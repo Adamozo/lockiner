@@ -1,0 +1,199 @@
+/**
+ * Global styles for LockIner with MakeItRemote design system
+ * Cyber-themed color palette and animations
+ */
+
+:root {
+  /* Color tokens */
+  --color-cyber-blue: #00D4FF;
+  --color-electric-green: #00FF88;
+  --color-background-black: #0A0A0A;
+  --color-card-black: #1A1A1A;
+  --color-border-gray: #333333;
+  --color-danger-red: #FF3366;
+  --color-warning-orange: #FFA500;
+  --color-pure-white: #FFFFFF;
+}
+
+/* Dark mode by default */
+body {
+  background-color: var(--color-background-black);
+  color: var(--color-pure-white);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Glass effect utility */
+.glass {
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Glow effects */
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.3);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 255, 136, 0.4);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Focus states */
+.focus-visible:focus {
+  outline: 2px solid var(--color-cyber-blue);
+  outline-offset: 2px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-gray);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-cyber-blue);
+}
+
+/* Skeleton loader utility */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-card-black) 0%,
+    rgba(0, 212, 255, 0.1) 50%,
+    var(--color-card-black) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Top gradient border utility */
+.top-border-gradient {
+  position: relative;
+}
+
+.top-border-gradient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-cyber-blue), var(--color-electric-green));
+}
+
+/* Utility classes for consistent spacing */
+.container-custom {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 768px) {
+  .container-custom {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Text gradient utility */
+.text-gradient-brand {
+  background: linear-gradient(135deg, var(--color-cyber-blue), var(--color-electric-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Smooth transitions for all interactive elements */
+button,
+a,
+input,
+select,
+textarea {
+  transition: all 0.3s ease;
+}
+
+/* Prevent text selection on UI elements */
+button,
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Page transitions */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+}

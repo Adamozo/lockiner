@@ -1,0 +1,96 @@
+version: '3.8'
+
+# Simple Production Docker Compose for LockIner (without nginx)
+# Usage: docker-compose -f docker-compose.simple-prod.yml up -d
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: lockiner-postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-lockiner}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-lockiner_secret}
+      - POSTGRES_DB=${POSTGRES_DB:-lockiner_db}
+    networks:
+      - lockiner-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lockiner} -d ${POSTGRES_DB:-lockiner_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: always
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lockiner-backend
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - backend_uploads:/uploads:rw
+    environment:
+      - PYTHONUNBUFFERED=1
+      - RELOAD=false
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-lockiner}:${POSTGRES_PASSWORD:-lockiner_secret}@postgres:5432/${POSTGRES_DB:-lockiner_db}
+      - UPLOAD_DIR=/uploads
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENVIRONMENT=production
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lockiner-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: always
+
+  # Nuxt 4 Frontend (Production Build)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: lockiner-frontend
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NITRO_PORT=3000
+      - NITRO_HOST=0.0.0.0
+      - NUXT_PUBLIC_API_BASE_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - lockiner-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: always
+
+networks:
+  lockiner-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  backend_uploads:
+    driver: local

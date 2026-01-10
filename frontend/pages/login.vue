@@ -1,0 +1,205 @@
+<script setup lang="ts">
+import { useAuthStore } from "~/stores/auth";
+
+definePageMeta({
+  layout: "auth",
+  middleware: "guest",
+});
+
+useSeoMeta({
+  title: "Login - LockIner",
+  description: "Login to your LockIner account",
+});
+
+const authStore = useAuthStore();
+const router = useRouter();
+const route = useRoute();
+const toast = useToast();
+
+// Form state
+const form = ref({
+  email: "",
+  password: "",
+});
+const loading = ref(false);
+const showPassword = ref(false);
+const errors = ref({
+  email: "",
+  password: "",
+  general: "",
+});
+
+// Validation
+const validateForm = (): boolean => {
+  errors.value = { email: "", password: "", general: "" };
+  let valid = true;
+
+  if (!form.value.email) {
+    errors.value.email = "Email is required";
+    valid = false;
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
+    errors.value.email = "Invalid email format";
+    valid = false;
+  }
+
+  if (!form.value.password) {
+    errors.value.password = "Password is required";
+    valid = false;
+  }
+
+  return valid;
+};
+
+// Submit handler
+const handleSubmit = async () => {
+  if (!validateForm()) return;
+
+  loading.value = true;
+  errors.value.general = "";
+
+  try {
+    await authStore.login({
+      email: form.value.email,
+      password: form.value.password,
+    });
+
+    toast.add({
+      title: "Welcome back!",
+      description: "You have been logged in successfully",
+      color: "green",
+    });
+
+    // Redirect to intended destination or home
+    const redirect = (route.query.redirect as string) || "/home";
+    await router.push(redirect);
+  } catch (e: unknown) {
+    const err = e as { data?: { detail?: string }; statusCode?: number };
+
+    if (err.statusCode === 401) {
+      errors.value.general = "Invalid email or password";
+    } else if (err.data?.detail) {
+      errors.value.general = err.data.detail;
+    } else {
+      errors.value.general = "An error occurred. Please try again.";
+    }
+  } finally {
+    loading.value = false;
+  }
+};
+</script>
+
+<template>
+  <div
+    class="bg-card-black border border-border-gray rounded-lg shadow-xl overflow-hidden"
+  >
+    <!-- Header -->
+    <div class="px-6 py-5 border-b border-border-gray relative">
+      <div
+        class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-cyber-blue to-electric-green"
+      />
+      <h1 class="text-2xl font-bold text-pure-white">Welcome back</h1>
+    </div>
+
+    <!-- Form -->
+    <form @submit.prevent="handleSubmit" class="px-6 py-6 space-y-5">
+      <!-- General error -->
+      <div
+        v-if="errors.general"
+        class="p-4 bg-danger-red/10 border border-danger-red/30 rounded-lg"
+      >
+        <div class="flex items-center gap-2 text-danger-red">
+          <UIcon
+            name="i-heroicons-exclamation-circle"
+            class="w-5 h-5 flex-shrink-0"
+          />
+          <span class="text-sm">{{ errors.general }}</span>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div>
+        <label
+          for="email"
+          class="block text-sm font-medium text-pure-white mb-2"
+        >
+          Email
+        </label>
+        <input
+          id="email"
+          v-model="form.email"
+          type="email"
+          autocomplete="email"
+          placeholder="you@example.com"
+          :class="[
+            'w-full px-4 py-2.5 border rounded-lg bg-background-black text-pure-white placeholder-pure-white/40 focus:outline-none focus:ring-2 transition-colors',
+            errors.email
+              ? 'border-danger-red focus:border-danger-red focus:ring-danger-red/30'
+              : 'border-border-gray focus:border-cyber-blue focus:ring-cyber-blue/30',
+          ]"
+        />
+        <p v-if="errors.email" class="mt-1 text-sm text-danger-red">
+          {{ errors.email }}
+        </p>
+      </div>
+
+      <!-- Password -->
+      <div>
+        <label
+          for="password"
+          class="block text-sm font-medium text-pure-white mb-2"
+        >
+          Password
+        </label>
+        <div class="relative">
+          <input
+            id="password"
+            v-model="form.password"
+            :type="showPassword ? 'text' : 'password'"
+            autocomplete="current-password"
+            placeholder="Enter your password"
+            :class="[
+              'w-full px-4 py-2.5 pr-12 border rounded-lg bg-background-black text-pure-white placeholder-pure-white/40 focus:outline-none focus:ring-2 transition-colors',
+              errors.password
+                ? 'border-danger-red focus:border-danger-red focus:ring-danger-red/30'
+                : 'border-border-gray focus:border-cyber-blue focus:ring-cyber-blue/30',
+            ]"
+          />
+          <button
+            type="button"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-pure-white/40 hover:text-pure-white transition-colors"
+            @click="showPassword = !showPassword"
+          >
+            <UIcon
+              :name="showPassword ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'"
+              class="w-5 h-5"
+            />
+          </button>
+        </div>
+        <p v-if="errors.password" class="mt-1 text-sm text-danger-red">
+          {{ errors.password }}
+        </p>
+      </div>
+
+      <!-- Submit -->
+      <BaseButton
+        type="submit"
+        variant="primary"
+        :loading="loading"
+        class="w-full"
+      >
+        Sign in
+      </BaseButton>
+
+      <!-- Register link -->
+      <p class="text-center text-sm text-pure-white/60">
+        Don't have an account?
+        <NuxtLink
+          to="/register"
+          class="text-cyber-blue hover:text-cyber-blue/80 font-medium transition-colors"
+        >
+          Create one
+        </NuxtLink>
+      </p>
+    </form>
+  </div>
+</template>

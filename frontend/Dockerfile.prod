@@ -1,0 +1,52 @@
+# Frontend Production Dockerfile (Nuxt 4 + Node 20)
+# Multi-stage build for optimized production image
+
+# ============ Build Stage ============
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including devDependencies for build)
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Build for production
+RUN npm run build
+
+# ============ Production Stage ============
+FROM node:20-alpine AS production
+
+LABEL maintainer="LockIner"
+LABEL description="Nuxt 4 frontend for LockIner - Production"
+
+WORKDIR /app
+
+# Install only production essentials
+RUN apk add --no-cache curl
+
+# Copy built application from builder
+COPY --from=builder /app/.output ./.output
+COPY --from=builder /app/package*.json ./
+
+# Set production environment
+ENV NODE_ENV=production
+ENV NITRO_PORT=3000
+ENV NITRO_HOST=0.0.0.0
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:3000 || exit 1
+
+# Run production server
+CMD ["node", ".output/server/index.mjs"]

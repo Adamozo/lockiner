@@ -1,0 +1,61 @@
+# Git
+.git
+.gitignore
+.github
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Documentation
+*.md
+docs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Testing
+coverage/
+.pytest_cache/
+__pycache__/
+
+# Node (frontend)
+node_modules/
+.nuxt/
+.output/
+dist/
+
+# Python (backend)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+venv/
+env/
+
+# Data (nie kopiować do image)
+data/
+uploads/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Docker
+docker-compose*.yml
+Dockerfile*

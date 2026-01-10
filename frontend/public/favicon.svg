@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <!-- Gradient dla worka -->
+    <linearGradient id="bagGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D4FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00FF88;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Gradient dla symbolu $ -->
+    <linearGradient id="dollarGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0A0A0A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1A1A1A;stop-opacity:0.9" />
+    </linearGradient>
+
+    <!-- Glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Worek pieniędzy - korpus -->
+  <path
+    d="M 30 35 Q 30 25 50 25 Q 70 25 70 35 L 70 75 Q 70 85 50 85 Q 30 85 30 75 Z"
+    fill="url(#bagGradient)"
+    stroke="#00D4FF"
+    stroke-width="2"
+    filter="url(#glow)"
+  />
+
+  <!-- Liny/sznurek u góry -->
+  <ellipse cx="50" cy="25" rx="20" ry="5" fill="url(#bagGradient)" stroke="#00D4FF" stroke-width="1.5"/>
+  <line x1="35" y1="25" x2="30" y2="15" stroke="url(#bagGradient)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="65" y1="25" x2="70" y2="15" stroke="url(#bagGradient)" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Symbol $ -->
+  <text
+    x="50"
+    y="63"
+    font-family="Arial, sans-serif"
+    font-size="32"
+    font-weight="bold"
+    fill="url(#dollarGradient)"
+    text-anchor="middle"
+    dominant-baseline="middle"
+  >$</text>
+
+  <!-- Dodatkowe światło/refleks -->
+  <ellipse cx="45" cy="45" rx="8" ry="12" fill="#00D4FF" opacity="0.3"/>
+</svg>

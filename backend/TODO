@@ -1,0 +1,41 @@
+- add users
+
+  - fields
+    - id
+    - name
+    - email -> hashed
+    - password -> hashed
+
+- add household
+
+  - note: many 2 many realtion with users
+  - fields
+    - uid
+    - name
+    - decription
+    - icon
+  - functionality
+    - manger can generate qr code with oranization inviatation link
+    - manger can block memebers
+    - all mambers can perform all transations options so
+      - household has its own budget
+      - abilty to add trasations and receipts to household
+      - household analitycs
+        - extra charts with money spend by category by household memeber
+      - household limits
+
+- add household_members
+
+  - fields
+    - id
+    - fk_household
+    - fk_user
+    - status
+      - active
+      - blocked
+    - role
+      - manager
+      - member
+
+- create container with postgres
+- switch to async postgres operations with sqlalchemy

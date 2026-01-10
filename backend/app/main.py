@@ -1,0 +1,64 @@
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from .routers import transactions, receipts, categories, analytics, import_csv, settings, auth, households, invitations, food
+from .database import init_db
+
+# ---------------------------------------
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Initialize database tables
+    await init_db()
+    yield
+    # Shutdown: cleanup if needed
+
+
+app = FastAPI(
+    title="LockIner API",
+    description="Personal finance management API with receipt scanning and bank statement import",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth.router)
+app.include_router(households.router)
+app.include_router(invitations.router)
+app.include_router(transactions.router)
+app.include_router(receipts.router)
+app.include_router(categories.router)
+app.include_router(analytics.router)
+app.include_router(import_csv.router)
+app.include_router(settings.router)
+app.include_router(food.router)
+
+
+# ---------------------------------------
+
+@app.get("/")
+async def root():
+    return {
+        "message": "LockIner API",
+        "version": "1.0.0",
+        "status": "operational",
+    }
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
+# ---------------------------------------
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

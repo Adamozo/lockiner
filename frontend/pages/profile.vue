@@ -1,0 +1,420 @@
+<script setup lang="ts">
+import { useAuthStore } from '~/stores/auth'
+
+definePageMeta({
+  layout: 'default',
+})
+
+useSeoMeta({
+  title: 'Profile - LockIner',
+  description: 'Manage your account settings',
+})
+
+const authStore = useAuthStore()
+const toast = useToast()
+
+// Profile form
+const profileForm = ref({
+  name: '',
+})
+const profileLoading = ref(false)
+const profileErrors = ref({
+  name: '',
+  general: '',
+})
+
+// Password form
+const passwordForm = ref({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+})
+const passwordLoading = ref(false)
+const showCurrentPassword = ref(false)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
+const passwordErrors = ref({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+  general: '',
+})
+
+// Password strength indicator
+const passwordStrength = computed(() => {
+  const password = passwordForm.value.newPassword
+  if (!password) return { score: 0, label: '', color: '' }
+
+  let score = 0
+  if (password.length >= 8) score++
+  if (password.length >= 12) score++
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++
+  if (/\d/.test(password)) score++
+  if (/[^a-zA-Z0-9]/.test(password)) score++
+
+  if (score <= 1) return { score, label: 'Weak', color: 'bg-danger-red' }
+  if (score <= 2) return { score, label: 'Fair', color: 'bg-warning-orange' }
+  if (score <= 3) return { score, label: 'Good', color: 'bg-cyber-blue' }
+  return { score, label: 'Strong', color: 'bg-electric-green' }
+})
+
+// Initialize profile form with current user data
+onMounted(() => {
+  if (authStore.user) {
+    profileForm.value.name = authStore.user.name
+  }
+})
+
+// Watch for user changes
+watch(() => authStore.user, (user) => {
+  if (user) {
+    profileForm.value.name = user.name
+  }
+}, { immediate: true })
+
+// Validate profile form
+const validateProfileForm = (): boolean => {
+  profileErrors.value = { name: '', general: '' }
+
+  if (!profileForm.value.name || profileForm.value.name.trim().length < 2) {
+    profileErrors.value.name = 'Name must be at least 2 characters'
+    return false
+  }
+
+  return true
+}
+
+// Update profile
+const handleUpdateProfile = async () => {
+  if (!validateProfileForm()) return
+
+  profileLoading.value = true
+  profileErrors.value.general = ''
+
+  try {
+    await authStore.updateProfile({
+      name: profileForm.value.name.trim(),
+    })
+
+    toast.add({
+      title: 'Profile updated',
+      description: 'Your profile has been updated successfully',
+      color: 'green',
+    })
+  } catch (e: unknown) {
+    const err = e as { data?: { detail?: string } }
+    profileErrors.value.general = err.data?.detail || 'Failed to update profile'
+  } finally {
+    profileLoading.value = false
+  }
+}
+
+// Validate password form
+const validatePasswordForm = (): boolean => {
+  passwordErrors.value = { currentPassword: '', newPassword: '', confirmPassword: '', general: '' }
+  let valid = true
+
+  if (!passwordForm.value.currentPassword) {
+    passwordErrors.value.currentPassword = 'Current password is required'
+    valid = false
+  }
+
+  if (!passwordForm.value.newPassword) {
+    passwordErrors.value.newPassword = 'New password is required'
+    valid = false
+  } else if (passwordForm.value.newPassword.length < 8) {
+    passwordErrors.value.newPassword = 'Password must be at least 8 characters'
+    valid = false
+  }
+
+  if (!passwordForm.value.confirmPassword) {
+    passwordErrors.value.confirmPassword = 'Please confirm your new password'
+    valid = false
+  } else if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+    passwordErrors.value.confirmPassword = 'Passwords do not match'
+    valid = false
+  }
+
+  return valid
+}
+
+// Change password
+const handleChangePassword = async () => {
+  if (!validatePasswordForm()) return
+
+  passwordLoading.value = true
+  passwordErrors.value.general = ''
+
+  try {
+    await authStore.changePassword({
+      current_password: passwordForm.value.currentPassword,
+      new_password: passwordForm.value.newPassword,
+    })
+
+    toast.add({
+      title: 'Password changed',
+      description: 'Your password has been changed successfully',
+      color: 'green',
+    })
+
+    // Reset form
+    passwordForm.value = {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    }
+  } catch (e: unknown) {
+    const err = e as { data?: { detail?: string }, statusCode?: number }
+
+    if (err.statusCode === 400 || err.statusCode === 401) {
+      passwordErrors.value.currentPassword = 'Current password is incorrect'
+    } else {
+      passwordErrors.value.general = err.data?.detail || 'Failed to change password'
+    }
+  } finally {
+    passwordLoading.value = false
+  }
+}
+
+// Format date
+const formatDate = (dateStr: string | null): string => {
+  if (!dateStr) return 'N/A'
+  return new Date(dateStr).toLocaleDateString('pl-PL', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+}
+</script>
+
+<template>
+  <div class="space-y-8">
+    <!-- Page header -->
+    <header>
+      <h1 class="text-3xl font-bold text-pure-white">Profile</h1>
+      <p class="mt-2 text-pure-white/60">Manage your account settings</p>
+    </header>
+
+    <!-- User Info Card -->
+    <div class="bg-card-black border border-border-gray rounded-lg shadow overflow-hidden">
+      <div class="px-6 py-4 border-b border-border-gray relative">
+        <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-cyber-blue to-electric-green" />
+        <h2 class="text-xl font-semibold text-pure-white">Account Information</h2>
+      </div>
+
+      <div class="px-6 py-6">
+        <div class="flex items-center gap-6">
+          <!-- Avatar -->
+          <div class="w-20 h-20 rounded-full bg-gradient-to-br from-cyber-blue to-electric-green flex items-center justify-center text-3xl font-bold text-background-black">
+            {{ authStore.userName?.charAt(0)?.toUpperCase() || '?' }}
+          </div>
+
+          <!-- Info -->
+          <div class="flex-1 space-y-2">
+            <div>
+              <span class="text-sm text-pure-white/60">Name</span>
+              <p class="text-lg font-medium text-pure-white">{{ authStore.userName }}</p>
+            </div>
+            <div>
+              <span class="text-sm text-pure-white/60">Email</span>
+              <p class="text-pure-white">{{ authStore.userEmail }}</p>
+            </div>
+            <div>
+              <span class="text-sm text-pure-white/60">Member since</span>
+              <p class="text-pure-white">{{ formatDate(authStore.user?.created_at || null) }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Update Profile Section -->
+    <div class="bg-card-black border border-border-gray rounded-lg shadow overflow-hidden">
+      <div class="px-6 py-4 border-b border-border-gray">
+        <h2 class="text-xl font-semibold text-pure-white">Update Profile</h2>
+        <p class="mt-1 text-sm text-pure-white/60">Update your personal information</p>
+      </div>
+
+      <form @submit.prevent="handleUpdateProfile" class="px-6 py-6 space-y-5">
+        <!-- General error -->
+        <div
+          v-if="profileErrors.general"
+          class="p-4 bg-danger-red/10 border border-danger-red/30 rounded-lg"
+        >
+          <div class="flex items-center gap-2 text-danger-red">
+            <UIcon name="i-heroicons-exclamation-circle" class="w-5 h-5 flex-shrink-0" />
+            <span class="text-sm">{{ profileErrors.general }}</span>
+          </div>
+        </div>
+
+        <!-- Name -->
+        <div class="max-w-md">
+          <label for="profile-name" class="block text-sm font-medium text-pure-white mb-2">
+            Name
+          </label>
+          <input
+            id="profile-name"
+            v-model="profileForm.name"
+            type="text"
+            :class="[
+              'w-full px-4 py-2.5 border rounded-lg bg-background-black text-pure-white placeholder-pure-white/40 focus:outline-none focus:ring-2 transition-colors',
+              profileErrors.name
+                ? 'border-danger-red focus:border-danger-red focus:ring-danger-red/30'
+                : 'border-border-gray focus:border-cyber-blue focus:ring-cyber-blue/30'
+            ]"
+          />
+          <p v-if="profileErrors.name" class="mt-1 text-sm text-danger-red">{{ profileErrors.name }}</p>
+        </div>
+
+        <BaseButton
+          type="submit"
+          variant="primary"
+          :loading="profileLoading"
+        >
+          Save Changes
+        </BaseButton>
+      </form>
+    </div>
+
+    <!-- Change Password Section -->
+    <div class="bg-card-black border border-border-gray rounded-lg shadow overflow-hidden">
+      <div class="px-6 py-4 border-b border-border-gray">
+        <h2 class="text-xl font-semibold text-pure-white">Change Password</h2>
+        <p class="mt-1 text-sm text-pure-white/60">Update your password to keep your account secure</p>
+      </div>
+
+      <form @submit.prevent="handleChangePassword" class="px-6 py-6 space-y-5">
+        <!-- General error -->
+        <div
+          v-if="passwordErrors.general"
+          class="p-4 bg-danger-red/10 border border-danger-red/30 rounded-lg"
+        >
+          <div class="flex items-center gap-2 text-danger-red">
+            <UIcon name="i-heroicons-exclamation-circle" class="w-5 h-5 flex-shrink-0" />
+            <span class="text-sm">{{ passwordErrors.general }}</span>
+          </div>
+        </div>
+
+        <!-- Current Password -->
+        <div class="max-w-md">
+          <label for="current-password" class="block text-sm font-medium text-pure-white mb-2">
+            Current Password
+          </label>
+          <div class="relative">
+            <input
+              id="current-password"
+              v-model="passwordForm.currentPassword"
+              :type="showCurrentPassword ? 'text' : 'password'"
+              autocomplete="current-password"
+              :class="[
+                'w-full px-4 py-2.5 pr-12 border rounded-lg bg-background-black text-pure-white placeholder-pure-white/40 focus:outline-none focus:ring-2 transition-colors',
+                passwordErrors.currentPassword
+                  ? 'border-danger-red focus:border-danger-red focus:ring-danger-red/30'
+                  : 'border-border-gray focus:border-cyber-blue focus:ring-cyber-blue/30'
+              ]"
+            />
+            <button
+              type="button"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-pure-white/40 hover:text-pure-white transition-colors"
+              @click="showCurrentPassword = !showCurrentPassword"
+            >
+              <UIcon
+                :name="showCurrentPassword ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'"
+                class="w-5 h-5"
+              />
+            </button>
+          </div>
+          <p v-if="passwordErrors.currentPassword" class="mt-1 text-sm text-danger-red">{{ passwordErrors.currentPassword }}</p>
+        </div>
+
+        <!-- New Password -->
+        <div class="max-w-md">
+          <label for="new-password" class="block text-sm font-medium text-pure-white mb-2">
+            New Password
+          </label>
+          <div class="relative">
+            <input
+              id="new-password"
+              v-model="passwordForm.newPassword"
+              :type="showNewPassword ? 'text' : 'password'"
+              autocomplete="new-password"
+              :class="[
+                'w-full px-4 py-2.5 pr-12 border rounded-lg bg-background-black text-pure-white placeholder-pure-white/40 focus:outline-none focus:ring-2 transition-colors',
+                passwordErrors.newPassword
+                  ? 'border-danger-red focus:border-danger-red focus:ring-danger-red/30'
+                  : 'border-border-gray focus:border-cyber-blue focus:ring-cyber-blue/30'
+              ]"
+            />
+            <button
+              type="button"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-pure-white/40 hover:text-pure-white transition-colors"
+              @click="showNewPassword = !showNewPassword"
+            >
+              <UIcon
+                :name="showNewPassword ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'"
+                class="w-5 h-5"
+              />
+            </button>
+          </div>
+          <p v-if="passwordErrors.newPassword" class="mt-1 text-sm text-danger-red">{{ passwordErrors.newPassword }}</p>
+
+          <!-- Password strength indicator -->
+          <div v-if="passwordForm.newPassword" class="mt-2">
+            <div class="flex items-center gap-2">
+              <div class="flex-1 h-1.5 bg-border-gray rounded-full overflow-hidden">
+                <div
+                  class="h-full transition-all duration-300"
+                  :class="passwordStrength.color"
+                  :style="{ width: `${(passwordStrength.score / 5) * 100}%` }"
+                />
+              </div>
+              <span class="text-xs" :class="passwordStrength.color.replace('bg-', 'text-')">
+                {{ passwordStrength.label }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Confirm New Password -->
+        <div class="max-w-md">
+          <label for="confirm-new-password" class="block text-sm font-medium text-pure-white mb-2">
+            Confirm New Password
+          </label>
+          <div class="relative">
+            <input
+              id="confirm-new-password"
+              v-model="passwordForm.confirmPassword"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              autocomplete="new-password"
+              :class="[
+                'w-full px-4 py-2.5 pr-12 border rounded-lg bg-background-black text-pure-white placeholder-pure-white/40 focus:outline-none focus:ring-2 transition-colors',
+                passwordErrors.confirmPassword
+                  ? 'border-danger-red focus:border-danger-red focus:ring-danger-red/30'
+                  : 'border-border-gray focus:border-cyber-blue focus:ring-cyber-blue/30'
+              ]"
+            />
+            <button
+              type="button"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-pure-white/40 hover:text-pure-white transition-colors"
+              @click="showConfirmPassword = !showConfirmPassword"
+            >
+              <UIcon
+                :name="showConfirmPassword ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'"
+                class="w-5 h-5"
+              />
+            </button>
+          </div>
+          <p v-if="passwordErrors.confirmPassword" class="mt-1 text-sm text-danger-red">{{ passwordErrors.confirmPassword }}</p>
+        </div>
+
+        <BaseButton
+          type="submit"
+          variant="primary"
+          :loading="passwordLoading"
+        >
+          Change Password
+        </BaseButton>
+      </form>
+    </div>
+  </div>
+</template>

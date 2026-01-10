@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: scrooge-postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-scrooge}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-scrooge_secret}
+      - POSTGRES_DB=${POSTGRES_DB:-scrooge_db}
+    networks:
+      - scrooge-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-scrooge} -d ${POSTGRES_DB:-scrooge_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: scrooge-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Hot reload - kod źródłowy
+      - ./backend/app:/app/app:rw
+      # Scripts
+      - ./backend/scripts:/app/scripts:rw
+      # Persistence - baza danych SQLite
+      - ./backend/data:/data:rw
+      # Persistence - zdjęcia paragonów
+      - ./backend/uploads:/uploads:rw
+      # Cache dla pip (opcjonalnie)
+      - backend_pip_cache:/root/.cache/pip
+    environment:
+      # FastAPI
+      - PYTHONUNBUFFERED=1
+      - RELOAD=true
+      # Database (PostgreSQL)
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-scrooge}:${POSTGRES_PASSWORD:-scrooge_secret}@postgres:5432/${POSTGRES_DB:-scrooge_db}
+      # Uploads
+      - UPLOAD_DIR=/uploads
+      # AI API Keys (z .env)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - CORS_ORIGINS=http://localhost:3000
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - scrooge-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # Nuxt 4 Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: scrooge-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      # Hot reload - cały kod źródłowy
+      - ./frontend:/app:rw
+      # Exclude node_modules (używamy named volume)
+      - /app/node_modules
+      - /app/.nuxt
+      # Named volume dla node_modules (performance)
+      - frontend_node_modules:/app/node_modules
+    environment:
+      # Nuxt
+      - NODE_ENV=development
+      - NITRO_PORT=3000
+      - NITRO_HOST=0.0.0.0
+      # API Backend URL (internal Docker network)
+      - API_BASE_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - scrooge-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+networks:
+  scrooge-network:
+    driver: bridge
+
+volumes:
+  # PostgreSQL data persistence
+  postgres_data:
+    driver: local
+  # Named volumes dla cache/performance
+  backend_pip_cache:
+    driver: local
+  frontend_node_modules:
+    driver: local
