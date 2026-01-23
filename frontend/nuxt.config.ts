@@ -9,6 +9,14 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
   ],
 
+  // Icon configuration - bundle icons at build time for production
+  icon: {
+    serverBundle: 'local',
+    clientBundle: {
+      scan: true,
+    },
+  },
+
   css: [
     '~/assets/css/global.css',
   ],

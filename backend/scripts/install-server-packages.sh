@@ -44,8 +44,7 @@ apt-get install -y \
     ca-certificates \
     curl \
     gnupg \
-    lsb-release \
-    software-properties-common
+    lsb-release 
 
 # ============================================
 # Install Git
