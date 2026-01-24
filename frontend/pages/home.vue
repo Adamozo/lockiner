@@ -1,13 +1,12 @@
 <script setup lang="ts">
-// Home Hub - Under Construction
 definePageMeta({
-  layout: 'default',
-})
+  layout: "default",
+});
 
 useSeoMeta({
-  title: 'Dashboard - LockIner',
-  description: 'Coming soon - Your personal life management hub',
-})
+  title: "Dashboard - LockIner",
+  description: "Coming soon - Your personal life management hub",
+});
 </script>
 
 <template>
@@ -36,7 +35,8 @@ useSeoMeta({
       </h1>
 
       <p class="text-lg text-pure-white/60 mb-8">
-        We're building something awesome. The dashboard is being redesigned to bring you a better experience.
+        We're building something awesome. The dashboard is being redesigned to
+        bring you a better experience.
       </p>
 
       <div class="bg-card-black border border-border-gray rounded-xl p-6 mb-8">

@@ -130,8 +130,7 @@ onUnmounted(() => {
     >
       <div
         v-if="isOpen"
-        class="absolute z-50 mt-2 bg-card-black border border-border-gray rounded-lg shadow-xl overflow-hidden min-w-[200px]"
-        :class="collapsed ? 'left-full ml-2 bottom-0' : 'left-0 right-0'"
+        class="absolute z-50 bg-card-black border border-border-gray rounded-lg shadow-xl overflow-hidden min-w-[200px] left-full ml-2 bottom-0"
       >
         <div class="p-1">
           <!-- Personal option -->

@@ -100,17 +100,17 @@ const colorClasses = computed(() => {
 </script>
 
 <template>
-  <header class="sticky top-0 z-40 bg-background-black/95 backdrop-blur-glass border-b border-border-gray">
-    <div class="px-4 py-3 md:py-4">
-      <div class="flex items-center justify-between">
+  <header class="sticky top-0 z-40 bg-background-black/95 backdrop-blur-glass border-b border-border-gray overflow-hidden">
+    <div class="px-4 py-3 min-[920px]:py-4">
+      <div class="flex items-center justify-between gap-4">
         <!-- Module Title -->
-        <div class="flex items-center space-x-2 md:space-x-3">
-          <UIcon :name="moduleIcon" class="w-5 h-5 md:w-7 md:h-7" :class="colorClasses.title" />
-          <h1 class="text-lg md:text-xl font-bold text-pure-white">{{ moduleName }}</h1>
+        <div class="flex items-center space-x-2 min-[920px]:space-x-3 flex-shrink-0">
+          <UIcon :name="moduleIcon" class="w-5 h-5 min-[920px]:w-7 min-[920px]:h-7" :class="colorClasses.title" />
+          <h1 class="text-lg min-[920px]:text-xl font-bold text-pure-white">{{ moduleName }}</h1>
         </div>
 
         <!-- Desktop Navigation -->
-        <nav class="hidden md:flex items-center space-x-1">
+        <nav class="hidden min-[920px]:flex items-center space-x-1 overflow-x-auto flex-shrink min-w-0">
           <NuxtLink
             v-for="item in navigation"
             :key="item.to"
@@ -129,7 +129,7 @@ const colorClasses = computed(() => {
 
         <!-- Mobile Hamburger Button -->
         <button
-          class="md:hidden p-2 rounded-lg text-pure-white/70 hover:text-pure-white hover:bg-card-black/50 transition-colors"
+          class="min-[920px]:hidden p-2 rounded-lg text-pure-white/70 hover:text-pure-white hover:bg-card-black/50 transition-colors"
           @click="mobileMenuOpen = !mobileMenuOpen"
         >
           <UIcon
@@ -142,7 +142,7 @@ const colorClasses = computed(() => {
       <!-- Mobile Dropdown Menu -->
       <nav
         v-if="mobileMenuOpen"
-        class="md:hidden mt-3 pt-3 border-t border-border-gray"
+        class="min-[920px]:hidden mt-3 pt-3 border-t border-border-gray"
       >
         <!-- Current Module Pages -->
         <div class="space-y-1 mb-3">
