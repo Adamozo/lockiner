@@ -100,11 +100,12 @@ onUnmounted(() => {
       :class="collapsed ? 'justify-center px-2 py-3' : 'px-3 py-3 space-x-3'"
       :title="collapsed ? currentContextName : undefined"
     >
-      <template v-if="currentHouseholdId && currentContextIcon">
-        <span class="text-lg flex-shrink-0">{{ currentContextIcon }}</span>
-      </template>
-      <template v-else-if="currentHouseholdId">
-        <UIcon name="i-heroicons-home" class="w-5 h-5 flex-shrink-0 text-cyber-blue" />
+      <template v-if="currentHouseholdId">
+        <HouseholdIcon
+          :icon="currentContextIcon || 'house'"
+          :size="20"
+          color="#00D4FF"
+        />
       </template>
       <template v-else>
         <UIcon name="i-heroicons-user" class="w-5 h-5 flex-shrink-0" />
@@ -168,12 +169,11 @@ onUnmounted(() => {
               ? 'bg-cyber-blue/10 text-cyber-blue'
               : 'text-pure-white/80 hover:bg-background-black/50'"
           >
-            <template v-if="household.icon">
-              <span class="text-lg flex-shrink-0">{{ household.icon }}</span>
-            </template>
-            <template v-else>
-              <UIcon name="i-heroicons-home" class="w-5 h-5 flex-shrink-0" />
-            </template>
+            <HouseholdIcon
+              :icon="household.icon || 'house'"
+              :size="20"
+              :color="currentHouseholdId === household.uid ? '#00D4FF' : '#FFFFFFCC'"
+            />
             <span class="font-medium truncate">{{ household.name }}</span>
             <UIcon
               v-if="currentHouseholdId === household.uid"

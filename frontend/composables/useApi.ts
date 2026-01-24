@@ -93,19 +93,29 @@ export const useApi = () => {
                 // Note: The retry happens automatically by re-throwing
               }
             } else {
-              // Refresh failed, redirect to login
+              // Refresh failed, show notification and redirect to login
               isRefreshing = false
+              const toast = useToast()
+              toast.add({
+                title: 'Session Expired',
+                description: 'Your session has expired. Please log in again.',
+                color: 'orange',
+              })
               authStore.clearTokens()
-              const router = useRouter()
-              await router.push('/login')
+              await navigateTo('/login')
             }
           } catch {
             isRefreshing = false
-            // Refresh failed, redirect to login
+            // Refresh failed, show notification and redirect to login
             const authStore = useAuthStore()
+            const toast = useToast()
+            toast.add({
+              title: 'Session Expired',
+              description: 'Your session has expired. Please log in again.',
+              color: 'orange',
+            })
             authStore.clearTokens()
-            const router = useRouter()
-            await router.push('/login')
+            await navigateTo('/login')
           }
         }
       } else if (response.status === 403) {

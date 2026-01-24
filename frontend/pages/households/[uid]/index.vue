@@ -55,7 +55,16 @@ const showMemberActionDialog = ref(false)
 const selectedMember = ref<{ userId: number; name: string; role: string } | null>(null)
 
 // Available icons
-const availableIcons = ['🏠', '🏡', '🏢', '🏘️', '🏰', '👨‍👩‍👧‍👦', '👪', '🏛️', '🏗️']
+const availableIcons = [
+  { key: 'house', label: 'House' },
+  { key: 'garden', label: 'Garden Home' },
+  { key: 'apartment', label: 'Apartment' },
+  { key: 'neighborhood', label: 'Neighborhood' },
+  { key: 'castle', label: 'Estate' },
+  { key: 'family', label: 'Family' },
+  { key: 'group', label: 'Group' },
+  { key: 'building', label: 'Building' },
+]
 
 // Fetch household on mount
 onMounted(async () => {
@@ -364,8 +373,11 @@ const getStatusBadgeColor = (status: string) => {
 
           <div class="flex items-center gap-4">
             <div class="w-16 h-16 rounded-xl bg-cyber-blue/10 border border-cyber-blue/30 flex items-center justify-center flex-shrink-0">
-              <span v-if="currentHousehold.icon" class="text-4xl">{{ currentHousehold.icon }}</span>
-              <UIcon v-else name="i-heroicons-home" class="w-8 h-8 text-cyber-blue" />
+              <HouseholdIcon
+                :icon="currentHousehold.icon || 'house'"
+                :size="32"
+                color="#00D4FF"
+              />
             </div>
             <div>
               <h1 class="text-3xl font-bold text-pure-white">{{ currentHousehold.name }}</h1>
@@ -445,15 +457,20 @@ const getStatusBadgeColor = (status: string) => {
             <div class="flex flex-wrap gap-2">
               <button
                 v-for="icon in availableIcons"
-                :key="icon"
+                :key="icon.key"
                 type="button"
-                class="w-10 h-10 rounded-lg border text-xl flex items-center justify-center transition-all"
-                :class="editForm.icon === icon
+                class="w-10 h-10 rounded-lg border flex items-center justify-center transition-all"
+                :class="editForm.icon === icon.key
                   ? 'border-cyber-blue bg-cyber-blue/10'
                   : 'border-border-gray hover:border-cyber-blue/50 bg-background-black'"
-                @click="selectIcon(icon)"
+                :title="icon.label"
+                @click="selectIcon(icon.key)"
               >
-                {{ icon }}
+                <HouseholdIcon
+                  :icon="icon.key"
+                  :size="20"
+                  :color="editForm.icon === icon.key ? '#00D4FF' : '#FFFFFF99'"
+                />
               </button>
             </div>
           </div>

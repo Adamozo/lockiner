@@ -31,15 +31,21 @@ const formatDate = (dateStr: string): string => {
 <template>
   <div class="space-y-8">
     <!-- Page header -->
-    <header class="flex items-center justify-between">
+    <header class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-3 sm:gap-4">
       <div>
-        <h1 class="text-3xl font-bold text-pure-white">Households</h1>
-        <p class="mt-2 text-pure-white/60">
+        <h1 class="text-2xl sm:text-3xl font-bold text-pure-white">
+          Households
+        </h1>
+        <p class="mt-1 sm:mt-2 text-sm sm:text-base text-pure-white/60">
           Manage your households and shared expenses
         </p>
       </div>
       <NuxtLink to="/households/create">
-        <BaseButton variant="primary" icon="i-heroicons-plus">
+        <BaseButton
+          icon="i-heroicons-plus"
+          size="sm"
+          variant="primary"
+        >
           Create Household
         </BaseButton>
       </NuxtLink>
@@ -96,7 +102,7 @@ const formatDate = (dateStr: string): string => {
       <div
         class="w-20 h-20 mx-auto mb-6 rounded-full bg-card-black border border-border-gray flex items-center justify-center"
       >
-        <UIcon name="i-heroicons-home" class="w-10 h-10 text-pure-white/40" />
+        <HouseholdIcon icon="house" :size="40" color="#FFFFFF66" />
       </div>
       <h2 class="text-xl font-semibold text-pure-white mb-2">
         No households yet
@@ -106,7 +112,10 @@ const formatDate = (dateStr: string): string => {
         roommates.
       </p>
       <NuxtLink to="/households/create">
-        <BaseButton variant="primary" icon="i-heroicons-plus">
+        <BaseButton
+          icon="i-heroicons-plus"
+          variant="primary"
+        >
           Create Your First Household
         </BaseButton>
       </NuxtLink>
@@ -132,13 +141,10 @@ const formatDate = (dateStr: string): string => {
               <div
                 class="w-12 h-12 rounded-lg bg-cyber-blue/10 border border-cyber-blue/30 flex items-center justify-center flex-shrink-0"
               >
-                <span v-if="household.icon" class="text-2xl">{{
-                  household.icon
-                }}</span>
-                <UIcon
-                  v-else
-                  name="i-heroicons-home"
-                  class="w-6 h-6 text-cyber-blue"
+                <HouseholdIcon
+                  :icon="household.icon || 'house'"
+                  :size="24"
+                  color="#00D4FF"
                 />
               </div>
               <div class="flex-1 min-w-0">

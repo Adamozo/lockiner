@@ -27,7 +27,16 @@ const errors = ref({
 });
 
 // Available icons for selection
-const availableIcons = ["🏠", "🏡", "🏢", "🏘️", "🏰", "👨‍👩‍👧‍👦", "👪", "🏛️"];
+const availableIcons = [
+  { key: "house", label: "House" },
+  { key: "garden", label: "Garden Home" },
+  { key: "apartment", label: "Apartment" },
+  { key: "neighborhood", label: "Neighborhood" },
+  { key: "castle", label: "Estate" },
+  { key: "family", label: "Family" },
+  { key: "group", label: "Group" },
+  { key: "building", label: "Building" },
+];
 
 // Validation
 const validateForm = (): boolean => {
@@ -169,17 +178,22 @@ const selectIcon = (icon: string) => {
           <div class="flex flex-wrap gap-2">
             <button
               v-for="icon in availableIcons"
-              :key="icon"
+              :key="icon.key"
               type="button"
-              class="w-12 h-12 rounded-lg border text-2xl flex items-center justify-center transition-all duration-200"
+              class="w-12 h-12 rounded-lg border flex items-center justify-center transition-all duration-200"
               :class="
-                form.icon === icon
+                form.icon === icon.key
                   ? 'border-cyber-blue bg-cyber-blue/10'
                   : 'border-border-gray hover:border-cyber-blue/50 bg-background-black'
               "
-              @click="selectIcon(icon)"
+              :title="icon.label"
+              @click="selectIcon(icon.key)"
             >
-              {{ icon }}
+              <HouseholdIcon
+                :icon="icon.key"
+                :size="24"
+                :color="form.icon === icon.key ? '#00D4FF' : '#FFFFFF99'"
+              />
             </button>
           </div>
           <p class="mt-2 text-sm text-pure-white/40">
