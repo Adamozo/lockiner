@@ -83,10 +83,6 @@ export const useAuth = () => {
    * Require authentication - redirect to login if not authenticated
    */
   const requireAuth = async (redirectTo = '/login') => {
-    if (!store.initialized) {
-      store.initialize()
-    }
-
     if (!store.isAuthenticated) {
       // Try to fetch user if we have a token
       if (store.accessToken) {
@@ -106,10 +102,6 @@ export const useAuth = () => {
    * Require guest - redirect to home if authenticated
    */
   const requireGuest = async (redirectTo = '/') => {
-    if (!store.initialized) {
-      store.initialize()
-    }
-
     if (store.accessToken) {
       await store.fetchCurrentUser()
     }

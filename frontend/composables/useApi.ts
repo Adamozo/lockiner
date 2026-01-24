@@ -6,25 +6,78 @@
 
 import { useAuthStore } from '~/stores/auth'
 
-// Token storage key (must match auth store)
-const ACCESS_TOKEN_KEY = 'scrooge_access_token'
+// Shared state for refresh token handling (outside composable for singleton behavior)
+let isRefreshing = false
+let refreshPromise: Promise<boolean> | null = null
 
 /**
- * Get access token from localStorage (client-side only)
+ * Get access token from cookie (SSR-safe)
  */
 const getStoredToken = (): string | null => {
-  if (import.meta.client) {
-    return localStorage.getItem(ACCESS_TOKEN_KEY)
+  const tokenCookie = useCookie<string | null>('scrooge_access_token')
+  return tokenCookie.value
+}
+
+/**
+ * Handle 401 error - refresh token or redirect to login
+ * Returns true if token was refreshed successfully, false otherwise
+ */
+const handle401Error = async (): Promise<boolean> => {
+  if (!import.meta.client) {
+    return false
   }
-  return null
+
+  // If already refreshing, wait for the existing refresh to complete
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise
+  }
+
+  isRefreshing = true
+
+  refreshPromise = (async () => {
+    try {
+      const authStore = useAuthStore()
+      const refreshed = await authStore.refreshAccessToken()
+
+      if (refreshed) {
+        return true
+      }
+
+      // Refresh failed, redirect to login
+      const toast = useToast()
+      toast.add({
+        title: 'Session Expired',
+        description: 'Your session has expired. Please log in again.',
+        color: 'orange',
+      })
+      authStore.clearTokens()
+      await navigateTo('/login')
+      return false
+    } catch {
+      // Refresh failed, redirect to login
+      const authStore = useAuthStore()
+      const toast = useToast()
+      toast.add({
+        title: 'Session Expired',
+        description: 'Your session has expired. Please log in again.',
+        color: 'orange',
+      })
+      authStore.clearTokens()
+      await navigateTo('/login')
+      return false
+    } finally {
+      isRefreshing = false
+      refreshPromise = null
+    }
+  })()
+
+  return refreshPromise
 }
 
 /**
  * Create API client with base configuration and auth support
  */
 export const useApi = () => {
-  // Track if we're currently refreshing to avoid infinite loops
-  let isRefreshing = false
 
   const apiFetch = $fetch.create({
     // Use relative URLs to leverage Nuxt's proxy (nuxt.config.ts -> nitro.devProxy)
@@ -74,57 +127,19 @@ export const useApi = () => {
       if (response.status === 401) {
         console.error("Unauthorized - authentication required")
 
-        // Try to refresh token (only on client side and if not already refreshing)
-        if (import.meta.client && !isRefreshing) {
-          isRefreshing = true
-
-          try {
-            const authStore = useAuthStore()
-            const refreshed = await authStore.refreshAccessToken()
-
-            if (refreshed) {
-              isRefreshing = false
-              // Retry the original request with new token
-              const newToken = getStoredToken()
-              if (newToken) {
-                const newHeaders = new Headers(options.headers as HeadersInit)
-                newHeaders.set("Authorization", `Bearer ${newToken}`)
-                options.headers = newHeaders
-                // Note: The retry happens automatically by re-throwing
-              }
-            } else {
-              // Refresh failed, show notification and redirect to login
-              isRefreshing = false
-              const toast = useToast()
-              toast.add({
-                title: 'Session Expired',
-                description: 'Your session has expired. Please log in again.',
-                color: 'orange',
-              })
-              authStore.clearTokens()
-              await navigateTo('/login')
-            }
-          } catch {
-            isRefreshing = false
-            // Refresh failed, show notification and redirect to login
-            const authStore = useAuthStore()
-            const toast = useToast()
-            toast.add({
-              title: 'Session Expired',
-              description: 'Your session has expired. Please log in again.',
-              color: 'orange',
-            })
-            authStore.clearTokens()
-            await navigateTo('/login')
-          }
-        }
+        // Try to refresh token and handle redirect
+        await handle401Error()
       } else if (response.status === 403) {
         console.error("Forbidden - insufficient permissions")
 
         // Parse error message for specific permission errors
         const detail = response._data?.detail?.toLowerCase() || ''
 
-        if (import.meta.client) {
+        // Handle 403 with "not authenticated" as an auth error (backend bug workaround)
+        if (detail.includes('not authenticated') || detail.includes('authentication')) {
+          console.error("403 with auth error - treating as 401")
+          await handle401Error()
+        } else if (import.meta.client) {
           const toast = useToast()
 
           if (detail.includes('blocked')) {

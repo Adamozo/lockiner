@@ -7,21 +7,8 @@ const skillsNavigation = [
   { label: 'Log', icon: 'i-heroicons-clipboard-document-list', to: '/skills/log' },
 ]
 
-// Check sidebar collapsed state for main content margin
-const sidebarCollapsed = ref(false)
-
-onMounted(() => {
-  const saved = localStorage.getItem('sidebar-collapsed')
-  sidebarCollapsed.value = saved === 'true'
-
-  const checkSidebar = () => {
-    const saved = localStorage.getItem('sidebar-collapsed')
-    sidebarCollapsed.value = saved === 'true'
-  }
-
-  const interval = setInterval(checkSidebar, 100)
-  onUnmounted(() => clearInterval(interval))
-})
+// SSR-safe sidebar state using cookie
+const { sidebarCollapsed } = useSidebarState()
 </script>
 
 <template>

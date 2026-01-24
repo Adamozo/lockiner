@@ -21,22 +21,12 @@ const isPublicRoute = (path: string): boolean => {
 }
 
 export default defineNuxtRouteMiddleware(async (to) => {
-  // Only run on client side
-  if (import.meta.server) {
-    return
-  }
-
   // Skip for public routes
   if (isPublicRoute(to.path)) {
     return
   }
 
   const authStore = useAuthStore()
-
-  // Initialize store if not already done
-  if (!authStore.initialized) {
-    authStore.initialize()
-  }
 
   // If we have a token, try to fetch user data
   if (authStore.accessToken && !authStore.user) {

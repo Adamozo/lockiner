@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import transactions, receipts, categories, analytics, import_csv, settings, auth, households, invitations, food
-from .database import init_db
 
 # ---------------------------------------
 
@@ -10,7 +9,6 @@ from .database import init_db
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Initialize database tables
-    await init_db()
     yield
     # Shutdown: cleanup if needed
 

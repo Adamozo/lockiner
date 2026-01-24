@@ -51,28 +51,15 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 
-// Initialize auth store on mount
+// SSR-safe sidebar state using cookie
+const { sidebarCollapsed: isCollapsed, toggleSidebar } = useSidebarState();
+
+// Fetch user data on mount if we have a token but no user
 onMounted(() => {
-  authStore.initialize();
   if (authStore.accessToken && !authStore.user) {
     authStore.fetchCurrentUser();
   }
 });
-
-// Sidebar collapsed state with localStorage persistence
-const isCollapsed = ref(false);
-
-onMounted(() => {
-  const saved = localStorage.getItem("sidebar-collapsed");
-  if (saved !== null) {
-    isCollapsed.value = saved === "true";
-  }
-});
-
-const toggleSidebar = () => {
-  isCollapsed.value = !isCollapsed.value;
-  localStorage.setItem("sidebar-collapsed", String(isCollapsed.value));
-};
 
 const isActiveModule = (path: string) => {
   if (path === "/home") return route.path === "/home";

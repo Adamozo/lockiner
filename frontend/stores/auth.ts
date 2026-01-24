@@ -1,6 +1,8 @@
 /**
  * Authentication Pinia Store
  * Global state management for user authentication
+ *
+ * Uses cookies instead of localStorage for SSR-safe token storage.
  */
 
 import { defineStore } from 'pinia'
@@ -13,21 +15,30 @@ import type {
   PasswordChangeRequest,
 } from '~/types/api'
 
-// Token storage keys
+// Cookie keys
 const ACCESS_TOKEN_KEY = 'scrooge_access_token'
 const REFRESH_TOKEN_KEY = 'scrooge_refresh_token'
 
 export const useAuthStore = defineStore('auth', () => {
+  // SSR-safe token storage using cookies
+  const accessTokenCookie = useCookie<string | null>(ACCESS_TOKEN_KEY, {
+    default: () => null,
+    watch: true,
+  })
+  const refreshTokenCookie = useCookie<string | null>(REFRESH_TOKEN_KEY, {
+    default: () => null,
+    watch: true,
+  })
+
   // State
   const user = ref<User | null>(null)
-  const accessToken = ref<string | null>(null)
-  const refreshToken = ref<string | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
-  const initialized = ref(false)
 
   // Getters
-  const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
+  const accessToken = computed(() => accessTokenCookie.value)
+  const refreshToken = computed(() => refreshTokenCookie.value)
+  const isAuthenticated = computed(() => !!accessTokenCookie.value && !!user.value)
   const isLoggedIn = computed(() => isAuthenticated.value)
   const currentUser = computed(() => user.value)
   const userName = computed(() => user.value?.name || '')
@@ -49,8 +60,8 @@ export const useAuthStore = defineStore('auth', () => {
       ...(options.headers as Record<string, string>),
     }
 
-    if (accessToken.value) {
-      headers['Authorization'] = `Bearer ${accessToken.value}`
+    if (accessTokenCookie.value) {
+      headers['Authorization'] = `Bearer ${accessTokenCookie.value}`
     }
 
     const response = await $fetch<T>(getApiUrl(path), {
@@ -61,36 +72,17 @@ export const useAuthStore = defineStore('auth', () => {
     return response
   }
 
-  // Initialize: Load tokens from localStorage
-  const initialize = () => {
-    if (import.meta.client && !initialized.value) {
-      accessToken.value = localStorage.getItem(ACCESS_TOKEN_KEY)
-      refreshToken.value = localStorage.getItem(REFRESH_TOKEN_KEY)
-      initialized.value = true
-    }
-  }
-
-  // Save tokens to localStorage
+  // Save tokens to cookies
   const saveTokens = (access: string, refresh: string) => {
-    accessToken.value = access
-    refreshToken.value = refresh
-
-    if (import.meta.client) {
-      localStorage.setItem(ACCESS_TOKEN_KEY, access)
-      localStorage.setItem(REFRESH_TOKEN_KEY, refresh)
-    }
+    accessTokenCookie.value = access
+    refreshTokenCookie.value = refresh
   }
 
-  // Clear tokens from localStorage
+  // Clear tokens from cookies
   const clearTokens = () => {
-    accessToken.value = null
-    refreshToken.value = null
+    accessTokenCookie.value = null
+    refreshTokenCookie.value = null
     user.value = null
-
-    if (import.meta.client) {
-      localStorage.removeItem(ACCESS_TOKEN_KEY)
-      localStorage.removeItem(REFRESH_TOKEN_KEY)
-    }
   }
 
   // Actions
@@ -144,7 +136,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
 
     try {
-      if (accessToken.value) {
+      if (accessTokenCookie.value) {
         await authFetch('/auth/logout', { method: 'POST' })
       }
     } catch {
@@ -156,7 +148,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const refreshAccessToken = async (): Promise<boolean> => {
-    if (!refreshToken.value) {
+    if (!refreshTokenCookie.value) {
       return false
     }
 
@@ -164,7 +156,7 @@ export const useAuthStore = defineStore('auth', () => {
       const tokens = await $fetch<TokenResponse>(getApiUrl('/auth/refresh-token'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: { refresh_token: refreshToken.value },
+        body: { refresh_token: refreshTokenCookie.value },
       })
 
       saveTokens(tokens.access_token, tokens.refresh_token)
@@ -176,7 +168,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const fetchCurrentUser = async (): Promise<User | null> => {
-    if (!accessToken.value) {
+    if (!accessTokenCookie.value) {
       return null
     }
 
@@ -188,9 +180,12 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = userData
       return userData
     } catch (e: unknown) {
-      const err = e as { status?: number }
+      // FetchError from $fetch has status on response or statusCode property
+      const err = e as { status?: number; statusCode?: number; response?: { status?: number } }
+      const status = err.status || err.statusCode || err.response?.status
+
       // If 401, try to refresh token
-      if (err.status === 401) {
+      if (status === 401) {
         const refreshed = await refreshAccessToken()
         if (refreshed) {
           return fetchCurrentUser()
@@ -244,9 +239,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Check if user is authenticated on app start
   const checkAuth = async (): Promise<boolean> => {
-    initialize()
-
-    if (!accessToken.value) {
+    if (!accessTokenCookie.value) {
       return false
     }
 
@@ -257,13 +250,12 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     // State
     user,
-    accessToken,
-    refreshToken,
     loading,
     error,
-    initialized,
 
-    // Getters
+    // Getters (tokens are now computed from cookies)
+    accessToken,
+    refreshToken,
     isAuthenticated,
     isLoggedIn,
     currentUser,
@@ -271,7 +263,6 @@ export const useAuthStore = defineStore('auth', () => {
     userEmail,
 
     // Actions
-    initialize,
     register,
     login,
     logout,

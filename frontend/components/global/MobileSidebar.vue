@@ -23,9 +23,11 @@ const authStore = useAuthStore()
 // Mobile menu state
 const menuOpen = ref(false)
 
-// Initialize auth on mount
+// Fetch user data on mount if we have a token but no user
 onMounted(() => {
-  authStore.initialize()
+  if (authStore.accessToken && !authStore.user) {
+    authStore.fetchCurrentUser()
+  }
 })
 
 // Close menu on route change

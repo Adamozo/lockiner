@@ -2,42 +2,27 @@
  * Household Context Composable
  *
  * Manages the current household context for the application.
- * Stores the selected household in localStorage and provides
- * reactive access to the current household ID.
+ * Uses cookies for SSR-safe state (fixes hydration mismatch).
  */
 
-const HOUSEHOLD_CONTEXT_KEY = 'scrooge_household_context'
-
-// Global state (shared across all instances)
-const currentHouseholdId = ref<string | null>(null)
-const initialized = ref(false)
-
 export const useHouseholdContext = () => {
+  // SSR-safe storage using cookies
+  const householdCookie = useCookie<string | null>('scrooge_household_context', {
+    default: () => null,
+    watch: true,
+  })
+
   /**
-   * Initialize the household context from localStorage
+   * The current household ID (reactive)
    */
-  const initialize = () => {
-    if (import.meta.client && !initialized.value) {
-      const stored = localStorage.getItem(HOUSEHOLD_CONTEXT_KEY)
-      currentHouseholdId.value = stored || null
-      initialized.value = true
-    }
-  }
+  const currentHouseholdId = computed(() => householdCookie.value)
 
   /**
    * Set the current household context
    * @param householdId - Household UID or null for personal context
    */
   const setHouseholdContext = (householdId: string | null) => {
-    currentHouseholdId.value = householdId
-
-    if (import.meta.client) {
-      if (householdId) {
-        localStorage.setItem(HOUSEHOLD_CONTEXT_KEY, householdId)
-      } else {
-        localStorage.removeItem(HOUSEHOLD_CONTEXT_KEY)
-      }
-    }
+    householdCookie.value = householdId
   }
 
   /**
@@ -50,28 +35,22 @@ export const useHouseholdContext = () => {
   /**
    * Check if we're in a household context
    */
-  const isHouseholdContext = computed(() => !!currentHouseholdId.value)
+  const isHouseholdContext = computed(() => !!householdCookie.value)
 
   /**
    * Check if we're in personal context
    */
-  const isPersonalContext = computed(() => !currentHouseholdId.value)
+  const isPersonalContext = computed(() => !householdCookie.value)
 
   /**
    * Get the current household ID for API calls
    * Returns undefined if in personal context (for optional params)
    */
-  const householdIdForApi = computed(() => currentHouseholdId.value || undefined)
-
-  // Initialize on first use
-  if (import.meta.client) {
-    initialize()
-  }
+  const householdIdForApi = computed(() => householdCookie.value || undefined)
 
   return {
     // State
-    currentHouseholdId: readonly(currentHouseholdId),
-    initialized: readonly(initialized),
+    currentHouseholdId,
 
     // Computed
     isHouseholdContext,
@@ -79,7 +58,6 @@ export const useHouseholdContext = () => {
     householdIdForApi,
 
     // Actions
-    initialize,
     setHouseholdContext,
     clearHouseholdContext,
   }

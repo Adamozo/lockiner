@@ -7,11 +7,11 @@ const props = withDefaults(defineProps<Props>(), {
   size: 32,
 });
 
-// Generate unique ID for this instance to avoid SVG gradient conflicts
-const uniqueId = Math.random().toString(36).substring(2, 9)
-const lockGradientId = `lockGradient-${uniqueId}`
-const keyholeGradientId = `keyholeGradient-${uniqueId}`
-const glowId = `glow-${uniqueId}`
+// SSR-safe unique ID generation using Nuxt's useId
+const id = useId()
+const lockGradientId = `lockGradient-${id}`
+const keyholeGradientId = `keyholeGradient-${id}`
+const glowId = `glow-${id}`
 </script>
 
 <template>

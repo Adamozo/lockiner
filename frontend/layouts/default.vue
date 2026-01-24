@@ -2,23 +2,8 @@
 // Default layout with sidebar only (for home and settings pages)
 // No module-specific navbar
 
-// Check sidebar collapsed state for main content margin
-const sidebarCollapsed = ref(false)
-
-onMounted(() => {
-  const saved = localStorage.getItem('sidebar-collapsed')
-  sidebarCollapsed.value = saved === 'true'
-
-  // Watch for changes from sidebar toggle
-  const checkSidebar = () => {
-    const saved = localStorage.getItem('sidebar-collapsed')
-    sidebarCollapsed.value = saved === 'true'
-  }
-
-  // Poll for changes (since storage event only fires in other tabs)
-  const interval = setInterval(checkSidebar, 100)
-  onUnmounted(() => clearInterval(interval))
-})
+// SSR-safe sidebar state using cookie
+const { sidebarCollapsed } = useSidebarState()
 </script>
 
 <template>

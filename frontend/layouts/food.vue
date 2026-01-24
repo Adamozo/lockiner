@@ -8,22 +8,8 @@ const foodNavigation = [
   { label: 'Settings', icon: 'i-heroicons-cog-6-tooth', to: '/food/settings' },
 ]
 
-// Check sidebar collapsed state for main content margin
-const sidebarCollapsed = ref(false)
-
-onMounted(() => {
-  const saved = localStorage.getItem('sidebar-collapsed')
-  sidebarCollapsed.value = saved === 'true'
-
-  // Watch for changes from sidebar toggle
-  const checkSidebar = () => {
-    const saved = localStorage.getItem('sidebar-collapsed')
-    sidebarCollapsed.value = saved === 'true'
-  }
-
-  const interval = setInterval(checkSidebar, 100)
-  onUnmounted(() => clearInterval(interval))
-})
+// SSR-safe sidebar state using cookie
+const { sidebarCollapsed } = useSidebarState()
 </script>
 
 <template>

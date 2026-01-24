@@ -14,11 +14,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   const authStore = useAuthStore()
 
-  // Initialize store if not already done
-  if (!authStore.initialized) {
-    authStore.initialize()
-  }
-
   // If we have a token, try to fetch user data
   if (authStore.accessToken && !authStore.user) {
     await authStore.fetchCurrentUser()
