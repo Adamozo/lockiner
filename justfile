@@ -103,7 +103,7 @@ db-shell:
 
 # Run backend tests (pytest)
 test-backend:
-    docker-compose exec backend pytest -v
+    docker-compose exec -e PYTHONPATH=/app backend pytest -v
 
 # Run frontend tests (vitest)
 test-frontend:

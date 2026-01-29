@@ -1,5 +1,3 @@
-import os
-import hashlib
 import logging
 from datetime import datetime, timezone, timedelta
 from typing import Optional
@@ -12,12 +10,13 @@ from ..models import User, Voucher
 from ..schemas import UserCreate, TokenResponse
 from ..repositories.user import UserRepository
 from ..repositories.voucher import VoucherRepository
+from ..config import get_settings
 
 logger = logging.getLogger(__name__)
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+SECRET_KEY = get_settings().jwt_secret_key
 if not SECRET_KEY:
-    if os.getenv("ENVIRONMENT", "development") == "production":
+    if get_settings().environment == "production":
         raise RuntimeError("JWT_SECRET_KEY environment variable is required in production")
     SECRET_KEY = "dev-only-secret-key-do-not-use-in-production"
     logger.warning("Using default JWT secret. Set JWT_SECRET_KEY for production")

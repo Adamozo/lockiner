@@ -2,7 +2,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
 from datetime import datetime, timezone
 from pathlib import Path
-import os
 import uuid
 import json
 import logging
@@ -14,12 +13,13 @@ from ..repositories.household import HouseholdRepository
 from ..integrations.ocr_provider import create_ocr_provider, OCRProviderError, OCRProvider
 from .ownership import OwnershipService
 from .food import FoodService
+from ..config import get_settings
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------
 
-UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "/uploads"))
+UPLOAD_DIR = Path(get_settings().upload_dir)
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic"}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 

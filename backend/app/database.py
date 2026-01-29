@@ -1,11 +1,11 @@
-import os
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://scrooge:scrooge_secret@postgres:5432/scrooge_db")
+from app.config import get_settings
+
 
 engine = create_async_engine(
-    DATABASE_URL,
+    get_settings().database_url,
     echo=True,
     pool_pre_ping=True,
 )

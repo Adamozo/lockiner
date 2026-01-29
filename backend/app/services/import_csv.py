@@ -2,15 +2,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from datetime import datetime
 from pathlib import Path
-import os
 import uuid
 
 from ..models import MonthlyImport
 from ..repositories.import_csv import ImportRepository
+from ..config import get_settings
 
 # ---------------------------------------
 
-UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "/uploads"))
+UPLOAD_DIR = Path(get_settings().upload_dir)
 CSV_DIR = UPLOAD_DIR / "csv"
 ALLOWED_EXTENSIONS = {".csv", ".txt"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB

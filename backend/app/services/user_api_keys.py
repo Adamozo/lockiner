@@ -1,4 +1,3 @@
-import os
 import logging
 from typing import Optional
 from datetime import datetime, timezone
@@ -10,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..models import User, UserAPIKey
 from ..schemas import APIProviderConfigResponse, APIProviderListResponse
 from ..integrations.ocr_provider import OCRProvider
+from ..config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +21,10 @@ class UserAPIKeyService:
 
     def _get_fernet(self) -> Fernet:
         if self._fernet is None:
-            env_key = os.getenv("ENCRYPTION_KEY")
+            settings = get_settings()
+            env_key = settings.encryption_key
             if not env_key:
-                if os.getenv("ENVIRONMENT", "development") == "production":
+                if settings.environment == "production":
                     raise RuntimeError("ENCRYPTION_KEY environment variable is required in production")
                 logger.warning("ENCRYPTION_KEY not set. Using temporary key")
                 env_key = Fernet.generate_key().decode()

@@ -2,19 +2,19 @@ from typing import Optional
 from pathlib import Path
 from datetime import datetime
 import json
-import os
 import logging
 
 from cryptography.fernet import Fernet, InvalidToken
 
 from ..schemas import APIProviderConfigResponse, APIProviderListResponse
 from ..integrations.ocr_provider import OCRProvider
+from ..config import get_settings
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------
 
-SETTINGS_DIR = Path(os.getenv("DATA_DIR", "/data"))
+SETTINGS_DIR = Path(get_settings().data_dir)
 SETTINGS_FILE = SETTINGS_DIR / "settings.json"
 
 # ---------------------------------------
@@ -55,10 +55,11 @@ class SettingsService:
         self._encryption_key: Optional[bytes] = None
 
     def _get_encryption_key(self) -> bytes:
-        env_key = os.getenv("ENCRYPTION_KEY")
+        settings = get_settings()
+        env_key = settings.encryption_key
 
         if not env_key:
-            if os.getenv("ENVIRONMENT", "development") == "production":
+            if settings.environment == "production":
                 raise RuntimeError(
                     "ENCRYPTION_KEY environment variable is required in production"
                 )
@@ -136,14 +137,6 @@ class SettingsService:
         active_provider = settings.get("active_ocr_provider")
 
         if not active_provider:
-            if "gemini_api_key" in settings:
-                try:
-                    api_key = self._decrypt_api_key(settings["gemini_api_key"])
-                    return OCRProvider.GEMINI, api_key
-
-                except:
-                    pass
-
             return None, None
 
         provider_config = providers.get(active_provider)
@@ -208,24 +201,6 @@ class SettingsService:
         settings = self._load_settings()
         providers = settings.get("ocr_providers", {})
         active_provider = settings.get("active_ocr_provider")
-
-        if "gemini_api_key" in settings and "gemini" not in providers:
-            try:
-                api_key = self._decrypt_api_key(settings["gemini_api_key"])
-                key_preview = api_key[:8] + "..." if len(api_key) > 8 else api_key[:4] + "..."
-                providers_list = [{
-                    "provider": "gemini",
-                    "key_preview": key_preview,
-                    "is_active": active_provider is None or active_provider == "gemini",
-                    "configured_at": None,
-                }]
-                return APIProviderListResponse(
-                    providers=providers_list,
-                    active_provider="gemini" if (active_provider is None or active_provider == "gemini") else active_provider,
-                )
-
-            except:
-                pass
 
         providers_list = []
         for provider_name, provider_config in providers.items():
@@ -293,18 +268,6 @@ class SettingsService:
             try:
                 encrypted_key = providers["gemini"].get("encrypted_key")
                 api_key = self._decrypt_api_key(encrypted_key)
-                key_preview = api_key[:8] + "..." if len(api_key) > 8 else api_key[:4] + "..."
-                return {
-                    "configured": True,
-                    "key_preview": key_preview,
-                }
-
-            except:
-                pass
-
-        if "gemini_api_key" in settings:
-            try:
-                api_key = self._decrypt_api_key(settings["gemini_api_key"])
                 key_preview = api_key[:8] + "..." if len(api_key) > 8 else api_key[:4] + "..."
                 return {
                     "configured": True,

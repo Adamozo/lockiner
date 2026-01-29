@@ -23,13 +23,14 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 from app.models import Voucher, Base
+from app.config import get_settings
 
 
 # Number of vouchers to generate
 NUM_VOUCHERS = 100
 
 # Database URL from environment
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://scrooge:scrooge_secret@postgres:5432/scrooge_db")
+DATABASE_URL = get_settings().database_url
 
 # Output CSV file path (mounted volume)
 CSV_OUTPUT_PATH = Path("/app/scripts/vouchers.csv")
