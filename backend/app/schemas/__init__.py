@@ -1,0 +1,297 @@
+"""
+Pydantic schemas for request/response validation.
+
+This module defines Pydantic models for API request validation
+and response serialization. Follows Pydantic V2 syntax.
+
+All schemas are re-exported from submodules for backward compatibility.
+"""
+
+# Transaction schemas
+from .transaction import (
+    TransactionBase,
+    TransactionCreate,
+    TransactionUpdate,
+    TransactionResponse,
+)
+
+# Receipt schemas
+from .receipt import (
+    ReceiptItem,
+    ReceiptBase,
+    ReceiptCreate,
+    ReceiptUpdate,
+    ReceiptResponse,
+    ReceiptItemDetailed,
+    ReceiptOCRResponse,
+    ReceiptUploadResponse,
+)
+
+# Category schemas
+from .category import (
+    CategoryBase,
+    CategoryCreate,
+    CategoryUpdate,
+    CategoryResponse,
+)
+
+# Monthly import schemas
+from .monthly_import import (
+    MonthlyImportBase,
+    MonthlyImportCreate,
+    MonthlyImportResponse,
+)
+
+# Analytics schemas
+from .analytics import (
+    CategorySpending,
+    MonthSummary,
+    SpendingTrend,
+    YearlySummary,
+    MerchantSpending,
+    BudgetStatus,
+)
+
+# Budget schemas
+from .budget import (
+    BudgetSettingsBase,
+    BudgetSettingsUpdate,
+    BudgetSettingsResponse,
+    OverallBudgetStatus,
+    CompleteBudgetStatus,
+    BudgetAlert,
+    BudgetAlertsResponse,
+)
+
+# CSV import schemas
+from .csv_import import (
+    CSVImportRequest,
+    CSVImportResponse,
+)
+
+# Error schemas
+from .error import (
+    ErrorResponse,
+    ValidationErrorResponse,
+)
+
+# Settings schemas
+from .settings import (
+    APIProviderConfigBase,
+    APIProviderConfigCreate,
+    APIProviderConfigResponse,
+    APIProviderListResponse,
+    SetActiveProviderRequest,
+)
+
+# Voucher schemas
+from .voucher import (
+    VoucherResponse,
+    VoucherValidateResponse,
+)
+
+# User schemas
+from .user import (
+    UserBase,
+    UserCreate,
+    UserUpdate,
+    UserResponse,
+    LoginRequest,
+    TokenResponse,
+    RefreshTokenRequest,
+    PasswordChangeRequest,
+)
+
+# Household schemas
+from .household import (
+    HouseholdBase,
+    HouseholdCreate,
+    HouseholdUpdate,
+    HouseholdMemberResponse,
+    HouseholdResponse,
+    HouseholdDetailResponse,
+    HouseholdMemberUpdate,
+)
+
+# Invitation schemas
+from .invitation import (
+    InvitationCreate,
+    InvitationResponse,
+    InvitationJoinResponse,
+)
+
+# Household analytics schemas
+from .household_analytics import (
+    MemberSpending,
+    HouseholdMonthlySummary,
+    HouseholdCategorySummary,
+    HouseholdSpendingByMember,
+    HouseholdSpendingByCategory,
+)
+
+# Food schemas
+from .food import (
+    FoodCategoryBase,
+    FoodCategoryCreate,
+    FoodCategoryResponse,
+    FoodProductBase,
+    FoodProductCreate,
+    FoodProductUpdate,
+    FoodProductResponse,
+    FoodProductAliasCreate,
+    FoodProductAliasResponse,
+    FoodPendingImportItemResponse,
+    FoodPendingImportResponse,
+    FoodPendingImportItemAccept,
+    FoodPendingImportItemBulkAccept,
+    FoodInventoryCreate,
+    FoodInventoryUpdate,
+    FoodInventoryResponse,
+    FoodInventoryConsumeRequest,
+    FoodExpiryReminderResponse,
+    FoodReminderSettingsBase,
+    FoodReminderSettingsUpdate,
+    FoodReminderSettingsResponse,
+    FoodConsumptionLogCreate,
+    FoodConsumptionLogResponse,
+    FoodProductSearchParams,
+    FoodInventoryFilterParams,
+)
+
+# Fitness schemas
+from .fitness import (
+    ExerciseBase,
+    ExerciseCreate,
+    ExerciseResponse,
+    WorkoutBase,
+    WorkoutCreate,
+    WorkoutUpdate,
+    WorkoutResponse,
+    WeightEntryBase,
+    WeightEntryCreate,
+    WeightEntryUpdate,
+    WeightEntryResponse,
+    FitnessStatsResponse,
+)
+
+__all__ = [
+    # Transaction
+    "TransactionBase",
+    "TransactionCreate",
+    "TransactionUpdate",
+    "TransactionResponse",
+    # Receipt
+    "ReceiptItem",
+    "ReceiptBase",
+    "ReceiptCreate",
+    "ReceiptUpdate",
+    "ReceiptResponse",
+    "ReceiptItemDetailed",
+    "ReceiptOCRResponse",
+    "ReceiptUploadResponse",
+    # Category
+    "CategoryBase",
+    "CategoryCreate",
+    "CategoryUpdate",
+    "CategoryResponse",
+    # Monthly import
+    "MonthlyImportBase",
+    "MonthlyImportCreate",
+    "MonthlyImportResponse",
+    # Analytics
+    "CategorySpending",
+    "MonthSummary",
+    "SpendingTrend",
+    "YearlySummary",
+    "MerchantSpending",
+    "BudgetStatus",
+    # Budget
+    "BudgetSettingsBase",
+    "BudgetSettingsUpdate",
+    "BudgetSettingsResponse",
+    "OverallBudgetStatus",
+    "CompleteBudgetStatus",
+    "BudgetAlert",
+    "BudgetAlertsResponse",
+    # CSV import
+    "CSVImportRequest",
+    "CSVImportResponse",
+    # Error
+    "ErrorResponse",
+    "ValidationErrorResponse",
+    # Settings
+    "APIProviderConfigBase",
+    "APIProviderConfigCreate",
+    "APIProviderConfigResponse",
+    "APIProviderListResponse",
+    "SetActiveProviderRequest",
+    # Voucher
+    "VoucherResponse",
+    "VoucherValidateResponse",
+    # User
+    "UserBase",
+    "UserCreate",
+    "UserUpdate",
+    "UserResponse",
+    "LoginRequest",
+    "TokenResponse",
+    "RefreshTokenRequest",
+    "PasswordChangeRequest",
+    # Household
+    "HouseholdBase",
+    "HouseholdCreate",
+    "HouseholdUpdate",
+    "HouseholdMemberResponse",
+    "HouseholdResponse",
+    "HouseholdDetailResponse",
+    "HouseholdMemberUpdate",
+    # Invitation
+    "InvitationCreate",
+    "InvitationResponse",
+    "InvitationJoinResponse",
+    # Household analytics
+    "MemberSpending",
+    "HouseholdMonthlySummary",
+    "HouseholdCategorySummary",
+    "HouseholdSpendingByMember",
+    "HouseholdSpendingByCategory",
+    # Food
+    "FoodCategoryBase",
+    "FoodCategoryCreate",
+    "FoodCategoryResponse",
+    "FoodProductBase",
+    "FoodProductCreate",
+    "FoodProductUpdate",
+    "FoodProductResponse",
+    "FoodProductAliasCreate",
+    "FoodProductAliasResponse",
+    "FoodPendingImportItemResponse",
+    "FoodPendingImportResponse",
+    "FoodPendingImportItemAccept",
+    "FoodPendingImportItemBulkAccept",
+    "FoodInventoryCreate",
+    "FoodInventoryUpdate",
+    "FoodInventoryResponse",
+    "FoodInventoryConsumeRequest",
+    "FoodExpiryReminderResponse",
+    "FoodReminderSettingsBase",
+    "FoodReminderSettingsUpdate",
+    "FoodReminderSettingsResponse",
+    "FoodConsumptionLogCreate",
+    "FoodConsumptionLogResponse",
+    "FoodProductSearchParams",
+    "FoodInventoryFilterParams",
+    # Fitness
+    "ExerciseBase",
+    "ExerciseCreate",
+    "ExerciseResponse",
+    "WorkoutBase",
+    "WorkoutCreate",
+    "WorkoutUpdate",
+    "WorkoutResponse",
+    "WeightEntryBase",
+    "WeightEntryCreate",
+    "WeightEntryUpdate",
+    "WeightEntryResponse",
+    "FitnessStatsResponse",
+]

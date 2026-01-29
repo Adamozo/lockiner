@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { FitnessStats } from '~/types/fitness'
+
 definePageMeta({
   layout: 'fitness',
 })
@@ -8,11 +10,25 @@ useSeoMeta({
   description: 'Track your fitness progress over time',
 })
 
-const { workouts, stats, fetchWorkouts } = useWorkouts()
+const { workouts, fetchWorkouts, fetchStats } = useWorkouts()
 const { sortedEntries, currentWeight, weightChange, fetchEntries } = useWeight()
+
+const stats = ref<FitnessStats>({
+  total_workouts: 0,
+  workouts_this_week: 0,
+  workouts_this_month: 0,
+  total_weight_lifted_kg: 0,
+  current_weight_kg: null,
+  weight_change_kg: null,
+})
 
 onMounted(async () => {
   await Promise.all([fetchWorkouts(), fetchEntries()])
+  try {
+    stats.value = await fetchStats()
+  } catch {
+    // Stats will remain at defaults
+  }
 })
 
 // Calculate exercise progress (max weight per exercise over time)

@@ -1,23 +1,13 @@
-from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import transactions, receipts, categories, analytics, import_csv, settings, auth, households, invitations, food
+from .routers import transactions, receipts, categories, analytics, import_csv, settings, auth, households, invitations, food, fitness
 
 # ---------------------------------------
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup: Initialize database tables
-    yield
-    # Shutdown: cleanup if needed
-
-
 app = FastAPI(
     title="LockIner API",
-    description="Personal finance management API with receipt scanning and bank statement import",
     version="1.0.0",
-    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -38,6 +28,7 @@ app.include_router(analytics.router)
 app.include_router(import_csv.router)
 app.include_router(settings.router)
 app.include_router(food.router)
+app.include_router(fitness.router)
 
 
 # ---------------------------------------

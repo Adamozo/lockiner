@@ -15,42 +15,21 @@ Usage:
 import sys
 from sqlalchemy import text
 
-from .database import engine, Base, SessionLocal
+from .database import SessionLocal
 from .models import Category, Transaction, Receipt, MonthlyImport, BudgetSettings, FoodCategory
 
 
-def init_database(drop_existing: bool = False):
+def init_database():
     """
-    Create all tables and seed initial data.
+    Seed initial data.
 
-    Args:
-        drop_existing: If True, drops all existing tables before creating new ones.
-                      WARNING: This will delete all data!
+    Tables are managed by Alembic migrations (alembic upgrade head).
+    This function only handles data seeding.
     """
 
     print("=" * 60)
-    print("LockIner Database Initialization")
+    print("LockIner Database Seeding")
     print("=" * 60)
-
-    if drop_existing:
-        print("\n[WARNING] Dropping all existing tables...")
-        response = input("Are you sure? This will delete all data! (yes/no): ")
-        if response.lower() != "yes":
-            print("Initialization cancelled.")
-            return
-
-        Base.metadata.drop_all(bind=engine)
-        print("All tables dropped.")
-
-    # Create all tables
-    print("\nCreating database tables...")
-    Base.metadata.create_all(bind=engine)
-    print("Tables created successfully:")
-    print("  - transactions")
-    print("  - receipts")
-    print("  - categories")
-    print("  - monthly_imports")
-    print("  - budget_settings")
 
     # Seed categories
     seed_categories()
@@ -59,14 +38,8 @@ def init_database(drop_existing: bool = False):
     seed_food_categories()
 
     print("\n" + "=" * 60)
-    print("Database initialization completed successfully!")
+    print("Database seeding completed successfully!")
     print("=" * 60)
-    print("\nDatabase location: /data/scrooge.db")
-    print("\nTo view database:")
-    print("  docker exec -it scrooge-backend sqlite3 /data/scrooge.db")
-    print("\nTo backup database:")
-    print("  docker cp scrooge-backend:/data/scrooge.db ./backups/")
-    print()
 
 
 def seed_categories():
@@ -327,16 +300,19 @@ def verify_database():
 
 def reset_database():
     """
-    Reset database by dropping and recreating all tables.
+    Reset database by re-seeding data.
 
-    WARNING: This deletes ALL data!
+    NOTE: Table management is handled by Alembic migrations.
+    Use 'alembic downgrade base' + 'alembic upgrade head' to recreate tables.
     """
 
     print("\n" + "!" * 60)
-    print("WARNING: This will DELETE ALL DATA in the database!")
+    print("WARNING: To reset tables, use Alembic migrations:")
+    print("  alembic downgrade base")
+    print("  alembic upgrade head")
     print("!" * 60)
 
-    init_database(drop_existing=True)
+    init_database()
     verify_database()
 
 
@@ -361,5 +337,5 @@ if __name__ == "__main__":
             print(f"Unknown argument: {sys.argv[1]}")
             print("Use --help for usage information")
     else:
-        init_database(drop_existing=False)
+        init_database()
         verify_database()

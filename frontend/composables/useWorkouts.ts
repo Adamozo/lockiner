@@ -1,48 +1,51 @@
-// Workouts composable with mock data
-import type { Workout, WorkoutCreate, FitnessStats } from '~/types/fitness'
-import { mockWorkouts } from './useFitnessMockData'
+import type { Workout, WorkoutCreate, WorkoutUpdate, FitnessStats } from '~/types/fitness'
+import { buildQueryParams } from './useApi'
+
+interface WorkoutFilters {
+  start_date?: string
+  end_date?: string
+  skip?: number
+  limit?: number
+}
 
 export function useWorkouts() {
-  const workouts = ref<Workout[]>([...mockWorkouts])
+  const api = useApi()
+  const workouts = ref<Workout[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  // Generate next ID
-  const nextId = computed(() => {
-    const maxId = Math.max(...workouts.value.map(w => w.id), 0)
-    return maxId + 1
-  })
-
-  // Fetch workouts (simulated)
-  const fetchWorkouts = async () => {
+  // Fetch workouts
+  const fetchWorkouts = async (filters?: WorkoutFilters): Promise<void> => {
     loading.value = true
     error.value = null
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300))
-      // Data is already loaded from mock
+      const queryString = buildQueryParams({
+        start_date: filters?.start_date,
+        end_date: filters?.end_date,
+        skip: filters?.skip,
+        limit: filters?.limit,
+      })
+      const data = await api<Workout[]>(`/api/v1/fitness/workouts${queryString}`)
+      workouts.value = data
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to fetch workouts'
+      throw e
     } finally {
       loading.value = false
     }
   }
 
   // Create workout
-  const createWorkout = async (workout: WorkoutCreate) => {
+  const createWorkout = async (workout: WorkoutCreate): Promise<Workout> => {
     loading.value = true
     error.value = null
     try {
-      await new Promise(resolve => setTimeout(resolve, 300))
-
-      const newWorkout: Workout = {
-        id: nextId.value,
-        ...workout,
-        exercises: workout.exercises.map((e, i) => ({ ...e, id: Date.now() + i })),
-        completed: true,
-      }
-      workouts.value.unshift(newWorkout)
-      return newWorkout
+      const data = await api<Workout>('/api/v1/fitness/workouts', {
+        method: 'POST',
+        body: workout,
+      })
+      workouts.value.unshift(data)
+      return data
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to create workout'
       throw e
@@ -52,23 +55,19 @@ export function useWorkouts() {
   }
 
   // Update workout
-  const updateWorkout = async (id: number, updates: Partial<WorkoutCreate>) => {
+  const updateWorkout = async (id: number, updates: WorkoutUpdate): Promise<Workout> => {
     loading.value = true
     error.value = null
     try {
-      await new Promise(resolve => setTimeout(resolve, 300))
-
+      const data = await api<Workout>(`/api/v1/fitness/workouts/${id}`, {
+        method: 'PUT',
+        body: updates,
+      })
       const index = workouts.value.findIndex(w => w.id === id)
-      if (index === -1) throw new Error('Workout not found')
-
-      workouts.value[index] = {
-        ...workouts.value[index],
-        ...updates,
-        exercises: updates.exercises
-          ? updates.exercises.map((e, i) => ({ ...e, id: Date.now() + i }))
-          : workouts.value[index].exercises,
+      if (index !== -1) {
+        workouts.value[index] = data
       }
-      return workouts.value[index]
+      return data
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to update workout'
       throw e
@@ -78,16 +77,12 @@ export function useWorkouts() {
   }
 
   // Delete workout
-  const deleteWorkout = async (id: number) => {
+  const deleteWorkout = async (id: number): Promise<void> => {
     loading.value = true
     error.value = null
     try {
-      await new Promise(resolve => setTimeout(resolve, 300))
-
-      const index = workouts.value.findIndex(w => w.id === id)
-      if (index === -1) throw new Error('Workout not found')
-
-      workouts.value.splice(index, 1)
+      await api(`/api/v1/fitness/workouts/${id}`, { method: 'DELETE' })
+      workouts.value = workouts.value.filter(w => w.id !== id)
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to delete workout'
       throw e
@@ -96,35 +91,13 @@ export function useWorkouts() {
     }
   }
 
-  // Get stats
-  const stats = computed<FitnessStats>(() => {
-    const now = new Date()
-    const startOfWeek = new Date(now)
-    startOfWeek.setDate(now.getDate() - now.getDay())
-    startOfWeek.setHours(0, 0, 0, 0)
+  // Fetch stats from API
+  const fetchStats = async (): Promise<FitnessStats> => {
+    const data = await api<FitnessStats>('/api/v1/fitness/stats')
+    return data
+  }
 
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-
-    const workoutsThisWeek = workouts.value.filter(w => new Date(w.date) >= startOfWeek).length
-    const workoutsThisMonth = workouts.value.filter(w => new Date(w.date) >= startOfMonth).length
-
-    const totalWeightLifted = workouts.value.reduce((total, workout) => {
-      return total + workout.exercises.reduce((sum, ex) => {
-        return sum + (ex.weight_kg * ex.sets * ex.reps)
-      }, 0)
-    }, 0)
-
-    return {
-      total_workouts: workouts.value.length,
-      workouts_this_week: workoutsThisWeek,
-      workouts_this_month: workoutsThisMonth,
-      total_weight_lifted_kg: totalWeightLifted,
-      current_weight_kg: null,
-      weight_change_kg: null,
-    }
-  })
-
-  // Get recent workouts
+  // Computed: recent workouts (sorted by date)
   const recentWorkouts = computed(() => {
     return [...workouts.value]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -135,11 +108,11 @@ export function useWorkouts() {
     workouts,
     loading,
     error,
-    stats,
     recentWorkouts,
     fetchWorkouts,
     createWorkout,
     updateWorkout,
     deleteWorkout,
+    fetchStats,
   }
 }

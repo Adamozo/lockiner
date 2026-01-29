@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import type { Workout, WorkoutCreate } from '~/types/fitness'
-import { exerciseLibrary } from '~/composables/useFitnessMockData'
 
 definePageMeta({
   layout: 'fitness',
 })
+
+// Common gym exercises for the dropdown
+const exerciseLibrary = [
+  'Bench Press', 'Incline Bench Press', 'Dumbbell Press', 'Push-ups',
+  'Squat', 'Leg Press', 'Lunges', 'Leg Extension', 'Leg Curl',
+  'Deadlift', 'Romanian Deadlift', 'Barbell Row', 'Pull-ups', 'Lat Pulldown',
+  'Shoulder Press', 'Lateral Raise', 'Face Pull',
+  'Bicep Curl', 'Hammer Curl', 'Tricep Pushdown', 'Tricep Dips',
+  'Plank', 'Crunches', 'Russian Twist',
+]
 
 useSeoMeta({
   title: 'Workouts - LockIner',

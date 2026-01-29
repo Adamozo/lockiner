@@ -21,6 +21,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
+# Copy Alembic config
+COPY alembic.ini .
+
 # Copy application code
 COPY ./app /app/app
 
@@ -39,7 +42,8 @@ ENV RELOAD=true
 
 # Run FastAPI with uvicorn
 # Uses shell form to support environment variable substitution
-CMD if [ "$RELOAD" = "true" ]; then \
+CMD alembic upgrade head && \
+    if [ "$RELOAD" = "true" ]; then \
       uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload; \
     else \
       uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4; \

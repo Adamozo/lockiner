@@ -32,6 +32,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      # Alembic config
+      - ./backend/alembic.ini:/app/alembic.ini:ro
       # Hot reload - kod źródłowy
       - ./backend/app:/app/app:rw
       # Scripts

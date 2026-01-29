@@ -19,53 +19,6 @@ useSeoMeta({
       </p>
     </div>
 
-    <!-- Work in Progress Banner -->
-    <div
-      class="bg-warning-orange/10 border border-warning-orange/30 rounded-xl p-6"
-    >
-      <div class="flex items-center gap-4">
-        <div
-          class="w-12 h-12 rounded-full bg-warning-orange/20 flex items-center justify-center flex-shrink-0"
-        >
-          <UIcon
-            name="i-heroicons-wrench-screwdriver"
-            class="w-6 h-6 text-warning-orange"
-          />
-        </div>
-        <div>
-          <h3 class="text-lg font-semibold text-warning-orange">
-            Work in Progress
-          </h3>
-          <p class="text-pure-white/70 mt-1">
-            The Fitness module is under development. Planned features:
-          </p>
-          <ul class="text-pure-white/60 mt-2 space-y-1 text-sm">
-            <li class="flex items-center gap-2">
-              <UIcon
-                name="i-heroicons-check"
-                class="w-4 h-4 text-electric-green"
-              />
-              Ready-made workout plans and AI generation
-            </li>
-            <li class="flex items-center gap-2">
-              <UIcon
-                name="i-heroicons-check"
-                class="w-4 h-4 text-electric-green"
-              />
-              Body measurements tracking (circumferences, body fat %)
-            </li>
-            <li class="flex items-center gap-2">
-              <UIcon
-                name="i-heroicons-check"
-                class="w-4 h-4 text-electric-green"
-              />
-              Progress charts and workout analytics
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
     <!-- Stats cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <!-- Workouts This Week -->
