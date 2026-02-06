@@ -28,9 +28,10 @@ useSeoMeta({
         </div>
       </div>
 
-      <h1 class="text-4xl md:text-5xl font-bold mb-4">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
         <span class="text-cyber-blue">Under</span>
-        <span class="text-pure-white"> </span>
+        <br class="sm:hidden" />
+        <span class="text-pure-white hidden sm:inline"> </span>
         <span class="text-electric-green">Construction</span>
       </h1>
 

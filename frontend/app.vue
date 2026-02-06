@@ -5,11 +5,10 @@ usePWAInstall()
 
 <template>
   <div class="min-h-screen bg-background-black">
+    <NuxtPwaAssets />
     <NuxtLoadingIndicator />
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
-    <PwaInstallBanner />
-    <PwaUpdatePrompt />
   </div>
 </template>

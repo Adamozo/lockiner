@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[]
@@ -13,6 +13,7 @@ const deferredPrompt = ref<BeforeInstallPromptEvent | null>(null)
 const isInstallable = ref(false)
 const isInstalled = ref(false)
 const needRefresh = ref(false)
+const isUpdateDismissed = ref(false)
 const updateServiceWorker = ref<(() => Promise<void>) | null>(null)
 
 export function usePWAInstall() {
@@ -78,6 +79,11 @@ export function usePWAInstall() {
     }
   }
 
+  const dismissUpdate = () => {
+    isUpdateDismissed.value = true
+    needRefresh.value = false
+  }
+
   const initPWA = async () => {
     if (!import.meta.client) return
 
@@ -106,9 +112,14 @@ export function usePWAInstall() {
         },
       })
 
-      // Watch for updates
+      // Watch for updates (respect dismissed state)
       watch(swNeedRefresh, (value) => {
-        needRefresh.value = value
+        if (value && !isUpdateDismissed.value) {
+          needRefresh.value = true
+        } else if (!value) {
+          needRefresh.value = false
+          isUpdateDismissed.value = false
+        }
       }, { immediate: true })
 
       updateServiceWorker.value = swUpdate
@@ -140,6 +151,7 @@ export function usePWAInstall() {
     needRefresh,
     installApp,
     dismissInstall,
+    dismissUpdate,
     refreshApp,
   }
 }

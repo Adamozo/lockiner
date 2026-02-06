@@ -6,16 +6,16 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-    db_user: str = "scrooge"
-    db_password: str = "scrooge_secret"
-    db_host: str = "postgres"
-    db_port: int = 5432
-    db_name: str = "scrooge_db"
-    
+    postgres_user: str = "lockiner"
+    postgres_password: str = "lockiner_secret"
+    postgres_host: str = "postgres"
+    postgres_port: int = 5432
+    postgres_db: str = "lockiner_db"
+
     @computed_field
     @property
     def database_url(self) -> str:
-        return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+        return f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
 
     jwt_secret_key: str | None = None
     encryption_key: str | None = None

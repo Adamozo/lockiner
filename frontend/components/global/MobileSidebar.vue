@@ -108,6 +108,15 @@ const handleLogout = async () => {
         <!-- Divider -->
         <div class="border-t border-border-gray my-3" />
 
+        <!-- Household Context Selector -->
+        <div v-if="authStore.isAuthenticated" class="mb-3">
+          <label class="block text-xs font-medium text-pure-white/40 uppercase tracking-wider mb-2">View Context</label>
+          <HouseholdSelectorMobile />
+        </div>
+
+        <!-- Divider -->
+        <div class="border-t border-border-gray my-3" />
+
         <!-- User Section -->
         <div v-if="authStore.isAuthenticated" class="space-y-1">
           <!-- Profile -->

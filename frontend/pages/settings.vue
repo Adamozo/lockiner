@@ -12,7 +12,51 @@ useSeoMeta({
 
 const { getAPIProviders, addAPIProvider, setActiveProvider, deleteAPIProvider } =
   useSettings();
+const { isInstallable, isInstalled, needRefresh, installApp, refreshApp } = usePWAInstall();
 const toast = useToast();
+
+// PWA handlers
+const isInstallingPWA = ref(false);
+const isUpdatingPWA = ref(false);
+
+const handleInstallPWA = async () => {
+  isInstallingPWA.value = true;
+  try {
+    const success = await installApp();
+    if (success) {
+      toast.add({
+        title: "Success",
+        description: "LockIner has been installed!",
+        color: "green",
+      });
+    }
+  } finally {
+    isInstallingPWA.value = false;
+  }
+};
+
+const handleUpdatePWA = async () => {
+  isUpdatingPWA.value = true;
+  try {
+    await refreshApp();
+    toast.add({
+      title: "Updating...",
+      description: "The app will reload with the latest version",
+      color: "green",
+    });
+    // Reload to apply updates
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  } catch {
+    toast.add({
+      title: "Error",
+      description: "Failed to update the app",
+      color: "red",
+    });
+    isUpdatingPWA.value = false;
+  }
+};
 
 // State
 const providers = ref<APIProviderConfig[]>([]);
@@ -136,6 +180,114 @@ onMounted(() => {
       title="Settings"
       description="Configure your LockIner application"
     />
+
+    <!-- PWA Settings Section -->
+    <div
+      class="bg-card-black border border-border-gray rounded-lg shadow overflow-hidden"
+    >
+      <!-- Section Header -->
+      <div class="px-6 py-4 border-b border-border-gray relative">
+        <div
+          class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-cyber-blue to-electric-green"
+        />
+        <h2 class="text-xl font-semibold text-pure-white">
+          App Installation
+        </h2>
+        <p class="mt-1 text-sm text-pure-white/60">
+          Install LockIner as an app for quick access and offline use
+        </p>
+      </div>
+
+      <div class="px-4 sm:px-6 py-6 space-y-4">
+        <!-- Install Status -->
+        <div class="p-4 bg-background-black rounded-lg border border-border-gray">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+              :class="isInstalled ? 'bg-electric-green/20' : 'bg-cyber-blue/20'"
+            >
+              <UIcon
+                :name="isInstalled ? 'i-heroicons-check-circle' : 'i-heroicons-device-phone-mobile'"
+                class="w-5 h-5"
+                :class="isInstalled ? 'text-electric-green' : 'text-cyber-blue'"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-pure-white font-medium">
+                {{ isInstalled ? 'App Installed' : 'Install App' }}
+              </p>
+              <p class="text-sm text-pure-white/60">
+                {{ isInstalled ? 'Installed on device' : 'Add to home screen' }}
+              </p>
+            </div>
+            <div class="flex-shrink-0">
+              <BaseButton
+                v-if="isInstallable && !isInstalled"
+                variant="primary"
+                icon="i-heroicons-arrow-down-tray"
+                size="sm"
+                :loading="isInstallingPWA"
+                @click="handleInstallPWA"
+              >
+                Install
+              </BaseButton>
+              <span v-else-if="isInstalled" class="text-sm text-electric-green font-medium whitespace-nowrap">
+                Installed
+              </span>
+              <span v-else class="text-sm text-pure-white/40 whitespace-nowrap">
+                N/A
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Update Section -->
+        <div class="p-4 bg-background-black rounded-lg border border-border-gray">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+              :class="needRefresh ? 'bg-warning-orange/20' : 'bg-card-black'"
+            >
+              <UIcon
+                name="i-heroicons-arrow-path"
+                class="w-5 h-5"
+                :class="needRefresh ? 'text-warning-orange' : 'text-pure-white/60'"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-pure-white font-medium">
+                {{ needRefresh ? 'Update Ready' : 'Updates' }}
+              </p>
+              <p class="text-sm text-pure-white/60">
+                {{ needRefresh ? 'New version available' : 'Up to date' }}
+              </p>
+            </div>
+            <div class="flex-shrink-0">
+              <BaseButton
+                v-if="needRefresh"
+                variant="primary"
+                icon="i-heroicons-arrow-path"
+                size="sm"
+                :loading="isUpdatingPWA"
+                @click="handleUpdatePWA"
+              >
+                Update
+              </BaseButton>
+              <BaseButton
+                v-else
+                variant="ghost"
+                icon="i-heroicons-arrow-path"
+                size="sm"
+                :loading="isUpdatingPWA"
+                @click="handleUpdatePWA"
+              >
+                Check
+              </BaseButton>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- OCR Provider Configuration Section -->
     <div

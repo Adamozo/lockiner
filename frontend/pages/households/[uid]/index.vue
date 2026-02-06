@@ -361,39 +361,39 @@ const getStatusBadgeColor = (status: string) => {
     <!-- Content -->
     <template v-else-if="currentHousehold && !isBlocked">
       <!-- Header -->
-      <header class="flex items-start justify-between">
-        <div>
-          <NuxtLink
-            to="/households"
-            class="inline-flex items-center gap-2 text-pure-white/60 hover:text-pure-white transition-colors mb-4"
-          >
-            <UIcon name="i-heroicons-arrow-left" class="w-5 h-5" />
-            <span>Back to Households</span>
-          </NuxtLink>
+      <header class="space-y-4">
+        <NuxtLink
+          to="/households"
+          class="inline-flex items-center gap-2 text-pure-white/60 hover:text-pure-white transition-colors"
+        >
+          <UIcon name="i-heroicons-arrow-left" class="w-5 h-5" />
+          <span>Back to Households</span>
+        </NuxtLink>
 
-          <div class="flex items-center gap-4">
-            <div class="w-16 h-16 rounded-xl bg-cyber-blue/10 border border-cyber-blue/30 flex items-center justify-center flex-shrink-0">
-              <HouseholdIcon
-                :icon="currentHousehold.icon || 'house'"
-                :size="32"
-                color="#00D4FF"
-              />
-            </div>
-            <div>
-              <h1 class="text-3xl font-bold text-pure-white">{{ currentHousehold.name }}</h1>
-              <p v-if="currentHousehold.description" class="mt-1 text-pure-white/60">
-                {{ currentHousehold.description }}
-              </p>
-            </div>
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-cyber-blue/10 border border-cyber-blue/30 flex items-center justify-center flex-shrink-0">
+            <HouseholdIcon
+              :icon="currentHousehold.icon || 'house'"
+              :size="28"
+              color="#00D4FF"
+            />
+          </div>
+          <div class="min-w-0 flex-1">
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-pure-white truncate">{{ currentHousehold.name }}</h1>
+            <p v-if="currentHousehold.description" class="mt-1 text-sm text-pure-white/60 line-clamp-2">
+              {{ currentHousehold.description }}
+            </p>
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <!-- Action buttons - responsive grid -->
+        <div class="flex flex-wrap gap-2">
           <!-- Analytics link -->
           <NuxtLink :to="`/households/${householdUid}/analytics`">
             <BaseButton
               variant="secondary"
               icon="i-heroicons-chart-bar"
+              size="sm"
             >
               Analytics
             </BaseButton>
@@ -404,17 +404,19 @@ const getStatusBadgeColor = (status: string) => {
             v-if="currentHouseholdId === householdUid"
             variant="secondary"
             icon="i-heroicons-user"
+            size="sm"
             @click="switchToPersonal"
           >
-            Personal View
+            Personal
           </BaseButton>
           <BaseButton
             v-else
             variant="primary"
             icon="i-heroicons-home"
+            size="sm"
             @click="switchToHousehold"
           >
-            View as Household
+            Household
           </BaseButton>
 
           <!-- Edit button (manager only) -->
@@ -422,6 +424,7 @@ const getStatusBadgeColor = (status: string) => {
             v-if="isCurrentUserManager && !isEditing"
             variant="secondary"
             icon="i-heroicons-pencil"
+            size="sm"
             @click="startEditing"
           >
             Edit
