@@ -25,6 +25,7 @@ class UserResponse(BaseModel):
     """Schema for user response (public info)."""
     id: int
     name: str
+    role: str = "user"
     created_at: str
     is_active: bool
 

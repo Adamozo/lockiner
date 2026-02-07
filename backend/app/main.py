@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import transactions, receipts, categories, analytics, import_csv, settings, auth, households, invitations, food, fitness
+from .routers import transactions, receipts, categories, analytics, import_csv, settings, auth, households, invitations, food, fitness, admin, notifications
 
 # ---------------------------------------
 
@@ -29,6 +29,8 @@ app.include_router(import_csv.router)
 app.include_router(settings.router)
 app.include_router(food.router)
 app.include_router(fitness.router)
+app.include_router(admin.router)
+app.include_router(notifications.router)
 
 
 # ---------------------------------------

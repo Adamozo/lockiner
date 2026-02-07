@@ -19,14 +19,18 @@ const modules: ModuleItem[] = [
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const { unreadCount, fetchUnreadCount } = useNotifications()
 
 // Mobile menu state
 const menuOpen = ref(false)
 
-// Fetch user data on mount if we have a token but no user
+// Fetch user data and unread count on mount
 onMounted(() => {
   if (authStore.accessToken && !authStore.user) {
     authStore.fetchCurrentUser()
+  }
+  if (authStore.accessToken) {
+    fetchUnreadCount()
   }
 })
 
@@ -77,16 +81,33 @@ const handleLogout = async () => {
           </span>
         </NuxtLink>
 
-        <!-- Hamburger Button -->
-        <button
-          class="p-2 rounded-lg text-pure-white/70 hover:text-pure-white hover:bg-card-black/50 transition-colors"
-          @click="menuOpen = !menuOpen"
-        >
-          <UIcon
-            :name="menuOpen ? 'i-heroicons-x-mark' : 'i-heroicons-bars-3'"
-            class="w-6 h-6"
-          />
-        </button>
+        <div class="flex items-center gap-1">
+          <!-- Notification Bell -->
+          <NuxtLink
+            v-if="authStore.isAuthenticated"
+            to="/notifications"
+            class="relative p-2 rounded-lg text-pure-white/70 hover:text-pure-white hover:bg-card-black/50 transition-colors"
+          >
+            <UIcon name="i-heroicons-bell" class="w-6 h-6" />
+            <span
+              v-if="unreadCount > 0"
+              class="absolute top-1 right-1 min-w-[16px] h-4 px-1 bg-danger-red text-pure-white text-[10px] font-bold rounded-full flex items-center justify-center"
+            >
+              {{ unreadCount > 99 ? '99+' : unreadCount }}
+            </span>
+          </NuxtLink>
+
+          <!-- Hamburger Button -->
+          <button
+            class="p-2 rounded-lg text-pure-white/70 hover:text-pure-white hover:bg-card-black/50 transition-colors"
+            @click="menuOpen = !menuOpen"
+          >
+            <UIcon
+              :name="menuOpen ? 'i-heroicons-x-mark' : 'i-heroicons-bars-3'"
+              class="w-6 h-6"
+            />
+          </button>
+        </div>
       </div>
 
       <!-- Mobile Dropdown Menu -->
@@ -147,6 +168,21 @@ const handleLogout = async () => {
           >
             <UIcon name="i-heroicons-cog-6-tooth" class="w-5 h-5" />
             <span class="font-medium">Settings</span>
+          </NuxtLink>
+
+          <!-- Admin (conditional) -->
+          <NuxtLink
+            v-if="authStore.isAdmin"
+            to="/admin"
+            class="flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200"
+            :class="
+              route.path.startsWith('/admin')
+                ? 'text-warning-orange bg-warning-orange/10 border-l-2 border-warning-orange'
+                : 'text-pure-white/70 hover:text-pure-white hover:bg-card-black/50'
+            "
+          >
+            <UIcon name="i-heroicons-shield-check" class="w-5 h-5" />
+            <span class="font-medium">Admin</span>
           </NuxtLink>
 
           <!-- Logout -->

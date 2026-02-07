@@ -10,6 +10,7 @@ class Voucher(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     code = Column(String, unique=True, nullable=False, index=True)  # UUID string
+    status = Column(String(20), nullable=False, default="available")  # available | used | blocked
     used_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     used_at = Column(String, nullable=True)  # ISO 8601 datetime
     created_at = Column(String, default=lambda: utc_now().isoformat())
@@ -28,6 +29,7 @@ class User(Base):
     email_hash = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     name = Column(String, nullable=False)
+    role = Column(String(20), nullable=False, default="user")  # user | admin
     is_active = Column(Boolean, default=True)
     created_at = Column(String, default=lambda: utc_now().isoformat())
     updated_at = Column(String, nullable=True)

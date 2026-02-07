@@ -50,15 +50,27 @@ const modules: ModuleItem[] = [
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const { unreadCount, fetchUnreadCount } = useNotifications();
 
 // SSR-safe sidebar state using cookie
 const { sidebarCollapsed: isCollapsed, toggleSidebar } = useSidebarState();
 
-// Fetch user data on mount if we have a token but no user
+// Fetch user data and unread count on mount
+let unreadInterval: ReturnType<typeof setInterval> | null = null;
 onMounted(() => {
   if (authStore.accessToken && !authStore.user) {
     authStore.fetchCurrentUser();
   }
+  if (authStore.accessToken) {
+    fetchUnreadCount();
+    // Poll every 60s
+    unreadInterval = setInterval(() => {
+      if (authStore.isAuthenticated) fetchUnreadCount();
+    }, 60000);
+  }
+});
+onUnmounted(() => {
+  if (unreadInterval) clearInterval(unreadInterval);
 });
 
 const isActiveModule = (path: string) => {
@@ -181,6 +193,50 @@ onUnmounted(() => {
       >
         <UIcon :name="mod.icon" class="w-5 h-5 flex-shrink-0" />
         <span v-if="!isCollapsed" class="font-medium">{{ mod.name }}</span>
+      </NuxtLink>
+
+      <!-- Divider -->
+      <div class="border-t border-border-gray my-2" />
+
+      <!-- Notifications -->
+      <NuxtLink
+        to="/notifications"
+        class="flex items-center rounded-lg transition-all duration-200 relative"
+        :class="[
+          isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3 space-x-3',
+          route.path === '/notifications'
+            ? 'text-cyber-blue bg-cyber-blue/10 border-l-2 border-cyber-blue'
+            : 'text-pure-white/60 hover:text-pure-white hover:bg-card-black/50',
+        ]"
+        :title="isCollapsed ? 'Notifications' : undefined"
+      >
+        <div class="relative">
+          <UIcon name="i-heroicons-bell" class="w-5 h-5 flex-shrink-0" />
+          <span
+            v-if="unreadCount > 0"
+            class="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 bg-danger-red text-pure-white text-[10px] font-bold rounded-full flex items-center justify-center"
+          >
+            {{ unreadCount > 99 ? '99+' : unreadCount }}
+          </span>
+        </div>
+        <span v-if="!isCollapsed" class="font-medium">Notifications</span>
+      </NuxtLink>
+
+      <!-- Admin (conditional) -->
+      <NuxtLink
+        v-if="authStore.isAdmin"
+        to="/admin"
+        class="flex items-center rounded-lg transition-all duration-200"
+        :class="[
+          isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3 space-x-3',
+          route.path.startsWith('/admin')
+            ? 'text-warning-orange bg-warning-orange/10 border-l-2 border-warning-orange'
+            : 'text-pure-white/60 hover:text-pure-white hover:bg-card-black/50',
+        ]"
+        :title="isCollapsed ? 'Admin' : undefined"
+      >
+        <UIcon name="i-heroicons-shield-check" class="w-5 h-5 flex-shrink-0" />
+        <span v-if="!isCollapsed" class="font-medium">Admin</span>
       </NuxtLink>
     </nav>
 

@@ -335,6 +335,7 @@ export interface User {
   id: number
   email: string // Note: backend stores email_hash, but returns email for display
   name: string
+  role: 'user' | 'admin'
   is_active: boolean
   created_at: string
   updated_at: string | null
@@ -590,4 +591,57 @@ export interface HouseholdSpendingByCategory {
   month: string | null
   categories: HouseholdCategoryMemberBreakdown[]
   total: number
+}
+
+// ============================================
+// Notification Types
+// ============================================
+
+/**
+ * NotificationItem - User notification from API
+ */
+export interface NotificationItem {
+  id: number // user_notification.id
+  notification_id: number
+  title: string
+  body: string
+  notification_type: string
+  status: 'unread' | 'read'
+  read_at: string | null
+  created_at: string
+}
+
+/**
+ * UnreadCountResponse - Unread count
+ */
+export interface UnreadCountResponse {
+  count: number
+}
+
+// ============================================
+// Admin Types
+// ============================================
+
+/**
+ * VoucherAdmin - Admin voucher view
+ */
+export interface VoucherAdmin {
+  id: number
+  code: string
+  status: 'available' | 'used' | 'blocked'
+  used_by_user_id: number | null
+  used_by_name: string | null
+  used_at: string | null
+  created_at: string
+}
+
+/**
+ * UserAdmin - Admin user view
+ */
+export interface UserAdmin {
+  id: number
+  name: string
+  role: 'user' | 'admin'
+  is_active: boolean
+  created_at: string
 }

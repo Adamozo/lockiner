@@ -47,6 +47,7 @@ async def register(
         return UserResponse(
             id=user.id,
             name=user.name,
+            role=user.role,
             created_at=user.created_at,
             is_active=user.is_active,
         )
@@ -128,6 +129,7 @@ async def get_current_user_info(
     return UserResponse(
         id=current_user.id,
         name=current_user.name,
+        role=current_user.role,
         created_at=current_user.created_at,
         is_active=current_user.is_active,
     )
@@ -145,6 +147,7 @@ async def update_profile(
         return UserResponse(
             id=user.id,
             name=user.name,
+            role=user.role,
             created_at=user.created_at,
             is_active=user.is_active,
         )

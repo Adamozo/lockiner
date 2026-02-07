@@ -43,6 +43,7 @@ export const useAuthStore = defineStore('auth', () => {
   const currentUser = computed(() => user.value)
   const userName = computed(() => user.value?.name || '')
   const userEmail = computed(() => user.value?.email || '')
+  const isAdmin = computed(() => user.value?.role === 'admin')
 
   // Helper: Get base API URL for direct fetch (before useApi is configured)
   const getApiUrl = (path: string) => {
@@ -261,6 +262,7 @@ export const useAuthStore = defineStore('auth', () => {
     currentUser,
     userName,
     userEmail,
+    isAdmin,
 
     // Actions
     register,

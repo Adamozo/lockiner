@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timezone
+from typing import List
 
 from ..models import User
 
@@ -42,3 +43,15 @@ class UserRepository:
     async def delete(self, user: User) -> None:
         await self.db.delete(user)
         await self.db.commit()
+
+    async def get_all(self) -> List[User]:
+        """Get all users."""
+        result = await self.db.execute(select(User).order_by(User.id))
+        return list(result.scalars().all())
+
+    async def get_all_active_ids(self) -> List[int]:
+        """Get IDs of all active users."""
+        result = await self.db.execute(
+            select(User.id).filter(User.is_active == True)
+        )
+        return list(result.scalars().all())

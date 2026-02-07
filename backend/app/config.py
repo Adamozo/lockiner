@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     upload_dir: str = "/uploads"
     data_dir: str = "/data"
 
+    # VAPID keys for Web Push
+    vapid_private_key: str = ""
+    vapid_public_key: str = ""
+    vapid_contact_email: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

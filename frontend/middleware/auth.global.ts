@@ -40,4 +40,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
       query: { redirect: to.fullPath },
     })
   }
+
+  // Admin route protection
+  if (to.path.startsWith('/admin') && authStore.currentUser?.role !== 'admin') {
+    return navigateTo('/home')
+  }
 })

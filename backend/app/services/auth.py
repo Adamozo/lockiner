@@ -115,8 +115,8 @@ class AuthService:
 
     async def validate_voucher(self, voucher_code: str) -> Voucher:
         """Validate a voucher code and return the voucher if valid."""
-        voucher = await self.voucher_repository.get_unused_by_code(voucher_code)
-        if voucher is None:
+        voucher = await self.voucher_repository.get_by_code(voucher_code)
+        if voucher is None or voucher.status != "available":
             raise InvalidVoucherError()
         return voucher
 

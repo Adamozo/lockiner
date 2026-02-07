@@ -29,6 +29,7 @@ class VoucherRepository:
 
     async def mark_as_used(self, voucher: Voucher, user_id: int) -> Voucher:
         """Mark voucher as used by a user."""
+        voucher.status = "used"
         voucher.used_by_user_id = user_id
         voucher.used_at = datetime.now(timezone.utc).isoformat()
         await self.db.commit()
@@ -61,3 +62,24 @@ class VoucherRepository:
             select(Voucher).filter(Voucher.used_by_user_id.is_(None))
         )
         return list(result.scalars().all())
+
+    async def get_by_id(self, voucher_id: int) -> Voucher | None:
+        """Get voucher by ID."""
+        result = await self.db.execute(
+            select(Voucher).filter(Voucher.id == voucher_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def block(self, voucher: Voucher) -> Voucher:
+        """Block a voucher."""
+        voucher.status = "blocked"
+        await self.db.commit()
+        await self.db.refresh(voucher)
+        return voucher
+
+    async def unblock(self, voucher: Voucher) -> Voucher:
+        """Unblock a voucher (only if not used)."""
+        voucher.status = "available"
+        await self.db.commit()
+        await self.db.refresh(voucher)
+        return voucher

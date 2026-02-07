@@ -58,6 +58,10 @@ services:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - CORS_ORIGINS=http://localhost:3000
+      # VAPID keys for Web Push
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+      - VAPID_CONTACT_EMAIL=${VAPID_CONTACT_EMAIL}
     env_file:
       - .env
     depends_on:

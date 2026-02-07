@@ -58,6 +58,9 @@ from .food import (
     FoodConsumptionLog,
 )
 
+# Notification models
+from .notification import Notification, UserNotification, PushSubscription
+
 # Fitness module models
 from .fitness import Workout, Exercise, WeightEntry
 
@@ -128,6 +131,12 @@ Index("idx_food_expiry_reminders_status", FoodExpiryReminder.status)
 Index("idx_food_consumption_log_user", FoodConsumptionLog.user_id)
 Index("idx_food_consumption_log_consumed_at", FoodConsumptionLog.consumed_at)
 
+# Notification module indexes
+Index("idx_user_notifications_user", UserNotification.user_id)
+Index("idx_user_notifications_notification", UserNotification.notification_id)
+Index("idx_push_subscriptions_user", PushSubscription.user_id)
+Index("idx_notifications_created_by", Notification.created_by_user_id)
+
 # Fitness module indexes
 Index("idx_workouts_user", Workout.user_id)
 Index("idx_workouts_date", Workout.date)
@@ -174,6 +183,10 @@ __all__ = [
     "FoodExpiryReminder",
     "FoodReminderSettings",
     "FoodConsumptionLog",
+    # Notification
+    "Notification",
+    "UserNotification",
+    "PushSubscription",
     # Fitness
     "Workout",
     "Exercise",
