@@ -1,53 +1,79 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
   <defs>
-    <!-- Gradient dla worka -->
-    <linearGradient id="bagGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#00D4FF;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#00FF88;stop-opacity:1" />
+    <!-- Gradient for lock body -->
+    <linearGradient id="lockGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00ff88;stop-opacity:1" />
     </linearGradient>
 
-    <!-- Gradient dla symbolu $ -->
-    <linearGradient id="dollarGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#0A0A0A;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1A1A1A;stop-opacity:0.9" />
+    <!-- Gradient for keyhole -->
+    <linearGradient id="keyholeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a0a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1a1a;stop-opacity:0.9" />
     </linearGradient>
 
     <!-- Glow effect -->
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
       <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
+        <feMergeNode in="coloredBlur" />
+        <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
   </defs>
 
-  <!-- Worek pieniędzy - korpus -->
-  <path
-    d="M 30 35 Q 30 25 50 25 Q 70 25 70 35 L 70 75 Q 70 85 50 85 Q 30 85 30 75 Z"
-    fill="url(#bagGradient)"
+  <!-- Group with glow filter -->
+  <g filter="url(#glow)">
+    <!-- Lock shackle (top arc) -->
+    <path
+      d="M 30 40
+         L 30 28
+         C 30 12, 70 12, 70 28
+         L 70 40"
+      fill="none"
+      stroke="url(#lockGradient)"
+      stroke-width="8"
+      stroke-linecap="round"
+    />
+
+    <!-- Lock body (rounded rectangle) -->
+    <rect
+      x="20"
+      y="40"
+      width="60"
+      height="50"
+      rx="8"
+      ry="8"
+      fill="url(#lockGradient)"
+      stroke="#00D4FF"
+      stroke-width="2"
+    />
+  </g>
+
+  <!-- Keyhole circle -->
+  <circle
+    cx="50"
+    cy="58"
+    r="8"
+    fill="url(#keyholeGradient)"
     stroke="#00D4FF"
-    stroke-width="2"
-    filter="url(#glow)"
+    stroke-width="1"
   />
 
-  <!-- Liny/sznurek u góry -->
-  <ellipse cx="50" cy="25" rx="20" ry="5" fill="url(#bagGradient)" stroke="#00D4FF" stroke-width="1.5"/>
-  <line x1="35" y1="25" x2="30" y2="15" stroke="url(#bagGradient)" stroke-width="3" stroke-linecap="round"/>
-  <line x1="65" y1="25" x2="70" y2="15" stroke="url(#bagGradient)" stroke-width="3" stroke-linecap="round"/>
+  <!-- Keyhole slot -->
+  <rect
+    x="47"
+    y="62"
+    width="6"
+    height="14"
+    rx="2"
+    fill="url(#keyholeGradient)"
+  />
 
-  <!-- Symbol $ -->
-  <text
-    x="50"
-    y="63"
-    font-family="Arial, sans-serif"
-    font-size="32"
-    font-weight="bold"
-    fill="url(#dollarGradient)"
-    text-anchor="middle"
-    dominant-baseline="middle"
-  >$</text>
-
-  <!-- Dodatkowe światło/refleks -->
-  <ellipse cx="45" cy="45" rx="8" ry="12" fill="#00D4FF" opacity="0.3"/>
+  <!-- Light reflection on lock body -->
+  <path
+    d="M 28 50 C 32 55, 34 65, 30 75 C 26 82, 24 78, 26 68 C 28 58, 26 48, 28 50 Z"
+    fill="#FFFFFF"
+    opacity="0.2"
+  />
 </svg>
