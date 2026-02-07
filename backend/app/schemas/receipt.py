@@ -21,7 +21,7 @@ class ReceiptBase(BaseModel):
     items_json: Optional[str] = Field(None, description="JSON array of items")
     raw_ocr_response: Optional[str] = None
     verified: bool = False
-    category: str = "Inne"
+    category: Optional[str] = None
 
 
 class ReceiptCreate(ReceiptBase):

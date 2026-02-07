@@ -132,25 +132,25 @@ const handleItemUpdate = async (index: number, updatedItem: ReceiptItem) => {
     <div class="grid grid-cols-2 gap-4">
       <div>
         <p class="text-sm font-medium text-pure-white/60">Merchant</p>
-        <p class="mt-1 text-lg font-semibold text-pure-white">
+        <p class="mt-1 text-base font-semibold text-pure-white">
           {{ receipt.merchant || "Unknown" }}
         </p>
       </div>
       <div>
         <p class="text-sm font-medium text-pure-white/60">Date</p>
-        <p class="mt-1 text-lg font-semibold text-pure-white">
+        <p class="mt-1 text-base font-semibold text-pure-white">
           {{ formatDate(receipt.scan_date) }}
         </p>
       </div>
       <div>
         <p class="text-sm font-medium text-pure-white/60">Total</p>
-        <p class="mt-1 text-lg font-semibold text-electric-green">
+        <p class="mt-1 text-base font-semibold text-electric-green">
           {{ receipt.total ? formatCurrency(receipt.total) : "N/A" }}
         </p>
       </div>
       <div>
         <p class="text-sm font-medium text-pure-white/60">Status</p>
-        <div class="flex items-center gap-2 mt-1">
+        <div class="mt-1">
           <UBadge
             :color="receipt.verified ? 'success' : 'warning'"
             variant="solid"
@@ -158,55 +158,65 @@ const handleItemUpdate = async (index: number, updatedItem: ReceiptItem) => {
           >
             {{ receipt.verified ? "Verified" : "Pending" }}
           </UBadge>
-          <BaseButton
-            v-if="!receipt.verified"
-            size="sm"
-            variant="primary"
-            icon="i-heroicons-check"
-            :loading="isVerifying"
-            @click="handleVerify"
-          >
-            Mark as Verified
-          </BaseButton>
         </div>
       </div>
     </div>
 
+    <!-- Verify Button -->
+    <BaseButton
+      v-if="!receipt.verified"
+      size="sm"
+      variant="primary"
+      icon="i-heroicons-check"
+      :loading="isVerifying"
+      class="w-full"
+      @click="handleVerify"
+    >
+      Mark as Verified
+    </BaseButton>
+
     <!-- Items -->
     <div v-if="items.length > 0">
       <h3 class="text-lg font-semibold text-pure-white mb-3">Items</h3>
-      <div class="border border-border-gray rounded-lg overflow-hidden">
+
+      <!-- Mobile: Cards View (< 1024px) -->
+      <div class="space-y-3 lg:hidden">
+        <ReceiptItemCard
+          v-for="(item, index) in items"
+          :key="index"
+          :item="item"
+          :index="index"
+          :is-editable="!updatingItems"
+          @update="(updatedItem) => handleItemUpdate(index, updatedItem)"
+        />
+        <!-- Mobile Subtotal -->
+        <div class="bg-card-black/50 border border-border-gray rounded-lg p-4 flex justify-between items-center">
+          <span class="font-semibold text-pure-white">Subtotal</span>
+          <span class="font-semibold text-electric-green">{{ formatCurrency(itemsTotal) }}</span>
+        </div>
+      </div>
+
+      <!-- Desktop: Table View (≥ 1024px) -->
+      <div class="hidden lg:block border border-border-gray rounded-lg overflow-hidden">
         <table class="min-w-full divide-y divide-border-gray">
           <thead class="bg-card-black/50">
             <tr>
-              <th
-                class="px-4 py-3 text-left text-xs font-medium text-pure-white/60 uppercase tracking-wider"
-              >
+              <th class="px-4 py-3 text-left text-xs font-medium text-pure-white/60 uppercase tracking-wider">
                 Item
               </th>
-              <th
-                class="px-4 py-3 text-right text-xs font-medium text-pure-white/60 uppercase tracking-wider"
-              >
+              <th class="px-4 py-3 text-right text-xs font-medium text-pure-white/60 uppercase tracking-wider">
                 Qty
               </th>
-              <th
-                class="px-4 py-3 text-right text-xs font-medium text-pure-white/60 uppercase tracking-wider"
-              >
+              <th class="px-4 py-3 text-right text-xs font-medium text-pure-white/60 uppercase tracking-wider">
                 Unit Price
               </th>
-              <th
-                class="px-4 py-3 text-right text-xs font-medium text-pure-white/60 uppercase tracking-wider"
-              >
+              <th class="px-4 py-3 text-right text-xs font-medium text-pure-white/60 uppercase tracking-wider">
                 Total
               </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-medium text-pure-white/60 uppercase tracking-wider"
-              >
+              <th class="px-4 py-3 text-left text-xs font-medium text-pure-white/60 uppercase tracking-wider">
                 Category
               </th>
-              <th
-                class="px-4 py-3 text-right text-xs font-medium text-pure-white/60 uppercase tracking-wider"
-              >
+              <th class="px-4 py-3 text-right text-xs font-medium text-pure-white/60 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -221,18 +231,13 @@ const handleItemUpdate = async (index: number, updatedItem: ReceiptItem) => {
               @update="(updatedItem) => handleItemUpdate(index, updatedItem)"
             />
             <tr class="bg-card-black/50 font-semibold">
-              <td
-                colspan="4"
-                class="px-4 py-3 text-sm text-pure-white text-right"
-              >
+              <td colspan="3" class="px-4 py-3 text-sm text-pure-white text-right">
                 Subtotal
               </td>
-              <td
-                colspan="2"
-                class="px-4 py-3 text-sm text-electric-green text-right"
-              >
+              <td class="px-4 py-3 text-sm text-electric-green text-right">
                 {{ formatCurrency(itemsTotal) }}
               </td>
+              <td colspan="2"></td>
             </tr>
           </tbody>
         </table>

@@ -21,8 +21,25 @@ export interface APIProviderConfigRequest {
   is_active: boolean
 }
 
+// Global state for key configuration
+const keyConfigured = ref(false)
+
 export function useSettings() {
   const api = useApi()
+
+  /**
+   * Check if Gemini API key is configured
+   */
+  const getGeminiKeyStatus = async (): Promise<void> => {
+    try {
+      const response = await api<APIProviderListResponse>('/api/v1/settings/api-providers')
+      // Check if there's an active provider configured
+      keyConfigured.value = response.active_provider !== null && response.providers.length > 0
+    } catch (error) {
+      console.error('Failed to check API key status:', error)
+      keyConfigured.value = false
+    }
+  }
 
   /**
    * Get list of all configured API providers
@@ -30,6 +47,8 @@ export function useSettings() {
   const getAPIProviders = async (): Promise<APIProviderListResponse> => {
     try {
       const response = await api<APIProviderListResponse>('/api/v1/settings/api-providers')
+      // Update keyConfigured state
+      keyConfigured.value = response.active_provider !== null && response.providers.length > 0
       return response
     } catch (error) {
       console.error('Failed to fetch API providers:', error)
@@ -83,6 +102,8 @@ export function useSettings() {
   }
 
   return {
+    keyConfigured,
+    getGeminiKeyStatus,
     getAPIProviders,
     addAPIProvider,
     setActiveProvider,

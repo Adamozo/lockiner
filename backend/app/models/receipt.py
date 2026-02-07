@@ -16,7 +16,7 @@ class Receipt(Base):
     items_json = Column(Text)
     raw_ocr_response = Column(Text)
     verified = Column(Boolean, default=False)
-    category = Column(String, ForeignKey("categories.name"), default="Inne", index=True)
+    category = Column(String, ForeignKey("categories.name", ondelete="SET NULL"), nullable=True, index=True)
     created_at = Column(String, default=lambda: utc_now().isoformat())
 
     # Relationships

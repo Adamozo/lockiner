@@ -160,14 +160,16 @@ const handleEdit = (item: FoodInventoryItem) => {
 <template>
   <div class="space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>
-        <h1 class="text-2xl font-bold text-pure-white">{{ pageTitle }}</h1>
-        <p class="text-pure-white/60 mt-1">Manage your food inventory and track expiration dates</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-pure-white">{{ pageTitle }}</h1>
+        <p class="text-pure-white/60 text-sm sm:text-base mt-1">Manage your food inventory and track expiration dates</p>
       </div>
       <BaseButton
         icon="i-heroicons-plus"
         variant="primary"
+        size="sm"
+        class="self-start sm:self-auto"
         @click="showAddModal = true"
       >
         Add Item

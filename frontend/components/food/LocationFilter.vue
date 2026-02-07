@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Location filter tabs for inventory
+ * Location filter dropdown for inventory
  */
 import type { FoodInventoryLocation } from '~/types/food'
 
@@ -14,32 +14,37 @@ const emit = defineEmits<{
 }>()
 
 const locations = [
-  { value: null, label: 'All', icon: 'i-heroicons-squares-2x2' },
-  { value: 'fridge' as const, label: 'Fridge', icon: 'i-heroicons-cube' },
-  { value: 'freezer' as const, label: 'Freezer', icon: 'i-heroicons-cube-transparent' },
-  { value: 'pantry' as const, label: 'Pantry', icon: 'i-heroicons-archive-box' },
+  { value: '', label: 'All Locations', icon: 'i-heroicons-squares-2x2' },
+  { value: 'fridge', label: 'Fridge', icon: 'i-heroicons-cube' },
+  { value: 'freezer', label: 'Freezer', icon: 'i-heroicons-cube-transparent' },
+  { value: 'pantry', label: 'Pantry', icon: 'i-heroicons-archive-box' },
 ]
 
-const selectLocation = (value: FoodInventoryLocation | null) => {
-  emit('update:modelValue', value)
-}
+const selectedValue = computed({
+  get: () => props.modelValue ?? '',
+  set: (val: string) => emit('update:modelValue', val === '' ? null : val as FoodInventoryLocation)
+})
+
+const selectedLabel = computed(() => {
+  const loc = locations.find(l => l.value === (props.modelValue ?? ''))
+  return loc?.label ?? 'All Locations'
+})
 </script>
 
 <template>
-  <div class="flex gap-2 p-1 bg-card-black border border-border-gray rounded-xl">
-    <button
-      v-for="loc in locations"
-      :key="loc.value ?? 'all'"
-      class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-      :class="
-        modelValue === loc.value
-          ? 'bg-electric-green/20 text-electric-green'
-          : 'text-pure-white/60 hover:text-pure-white hover:bg-pure-white/5'
-      "
-      @click="selectLocation(loc.value)"
+  <div class="flex items-center gap-2">
+    <UIcon name="i-heroicons-funnel" class="w-4 h-4 text-pure-white/60" />
+    <select
+      v-model="selectedValue"
+      class="px-3 py-2 bg-card-black border border-border-gray rounded-lg text-pure-white text-sm font-medium focus:border-electric-green focus:ring-1 focus:ring-electric-green focus:outline-none transition-colors"
     >
-      <UIcon :name="loc.icon" class="w-4 h-4" />
-      {{ loc.label }}
-    </button>
+      <option
+        v-for="loc in locations"
+        :key="loc.value"
+        :value="loc.value"
+      >
+        {{ loc.label }}
+      </option>
+    </select>
   </div>
 </template>

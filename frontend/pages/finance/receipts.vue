@@ -12,6 +12,7 @@ useSeoMeta({
 
 const { currentHouseholdId, householdIdForApi, isPersonalContext } = useHouseholdContext()
 const { receipts, loading, error: receiptsError, fetchReceipts, deleteReceipt } = useReceipts()
+const categoriesStore = useCategoriesStore()
 const toast = useToast()
 
 // Modal state
@@ -47,10 +48,14 @@ const stats = computed(() => [
 // Load data function
 const loadData = async () => {
   try {
-    await fetchReceipts(householdIdForApi.value)
+    // Fetch categories and receipts in parallel
+    await Promise.all([
+      categoriesStore.fetchCategories(),
+      fetchReceipts(householdIdForApi.value),
+    ])
   }
   catch (error) {
-    console.error('Failed to fetch receipts:', error)
+    console.error('Failed to fetch data:', error)
     toast.add({
       title: 'Error',
       description: 'Failed to load receipts. Please check if the backend is running.',
