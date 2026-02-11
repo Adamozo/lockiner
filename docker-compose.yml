@@ -10,13 +10,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-scrooge}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-scrooge_secret}
-      - POSTGRES_DB=${POSTGRES_DB:-scrooge_db}
+      - POSTGRES_USER=${POSTGRES_USER:-lockiner}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-lockiner_secret}
+      - POSTGRES_DB=${POSTGRES_DB:-lockiner_db}
     networks:
       - scrooge-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-scrooge} -d ${POSTGRES_DB:-scrooge_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lockiner} -d ${POSTGRES_DB:-lockiner_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -49,7 +49,7 @@ services:
       - PYTHONUNBUFFERED=1
       - RELOAD=true
       # Database (PostgreSQL)
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-scrooge}:${POSTGRES_PASSWORD:-scrooge_secret}@postgres:5432/${POSTGRES_DB:-scrooge_db}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-lockiner}:${POSTGRES_PASSWORD:-lockiner_secret}@postgres:5432/${POSTGRES_DB:-lockiner_db}
       # Uploads
       - UPLOAD_DIR=/uploads
       # AI API Keys (z .env)

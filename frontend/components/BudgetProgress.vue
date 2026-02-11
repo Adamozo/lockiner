@@ -64,7 +64,8 @@ const getStatusLabel = (status: "ok" | "warning" | "over") => {
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div>
+    <div class="space-y-4 max-h-[480px] overflow-y-auto pr-1 scrollbar-thin">
     <div
       v-for="budget in budgets"
       :key="budget.category"
@@ -133,6 +134,7 @@ const getStatusLabel = (status: "ok" | "warning" | "over") => {
           }}
         </span>
       </div>
+    </div>
     </div>
 
     <!-- Manage Budget Limits Link -->

@@ -145,7 +145,7 @@ const reminderFields = [
           </p>
         </div>
 
-        <div v-if="categories.length > 0" class="divide-y divide-border-gray">
+        <div v-if="categories.length > 0" class="divide-y divide-border-gray max-h-[480px] overflow-y-auto scrollbar-thin">
           <div
             v-for="category in categories"
             :key="category.id"

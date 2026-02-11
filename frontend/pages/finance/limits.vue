@@ -185,7 +185,7 @@ const formatMonthDisplay = (month: string) => {
         </div>
 
         <!-- Categories List -->
-        <div class="space-y-3">
+        <div class="space-y-3 max-h-[480px] overflow-y-auto pr-1 scrollbar-thin">
           <div
             v-for="category in categoriesStore.categories"
             :key="category.id"

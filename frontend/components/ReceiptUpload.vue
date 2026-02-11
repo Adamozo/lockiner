@@ -43,6 +43,62 @@ const paymentMethods = [
   { label: 'BLIK', value: 'blik' },
 ]
 
+// File input refs
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const cameraInputRef = ref<HTMLInputElement | null>(null)
+const openFilePicker = () => fileInputRef.value?.click()
+
+// Camera state
+const showCamera = ref(false)
+const cameraStream = ref<MediaStream | null>(null)
+const videoRef = ref<HTMLVideoElement | null>(null)
+
+const openCamera = async () => {
+  // Try getUserMedia (works on desktop, may fail on mobile without HTTPS)
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' },
+    })
+    cameraStream.value = stream
+    showCamera.value = true
+    await nextTick()
+    if (videoRef.value) {
+      videoRef.value.srcObject = stream
+    }
+  } catch {
+    // Fallback: use native file input with capture (opens camera app on mobile)
+    cameraInputRef.value?.click()
+  }
+}
+
+const capturePhoto = () => {
+  if (!videoRef.value) return
+  const video = videoRef.value
+  const canvas = document.createElement('canvas')
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
+  canvas.getContext('2d')!.drawImage(video, 0, 0)
+  canvas.toBlob((blob) => {
+    if (blob) {
+      const capturedFile = new File([blob], `receipt-${Date.now()}.jpg`, { type: 'image/jpeg' })
+      handleFileSelect(capturedFile)
+    }
+    closeCamera()
+  }, 'image/jpeg', 0.92)
+}
+
+const closeCamera = () => {
+  if (cameraStream.value) {
+    cameraStream.value.getTracks().forEach((t) => t.stop())
+    cameraStream.value = null
+  }
+  showCamera.value = false
+}
+
+onUnmounted(() => {
+  closeCamera()
+})
+
 // File drop zone handlers
 const isDragging = ref(false)
 
@@ -307,10 +363,18 @@ const handleCancel = () => {
         @drop="handleDrop"
       >
         <input
-          id="file-input"
+          ref="fileInputRef"
           type="file"
           accept="image/*"
-          class="hidden"
+          class="absolute w-px h-px opacity-0 overflow-hidden"
+          @change="handleFileInput"
+        />
+        <input
+          ref="cameraInputRef"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          class="absolute w-px h-px opacity-0 overflow-hidden"
           @change="handleFileInput"
         />
 
@@ -322,11 +386,14 @@ const handleCancel = () => {
           <p class="text-sm text-pure-white/60 mb-4">
             or click to browse (JPEG, PNG)
           </p>
-          <label for="file-input" class="cursor-pointer">
-            <BaseButton as="span" variant="primary">
+          <div class="flex justify-center gap-3">
+            <BaseButton variant="primary" @click="openFilePicker">
               Select File
             </BaseButton>
-          </label>
+            <BaseButton variant="secondary" icon="i-heroicons-camera" @click="openCamera">
+              Take Photo
+            </BaseButton>
+          </div>
         </div>
 
         <div v-else class="space-y-4">
@@ -339,11 +406,12 @@ const handleCancel = () => {
             {{ file.name }}
           </p>
           <div class="flex justify-center space-x-3">
-            <label for="file-input" class="cursor-pointer">
-              <BaseButton as="span" variant="secondary" size="sm">
-                Change File
-              </BaseButton>
-            </label>
+            <BaseButton variant="secondary" size="sm" @click="openFilePicker">
+              Change File
+            </BaseButton>
+            <BaseButton variant="secondary" size="sm" icon="i-heroicons-camera" @click="openCamera">
+              Retake Photo
+            </BaseButton>
             <BaseButton
               variant="primary"
               size="sm"
@@ -569,5 +637,30 @@ const handleCancel = () => {
         </BaseButton>
       </div>
     </div>
+
+    <!-- Camera Overlay -->
+    <Teleport to="body">
+      <div
+        v-if="showCamera"
+        class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95"
+      >
+        <div class="relative w-full max-w-2xl px-4">
+          <video
+            ref="videoRef"
+            autoplay
+            playsinline
+            class="w-full rounded-lg"
+          />
+          <div class="flex justify-center gap-4 mt-6">
+            <BaseButton variant="secondary" @click="closeCamera">
+              Anuluj
+            </BaseButton>
+            <BaseButton variant="primary" icon="i-heroicons-camera" @click="capturePhoto">
+              Zrób zdjęcie
+            </BaseButton>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>

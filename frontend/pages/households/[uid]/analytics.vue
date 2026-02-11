@@ -301,7 +301,7 @@ const getMemberColor = (index: number): string => {
             No spending data for this month
           </div>
 
-          <div v-else class="space-y-6">
+          <div v-else class="space-y-6 max-h-[480px] overflow-y-auto pr-1 scrollbar-thin">
             <div
               v-for="category in spendingByCategory.categories"
               :key="category.category"
