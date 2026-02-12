@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
 from datetime import datetime, timezone, timedelta
 
-from ..models import Workout, Exercise, WeightEntry, utc_now
+from ..models import Workout, Exercise, ExerciseSet, WeightEntry, utc_now
 from ..schemas import (
     WorkoutCreate,
     WorkoutUpdate,
@@ -83,22 +83,48 @@ class FitnessService:
             name=data.name,
             duration_minutes=data.duration_minutes,
             notes=data.notes,
-            completed=True,
+            completed=data.completed if data.completed is not None else True,
         )
 
         # Add exercises
         for exercise_data in data.exercises:
-            exercise = Exercise(
-                name=exercise_data.name,
-                sets=exercise_data.sets,
-                reps=exercise_data.reps,
-                weight_kg=exercise_data.weight_kg,
-                rest_seconds=exercise_data.rest_seconds,
-                notes=exercise_data.notes,
-            )
+            exercise = self._build_exercise(exercise_data)
             workout.exercises.append(exercise)
 
         return await self.workout_repository.create(workout)
+
+    @staticmethod
+    def _build_exercise(exercise_data) -> Exercise:
+        """Build an Exercise (with optional sets_detail) from schema data."""
+        sets_val = exercise_data.sets
+        reps_val = exercise_data.reps
+        weight_val = exercise_data.weight_kg
+
+        exercise = Exercise(
+            name=exercise_data.name,
+            sets=sets_val,
+            reps=reps_val,
+            weight_kg=weight_val,
+            rest_seconds=exercise_data.rest_seconds,
+            notes=exercise_data.notes,
+        )
+
+        if exercise_data.sets_detail:
+            for set_data in exercise_data.sets_detail:
+                exercise.sets_detail.append(
+                    ExerciseSet(
+                        set_number=set_data.set_number,
+                        reps=set_data.reps,
+                        weight_kg=set_data.weight_kg,
+                        completed=set_data.completed,
+                    )
+                )
+            # Auto-compute summary fields from sets_detail
+            exercise.sets = len(exercise_data.sets_detail)
+            exercise.reps = max(s.reps for s in exercise_data.sets_detail)
+            exercise.weight_kg = max(s.weight_kg for s in exercise_data.sets_detail)
+
+        return exercise
 
     async def update_workout(
         self, workout_id: int, data: WorkoutUpdate, user_id: int
@@ -118,21 +144,14 @@ class FitnessService:
 
         # Update exercises if provided
         if data.exercises is not None:
-            # Delete existing exercises
+            # Delete existing exercises (cascade deletes their sets_detail)
             await self.exercise_repository.delete_by_workout_id(workout_id)
 
             # Add new exercises
             workout.exercises = []
             for exercise_data in data.exercises:
-                exercise = Exercise(
-                    workout_id=workout_id,
-                    name=exercise_data.name,
-                    sets=exercise_data.sets,
-                    reps=exercise_data.reps,
-                    weight_kg=exercise_data.weight_kg,
-                    rest_seconds=exercise_data.rest_seconds,
-                    notes=exercise_data.notes,
-                )
+                exercise = self._build_exercise(exercise_data)
+                exercise.workout_id = workout_id
                 workout.exercises.append(exercise)
 
         return await self.workout_repository.update(workout)

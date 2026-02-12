@@ -1,5 +1,25 @@
 // Fitness module types
 
+export interface ExerciseSet {
+  id: number
+  set_number: number
+  reps: number
+  weight_kg: number
+  completed: boolean
+}
+
+export interface ExerciseSetCreate {
+  set_number: number
+  reps: number
+  weight_kg: number
+  completed?: boolean
+}
+
+export interface ExerciseDefinition {
+  name: string
+  category: 'push' | 'pull' | 'legs' | 'core' | 'other'
+}
+
 export interface Exercise {
   id: number
   name: string
@@ -8,6 +28,7 @@ export interface Exercise {
   weight_kg: number
   rest_seconds?: number
   notes?: string
+  sets_detail: ExerciseSet[]
 }
 
 export interface Workout {
@@ -25,9 +46,10 @@ export interface Workout {
 export interface WorkoutCreate {
   date: string
   name: string
-  exercises: Omit<Exercise, 'id'>[]
-  duration_minutes: number
+  exercises: Omit<Exercise, 'id' | 'sets_detail'> & { sets_detail?: ExerciseSetCreate[] }[]
+  duration_minutes?: number
   notes?: string
+  completed?: boolean
 }
 
 export interface WeightEntry {
@@ -64,7 +86,7 @@ export interface ExerciseProgress {
 export interface WorkoutUpdate {
   date?: string
   name?: string
-  exercises?: Omit<Exercise, 'id'>[]
+  exercises?: (Omit<Exercise, 'id' | 'sets_detail'> & { sets_detail?: ExerciseSetCreate[] })[]
   duration_minutes?: number
   notes?: string
   completed?: boolean

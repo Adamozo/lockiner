@@ -3,7 +3,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import Optional, List
 
-from ..models import Workout, Exercise, WeightEntry
+from ..models import Workout, Exercise, ExerciseSet, WeightEntry
 
 
 class WorkoutRepository:
@@ -19,7 +19,7 @@ class WorkoutRepository:
         end_date: Optional[str] = None,
     ) -> List[Workout]:
         query = select(Workout).options(
-            selectinload(Workout.exercises)
+            selectinload(Workout.exercises).selectinload(Exercise.sets_detail)
         ).filter(Workout.user_id == user_id)
 
         if start_date:
@@ -37,7 +37,7 @@ class WorkoutRepository:
     async def get_by_id(self, workout_id: int) -> Optional[Workout]:
         result = await self.db.execute(
             select(Workout)
-            .options(selectinload(Workout.exercises))
+            .options(selectinload(Workout.exercises).selectinload(Exercise.sets_detail))
             .filter(Workout.id == workout_id)
         )
         return result.scalar_one_or_none()
@@ -101,13 +101,36 @@ class ExerciseRepository:
         await self.db.commit()
 
     async def get_total_weight_lifted(self, user_id: int) -> float:
-        """Calculate total weight lifted across all exercises for a user."""
-        result = await self.db.execute(
-            select(func.sum(Exercise.weight_kg * Exercise.sets * Exercise.reps))
-            .join(Workout)
+        """Calculate total weight lifted across all exercises for a user.
+
+        For exercises with per-set tracking, use sum(set.weight_kg * set.reps).
+        For exercises without per-set tracking, use weight_kg * sets * reps.
+        """
+        has_sets = (
+            select(ExerciseSet.id)
+            .where(ExerciseSet.exercise_id == Exercise.id)
+            .correlate(Exercise)
+            .exists()
+        )
+
+        # Sum from per-set data
+        sets_result = await self.db.execute(
+            select(func.sum(ExerciseSet.weight_kg * ExerciseSet.reps))
+            .join(Exercise, ExerciseSet.exercise_id == Exercise.id)
+            .join(Workout, Exercise.workout_id == Workout.id)
             .filter(Workout.user_id == user_id)
         )
-        return result.scalar() or 0.0
+        sets_total = sets_result.scalar() or 0.0
+
+        # Sum from summary fields (only for exercises WITHOUT sets_detail)
+        summary_result = await self.db.execute(
+            select(func.sum(Exercise.weight_kg * Exercise.sets * Exercise.reps))
+            .join(Workout)
+            .filter(Workout.user_id == user_id, ~has_sets)
+        )
+        summary_total = summary_result.scalar() or 0.0
+
+        return sets_total + summary_total
 
 
 class WeightEntryRepository:

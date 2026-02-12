@@ -97,6 +97,12 @@ export function useWorkouts() {
     return data
   }
 
+  // Fetch single workout
+  const fetchWorkout = async (id: number): Promise<Workout> => {
+    const data = await api<Workout>(`/api/v1/fitness/workouts/${id}`)
+    return data
+  }
+
   // Computed: recent workouts (sorted by date)
   const recentWorkouts = computed(() => {
     return [...workouts.value]
@@ -104,12 +110,25 @@ export function useWorkouts() {
       .slice(0, 5)
   })
 
+  // Computed: draft (incomplete) workouts
+  const draftWorkouts = computed(() => {
+    return workouts.value.filter(w => !w.completed)
+  })
+
+  // Computed: completed workouts
+  const completedWorkouts = computed(() => {
+    return workouts.value.filter(w => w.completed)
+  })
+
   return {
     workouts,
     loading,
     error,
     recentWorkouts,
+    draftWorkouts,
+    completedWorkouts,
     fetchWorkouts,
+    fetchWorkout,
     createWorkout,
     updateWorkout,
     deleteWorkout,

@@ -43,9 +43,28 @@ class Exercise(Base):
 
     # Relationships
     workout = relationship("Workout", back_populates="exercises")
+    sets_detail = relationship("ExerciseSet", back_populates="exercise", cascade="all, delete-orphan", order_by="ExerciseSet.set_number")
 
     def __repr__(self):
         return f"<Exercise(id={self.id}, name={self.name}, sets={self.sets}x{self.reps})>"
+
+
+class ExerciseSet(Base):
+    """Individual set within an exercise."""
+    __tablename__ = "exercise_sets"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    exercise_id = Column(Integer, ForeignKey("exercises.id", ondelete="CASCADE"), nullable=False)
+    set_number = Column(Integer, nullable=False)
+    reps = Column(Integer, nullable=False)
+    weight_kg = Column(Float, nullable=False)
+    completed = Column(Boolean, default=False)
+
+    # Relationships
+    exercise = relationship("Exercise", back_populates="sets_detail")
+
+    def __repr__(self):
+        return f"<ExerciseSet(id={self.id}, set={self.set_number}, reps={self.reps}, weight={self.weight_kg}kg)>"
 
 
 class WeightEntry(Base):

@@ -40,9 +40,13 @@ const exerciseProgress = computed(() => {
       if (!exerciseMap.has(exercise.name)) {
         exerciseMap.set(exercise.name, [])
       }
+      // Use max weight from sets_detail when available, otherwise fall back to summary field
+      const maxWeight = exercise.sets_detail?.length
+        ? Math.max(...exercise.sets_detail.map(s => s.weight_kg))
+        : exercise.weight_kg
       exerciseMap.get(exercise.name)!.push({
         date: workout.date,
-        weight: exercise.weight_kg,
+        weight: maxWeight,
       })
     })
   })

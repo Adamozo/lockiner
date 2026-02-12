@@ -160,6 +160,8 @@ from .food import (
 
 # Fitness schemas
 from .fitness import (
+    ExerciseSetCreate,
+    ExerciseSetResponse,
     ExerciseBase,
     ExerciseCreate,
     ExerciseResponse,
@@ -282,6 +284,8 @@ __all__ = [
     "FoodProductSearchParams",
     "FoodInventoryFilterParams",
     # Fitness
+    "ExerciseSetCreate",
+    "ExerciseSetResponse",
     "ExerciseBase",
     "ExerciseCreate",
     "ExerciseResponse",

@@ -4,6 +4,23 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 
 
+# --- Exercise Set ---
+
+class ExerciseSetCreate(BaseModel):
+    """Schema for creating an individual set."""
+    set_number: int = Field(..., ge=1)
+    reps: int = Field(..., ge=1)
+    weight_kg: float = Field(..., ge=0)
+    completed: bool = False
+
+
+class ExerciseSetResponse(ExerciseSetCreate):
+    """Schema for exercise set response."""
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # --- Exercise ---
 
 class ExerciseBase(BaseModel):
@@ -18,12 +35,13 @@ class ExerciseBase(BaseModel):
 
 class ExerciseCreate(ExerciseBase):
     """Schema for creating an exercise."""
-    pass
+    sets_detail: Optional[List[ExerciseSetCreate]] = None
 
 
 class ExerciseResponse(ExerciseBase):
     """Schema for exercise response."""
     id: int
+    sets_detail: List[ExerciseSetResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -40,7 +58,8 @@ class WorkoutBase(BaseModel):
 
 class WorkoutCreate(WorkoutBase):
     """Schema for creating a workout with exercises."""
-    exercises: List[ExerciseCreate]
+    exercises: List[ExerciseCreate] = []
+    completed: Optional[bool] = True
 
 
 class WorkoutUpdate(BaseModel):
