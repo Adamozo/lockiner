@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from .base import Base, utc_now
@@ -51,3 +51,30 @@ class PushSubscription(Base):
 
     def __repr__(self):
         return f"<PushSubscription(id={self.id}, user_id={self.user_id})>"
+
+
+class NotificationSchedule(Base):
+    """Per-user reminder schedule configuration."""
+    __tablename__ = "notification_schedules"
+    __table_args__ = (
+        UniqueConstraint("user_id", "reminder_type", name="uq_user_reminder_type"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    reminder_type = Column(String(50), nullable=False)  # workout | weight | receipt | finance | custom_*
+    enabled = Column(Boolean, nullable=False, default=False)
+    frequency = Column(String(20), nullable=False, default="daily")  # daily | weekly | monthly
+    hour = Column(Integer, nullable=False, default=9)
+    minute = Column(Integer, nullable=False, default=0)
+    day_of_week = Column(Integer, nullable=True)  # 0=Mon..6=Sun (weekly only)
+    day_of_month = Column(Integer, nullable=True)  # 1-31 (monthly only)
+    custom_name = Column(String(100), nullable=True)
+    custom_icon = Column(String(100), nullable=True)
+    custom_title = Column(String(200), nullable=True)
+    custom_body = Column(String(500), nullable=True)
+    created_at = Column(String, default=lambda: utc_now().isoformat())
+    updated_at = Column(String, nullable=True)
+
+    def __repr__(self):
+        return f"<NotificationSchedule(id={self.id}, user_id={self.user_id}, type={self.reminder_type})>"

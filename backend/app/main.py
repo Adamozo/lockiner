@@ -1,13 +1,24 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import transactions, receipts, categories, analytics, import_csv, settings, auth, households, invitations, food, fitness, admin, notifications
+from .services.scheduler import start_scheduler, stop_scheduler
 
 # ---------------------------------------
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_scheduler()
+    yield
+    stop_scheduler()
 
 
 app = FastAPI(
     title="LockIner API",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

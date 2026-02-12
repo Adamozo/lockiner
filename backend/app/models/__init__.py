@@ -59,7 +59,7 @@ from .food import (
 )
 
 # Notification models
-from .notification import Notification, UserNotification, PushSubscription
+from .notification import Notification, UserNotification, PushSubscription, NotificationSchedule
 
 # Fitness module models
 from .fitness import Workout, Exercise, ExerciseSet, WeightEntry
@@ -136,6 +136,8 @@ Index("idx_user_notifications_user", UserNotification.user_id)
 Index("idx_user_notifications_notification", UserNotification.notification_id)
 Index("idx_push_subscriptions_user", PushSubscription.user_id)
 Index("idx_notifications_created_by", Notification.created_by_user_id)
+Index("idx_notification_schedules_user", NotificationSchedule.user_id)
+Index("idx_notification_schedules_enabled", NotificationSchedule.enabled)
 
 # Fitness module indexes
 Index("idx_workouts_user", Workout.user_id)
@@ -188,6 +190,7 @@ __all__ = [
     "Notification",
     "UserNotification",
     "PushSubscription",
+    "NotificationSchedule",
     # Fitness
     "Workout",
     "Exercise",

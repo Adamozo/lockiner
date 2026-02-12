@@ -289,6 +289,9 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- Reminder Notifications Section -->
+    <SettingsReminderScheduleSection />
+
     <!-- OCR Provider Configuration Section -->
     <div
       class="bg-card-black border border-border-gray rounded-lg shadow overflow-hidden"

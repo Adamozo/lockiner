@@ -176,6 +176,16 @@ from .fitness import (
     FitnessStatsResponse,
 )
 
+# Notification schedule schemas
+from .notification_schedule import (
+    NotificationScheduleBase,
+    NotificationScheduleUpdate,
+    NotificationScheduleResponse,
+    NotificationScheduleBulkUpdate,
+    NotificationScheduleListResponse,
+    CustomReminderCreate,
+)
+
 __all__ = [
     # Transaction
     "TransactionBase",
@@ -298,4 +308,11 @@ __all__ = [
     "WeightEntryUpdate",
     "WeightEntryResponse",
     "FitnessStatsResponse",
+    # Notification schedules
+    "NotificationScheduleBase",
+    "NotificationScheduleUpdate",
+    "NotificationScheduleResponse",
+    "NotificationScheduleBulkUpdate",
+    "NotificationScheduleListResponse",
+    "CustomReminderCreate",
 ]
