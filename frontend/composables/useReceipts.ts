@@ -4,7 +4,7 @@
  * Supports household context via optional householdId parameter
  */
 
-import type { Receipt, ReceiptUpdate } from "~/types/api";
+import type { Receipt, ReceiptUpdate, ReceiptUploadResult } from "~/types/api";
 import { buildQueryParams } from "./useApi";
 
 export const useReceipts = () => {
@@ -67,7 +67,7 @@ export const useReceipts = () => {
     file: File,
     geminiApiKey?: string,
     householdId?: string | null
-  ): Promise<Receipt> => {
+  ): Promise<ReceiptUploadResult> => {
     loading.value = true;
     error.value = null;
 
@@ -80,12 +80,11 @@ export const useReceipts = () => {
       }
 
       const queryString = buildQueryParams({}, householdId);
-      const data = await api<Receipt>(`/api/v1/receipts/upload${queryString}`, {
+      const data = await api<ReceiptUploadResult>(`/api/v1/receipts/upload${queryString}`, {
         method: "POST",
         body: formData,
       });
 
-      receipts.value.unshift(data);
       return data;
     } catch (e) {
       error.value = e instanceof Error ? e.message : "Failed to upload receipt";

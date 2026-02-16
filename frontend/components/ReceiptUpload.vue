@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { OCRResponse, ReceiptItem, ReceiptUpdate } from '~/types/api'
+import type { OCRResponse, ReceiptItem, ReceiptUpdate, ReceiptUploadResult } from '~/types/api'
 
 const emit = defineEmits<{
   success: []
@@ -186,23 +186,16 @@ const handleUpload = async () => {
   try {
     // Upload receipt with optional custom API key
     const apiKey = useCustomKey.value ? customApiKey.value : undefined
-    const receipt = await uploadReceipt(file.value, apiKey)
-    uploadedReceiptId.value = receipt.id
+    const result = await uploadReceipt(file.value, apiKey)
+    uploadedReceiptId.value = result.receipt_id
 
-    // Parse OCR response if available
-    if (receipt.raw_ocr_response) {
-      try {
-        const parsed = JSON.parse(receipt.raw_ocr_response) as OCRResponse
-        ocrData.value = parsed
+    // Use OCR data if available
+    if (result.ocr_data) {
+      ocrData.value = result.ocr_data
 
-        // Ensure items array exists
-        if (!ocrData.value.items || ocrData.value.items.length === 0) {
-          ocrData.value.items = []
-          addItem()
-        }
-      } catch (e) {
-        console.error('Failed to parse OCR response:', e)
-        // Initialize with empty item
+      // Ensure items array exists
+      if (!ocrData.value.items || ocrData.value.items.length === 0) {
+        ocrData.value.items = []
         addItem()
       }
     } else {
@@ -250,7 +243,10 @@ const calculateItemTotal = (item: ReceiptItem) => {
 
 // Save handler
 const handleSave = async () => {
+  console.log('[ReceiptUpload] handleSave called, uploadedReceiptId:', uploadedReceiptId.value)
+
   if (!uploadedReceiptId.value) {
+    console.log('[ReceiptUpload] No uploadedReceiptId — bailing out')
     toast.add({
       title: 'Error',
       description: 'No receipt to save',
@@ -267,17 +263,14 @@ const handleSave = async () => {
       verified: true,
     }
 
+    console.log('[ReceiptUpload] calling updateReceipt with id:', uploadedReceiptId.value)
     await updateReceipt(uploadedReceiptId.value, updates)
-
-    toast.add({
-      title: 'Success',
-      description: 'Receipt saved successfully',
-      color: 'green',
-    })
+    console.log('[ReceiptUpload] updateReceipt succeeded, emitting success')
 
     emit('success')
     handleReset()
   } catch (error) {
+    console.error('[ReceiptUpload] handleSave error:', error)
     toast.add({
       title: 'Save Failed',
       description: error instanceof Error ? error.message : 'Failed to save receipt',

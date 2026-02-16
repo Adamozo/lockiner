@@ -98,8 +98,16 @@ const monthOptions = computed(() => {
 
 // Handlers
 async function handleUploadSuccess() {
+  console.log('[receipts] handleUploadSuccess called')
   isUploadModalOpen.value = false
   await loadData()
+  console.log('[receipts] loadData done, adding toast now')
+  toast.add({
+    title: 'Success',
+    description: 'Receipt uploaded and saved',
+    color: 'green',
+  })
+  console.log('[receipts] toast.add called')
 }
 
 function handleUploadCancel() {
@@ -117,6 +125,7 @@ async function handleDeleteReceipt(id: number) {
 
   try {
     await deleteReceipt(id, householdIdForApi.value)
+    await loadData()
     toast.add({
       title: 'Success',
       description: 'Receipt deleted successfully',
@@ -137,10 +146,13 @@ function openUploadModal() {
 }
 
 async function handleReceiptVerified() {
-  // Refresh receipts list to show updated status
   await loadData()
-  // Close the modal
   isDetailModalOpen.value = false
+  toast.add({
+    title: 'Success',
+    description: 'Receipt verified',
+    color: 'green',
+  })
 }
 </script>
 

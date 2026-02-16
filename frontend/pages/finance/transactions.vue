@@ -55,6 +55,7 @@ const handleAddTransaction = async (transaction: TransactionCreate) => {
   try {
     await createTransaction(transaction, householdIdForApi.value)
     isAddModalOpen.value = false
+    await loadData()
 
     toast.add({
       title: 'Success',
@@ -87,6 +88,7 @@ const handleUpdateTransaction = async (updates: TransactionCreate) => {
     await updateTransaction(editingTransaction.value.id, updates, householdIdForApi.value)
     isEditModalOpen.value = false
     editingTransaction.value = null
+    await loadData()
 
     toast.add({
       title: 'Success',
@@ -114,6 +116,7 @@ const handleDeleteTransaction = async (id: number) => {
 
   try {
     await deleteTransaction(id, householdIdForApi.value)
+    await loadData()
     toast.add({
       title: 'Success',
       description: 'Transaction deleted successfully',

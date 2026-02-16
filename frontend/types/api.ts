@@ -165,6 +165,17 @@ export interface OCRResponse {
 }
 
 /**
+ * ReceiptUploadResult - Response from upload endpoint
+ */
+export interface ReceiptUploadResult {
+  receipt_id: number
+  image_path: string
+  ocr_data: OCRResponse | null
+  error: string | null
+  created_at: string
+}
+
+/**
  * ReceiptUpdate - Update receipt data
  */
 export interface ReceiptUpdate {

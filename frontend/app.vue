@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/auth'
+import AppToasts from '~/components/AppToasts.vue'
 
 // Initialize PWA functionality
 usePWAInstall()
@@ -25,5 +26,6 @@ if (import.meta.client) {
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
+    <AppToasts />
   </div>
 </template>
