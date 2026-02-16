@@ -289,6 +289,9 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- Two-Factor Authentication Section -->
+    <SettingsTwoFactorSection />
+
     <!-- Reminder Notifications Section -->
     <SettingsReminderScheduleSection />
 

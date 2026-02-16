@@ -186,6 +186,19 @@ from .notification_schedule import (
     CustomReminderCreate,
 )
 
+# Two-factor authentication schemas
+from .two_factor import (
+    TwoFactorSetupResponse,
+    TwoFactorVerifySetupRequest,
+    TwoFactorVerifySetupResponse,
+    TwoFactorDisableRequest,
+    TwoFactorStatusResponse,
+    TwoFactorVerifyLoginRequest,
+    TwoFactorRegenerateRequest,
+    TwoFactorRegenerateResponse,
+    LoginResponse,
+)
+
 __all__ = [
     # Transaction
     "TransactionBase",
@@ -315,4 +328,14 @@ __all__ = [
     "NotificationScheduleBulkUpdate",
     "NotificationScheduleListResponse",
     "CustomReminderCreate",
+    # Two-factor authentication
+    "TwoFactorSetupResponse",
+    "TwoFactorVerifySetupRequest",
+    "TwoFactorVerifySetupResponse",
+    "TwoFactorDisableRequest",
+    "TwoFactorStatusResponse",
+    "TwoFactorVerifyLoginRequest",
+    "TwoFactorRegenerateRequest",
+    "TwoFactorRegenerateResponse",
+    "LoginResponse",
 ]

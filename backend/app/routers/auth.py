@@ -10,6 +10,15 @@ from ..schemas import (
     TokenResponse,
     RefreshTokenRequest,
     PasswordChangeRequest,
+    LoginResponse,
+    TwoFactorSetupResponse,
+    TwoFactorVerifySetupRequest,
+    TwoFactorVerifySetupResponse,
+    TwoFactorDisableRequest,
+    TwoFactorStatusResponse,
+    TwoFactorVerifyLoginRequest,
+    TwoFactorRegenerateRequest,
+    TwoFactorRegenerateResponse,
 )
 from ..services.auth import (
     AuthService,
@@ -19,6 +28,13 @@ from ..services.auth import (
     UserInactiveError,
     UserNotFoundError,
     InvalidVoucherError,
+)
+from ..services.two_factor import (
+    TwoFactorService,
+    TwoFactorAlreadyEnabledError,
+    TwoFactorNotEnabledError,
+    TwoFactorSetupNotStartedError,
+    InvalidTwoFactorCodeError,
 )
 from ..dependencies import get_current_user
 from ..models import User
@@ -50,6 +66,7 @@ async def register(
             role=user.role,
             created_at=user.created_at,
             is_active=user.is_active,
+            totp_enabled=user.totp_enabled or False,
         )
 
     except InvalidVoucherError as e:
@@ -65,7 +82,7 @@ async def register(
         )
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=LoginResponse)
 async def login(
     data: LoginRequest,
     service: AuthService = Depends(get_auth_service),
@@ -132,6 +149,7 @@ async def get_current_user_info(
         role=current_user.role,
         created_at=current_user.created_at,
         is_active=current_user.is_active,
+        totp_enabled=current_user.totp_enabled or False,
     )
 
 
@@ -150,6 +168,7 @@ async def update_profile(
             role=user.role,
             created_at=user.created_at,
             is_active=user.is_active,
+            totp_enabled=user.totp_enabled or False,
         )
 
     except UserNotFoundError as e:
@@ -178,4 +197,135 @@ async def change_password(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current password is incorrect",
+        )
+
+
+# ============ Two-Factor Authentication Endpoints ============
+
+
+async def get_two_factor_service(db: AsyncSession = Depends(get_db)) -> TwoFactorService:
+    return TwoFactorService(db)
+
+
+@router.post("/2fa/setup", response_model=TwoFactorSetupResponse)
+async def setup_two_factor(
+    current_user: User = Depends(get_current_user),
+    service: TwoFactorService = Depends(get_two_factor_service),
+):
+    """Initiate 2FA setup - returns secret and provisioning URI."""
+    try:
+        result = await service.initiate_setup(current_user)
+        return TwoFactorSetupResponse(**result)
+    except TwoFactorAlreadyEnabledError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.post("/2fa/verify-setup", response_model=TwoFactorVerifySetupResponse)
+async def verify_two_factor_setup(
+    data: TwoFactorVerifySetupRequest,
+    current_user: User = Depends(get_current_user),
+    service: TwoFactorService = Depends(get_two_factor_service),
+):
+    """Verify initial 2FA setup with first TOTP code. Returns recovery codes."""
+    try:
+        recovery_codes = await service.verify_setup(current_user, data.code)
+        return TwoFactorVerifySetupResponse(recovery_codes=recovery_codes)
+    except TwoFactorAlreadyEnabledError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except TwoFactorSetupNotStartedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except InvalidTwoFactorCodeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.post("/2fa/disable", status_code=status.HTTP_204_NO_CONTENT)
+async def disable_two_factor(
+    data: TwoFactorDisableRequest,
+    current_user: User = Depends(get_current_user),
+    service: TwoFactorService = Depends(get_two_factor_service),
+):
+    """Disable 2FA (requires valid TOTP or recovery code)."""
+    try:
+        await service.disable(current_user, data.code)
+        return None
+    except TwoFactorNotEnabledError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except InvalidTwoFactorCodeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.get("/2fa/status", response_model=TwoFactorStatusResponse)
+async def get_two_factor_status(
+    current_user: User = Depends(get_current_user),
+    service: TwoFactorService = Depends(get_two_factor_service),
+):
+    """Check 2FA status for current user."""
+    result = await service.get_status(current_user)
+    return TwoFactorStatusResponse(**result)
+
+
+@router.post("/2fa/verify", response_model=TokenResponse)
+async def verify_two_factor_login(
+    data: TwoFactorVerifyLoginRequest,
+    service: AuthService = Depends(get_auth_service),
+):
+    """Complete login with 2FA verification code. No auth required - uses temp token."""
+    try:
+        return await service.verify_two_factor_login(data.two_factor_token, data.code)
+    except InvalidCredentialsError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid two-factor authentication code",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except InvalidTokenError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except UserInactiveError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+
+@router.post("/2fa/regenerate-recovery", response_model=TwoFactorRegenerateResponse)
+async def regenerate_recovery_codes(
+    data: TwoFactorRegenerateRequest,
+    current_user: User = Depends(get_current_user),
+    service: TwoFactorService = Depends(get_two_factor_service),
+):
+    """Regenerate recovery codes (requires valid TOTP code)."""
+    try:
+        recovery_codes = await service.regenerate_recovery_codes(current_user, data.code)
+        return TwoFactorRegenerateResponse(recovery_codes=recovery_codes)
+    except TwoFactorNotEnabledError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except InvalidTwoFactorCodeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
         )

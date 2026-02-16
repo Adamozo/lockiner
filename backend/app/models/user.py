@@ -33,6 +33,9 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(String, default=lambda: utc_now().isoformat())
     updated_at = Column(String, nullable=True)
+    totp_secret_encrypted = Column(Text, nullable=True)
+    totp_enabled = Column(Boolean, default=False)
+    recovery_codes_hash = Column(Text, nullable=True)
 
     household_memberships = relationship("HouseholdMember", back_populates="user")
     api_keys = relationship("UserAPIKey", back_populates="user", cascade="all, delete-orphan")

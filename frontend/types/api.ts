@@ -337,6 +337,7 @@ export interface User {
   name: string
   role: 'user' | 'admin'
   is_active: boolean
+  totp_enabled: boolean
   created_at: string
   updated_at: string | null
 }
@@ -400,6 +401,52 @@ export interface RefreshTokenRequest {
 export interface PasswordChangeRequest {
   current_password: string
   new_password: string
+}
+
+// ============================================
+// Two-Factor Authentication Types
+// ============================================
+
+/**
+ * LoginResponse - Extended login response supporting 2FA
+ */
+export interface LoginResponse {
+  access_token?: string
+  refresh_token?: string
+  token_type: string
+  expires_in?: number
+  requires_2fa: boolean
+  two_factor_token?: string
+}
+
+/**
+ * TwoFactorSetupResponse - Response when initiating 2FA setup
+ */
+export interface TwoFactorSetupResponse {
+  secret: string
+  uri: string
+}
+
+/**
+ * TwoFactorVerifySetupResponse - Recovery codes after 2FA setup
+ */
+export interface TwoFactorVerifySetupResponse {
+  recovery_codes: string[]
+}
+
+/**
+ * TwoFactorStatusResponse - Current 2FA status
+ */
+export interface TwoFactorStatusResponse {
+  enabled: boolean
+  recovery_codes_remaining: number
+}
+
+/**
+ * TwoFactorRegenerateResponse - Regenerated recovery codes
+ */
+export interface TwoFactorRegenerateResponse {
+  recovery_codes: string[]
 }
 
 // ============================================

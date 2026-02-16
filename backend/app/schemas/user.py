@@ -28,6 +28,7 @@ class UserResponse(BaseModel):
     role: str = "user"
     created_at: str
     is_active: bool
+    totp_enabled: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

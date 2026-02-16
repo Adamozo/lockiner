@@ -22,17 +22,12 @@ const features: Feature[] = [
     icon: "i-heroicons-fire",
     color: "warning-orange",
   },
-  {
-    name: "Skills",
-    description: "Track learning journeys for coding, languages, and more",
-    icon: "i-heroicons-academic-cap",
-    color: "cyber-blue",
-  },
+
   {
     name: "Food",
     description: "Plan meals, track nutrition, and manage your diet goals",
     icon: "i-heroicons-cake",
-    color: "alert-red",
+    color: "cyber-blue",
   },
 ];
 
@@ -64,7 +59,7 @@ const colorClasses = {
       >
         Everything you need in one place
       </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <div
           v-for="feature in features"
           :key="feature.name"

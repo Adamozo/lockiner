@@ -87,15 +87,20 @@ async def _check_and_send_reminders_inner():
 
         logger.info(f"Found {len(due_schedules)} due reminder(s) to send")
 
-        if not settings.vapid_private_key:
-            logger.warning("VAPID private key not configured, skipping push")
-            return
-
-        try:
-            from pywebpush import webpush, WebPushException
-        except ImportError:
-            logger.warning("pywebpush not installed, skipping push notifications")
-            return
+        # Try to import pywebpush once for all schedules
+        webpush_available = False
+        webpush_func = None
+        WebPushException = None
+        if settings.vapid_private_key:
+            try:
+                from pywebpush import webpush as _webpush, WebPushException as _WPE
+                webpush_func = _webpush
+                WebPushException = _WPE
+                webpush_available = True
+            except ImportError:
+                logger.warning("pywebpush not installed, push notifications disabled")
+        else:
+            logger.warning("VAPID private key not configured, push notifications disabled")
 
         for schedule in due_schedules:
             # Custom reminders use their own title/body; built-ins use REMINDER_MESSAGES
@@ -104,22 +109,46 @@ async def _check_and_send_reminders_inner():
                     continue
                 title = schedule.custom_title
                 body = schedule.custom_body
+                notif_type = "reminder"
             else:
                 msg = REMINDER_MESSAGES.get(schedule.reminder_type)
                 if not msg:
                     continue
                 title = msg["title"]
                 body = msg["body"]
+                notif_type = "reminder"
+
+            # 1. Create in-app notification record
+            notification = await notification_repo.create_notification(
+                title=title,
+                body=body,
+                notification_type=notif_type,
+                created_by_user_id=None,
+            )
+            await notification_repo.create_user_notifications(
+                notification.id, [schedule.user_id]
+            )
+            logger.info(
+                f"Created in-app notification for {schedule.reminder_type} reminder, user {schedule.user_id}"
+            )
+
+            # 2. Send web push
+            if not webpush_available:
+                continue
 
             subscriptions = await notification_repo.get_push_subscriptions([schedule.user_id])
             if not subscriptions:
+                logger.info(
+                    f"User {schedule.user_id} has no push subscriptions, "
+                    f"skipping web push for {schedule.reminder_type} reminder"
+                )
                 continue
 
             payload = json.dumps({"title": title, "body": body})
 
             for sub in subscriptions:
                 try:
-                    webpush(
+                    webpush_func(
                         subscription_info={
                             "endpoint": sub.endpoint,
                             "keys": {
@@ -134,7 +163,7 @@ async def _check_and_send_reminders_inner():
                         },
                     )
                     logger.info(
-                        f"Sent {schedule.reminder_type} reminder to user {schedule.user_id}"
+                        f"Sent {schedule.reminder_type} push to user {schedule.user_id}"
                     )
                 except WebPushException as e:
                     if hasattr(e, "response") and e.response is not None and e.response.status_code == 410:

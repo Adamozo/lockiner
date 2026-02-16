@@ -12,6 +12,7 @@ import type {
   UserUpdate,
   LoginRequest,
   TokenResponse,
+  LoginResponse,
   PasswordChangeRequest,
 } from '~/types/api'
 
@@ -34,6 +35,8 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const requiresTwoFactor = ref(false)
+  const pendingTwoFactorToken = ref<string | null>(null)
 
   // Getters
   const accessToken = computed(() => accessTokenCookie.value)
@@ -111,18 +114,26 @@ export const useAuthStore = defineStore('auth', () => {
   const login = async (credentials: LoginRequest): Promise<void> => {
     loading.value = true
     error.value = null
+    requiresTwoFactor.value = false
+    pendingTwoFactorToken.value = null
 
     try {
-      const tokens = await $fetch<TokenResponse>(getApiUrl('/auth/login'), {
+      const response = await $fetch<LoginResponse>(getApiUrl('/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: credentials,
       })
 
-      saveTokens(tokens.access_token, tokens.refresh_token)
+      if (response.requires_2fa && response.two_factor_token) {
+        requiresTwoFactor.value = true
+        pendingTwoFactorToken.value = response.two_factor_token
+        return
+      }
 
-      // Fetch user data after successful login
-      await fetchCurrentUser()
+      if (response.access_token && response.refresh_token) {
+        saveTokens(response.access_token, response.refresh_token)
+        await fetchCurrentUser()
+      }
     } catch (e: unknown) {
       const err = e as { data?: { detail?: string } }
       error.value = err.data?.detail || 'Login failed'
@@ -131,6 +142,44 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       loading.value = false
     }
+  }
+
+  const verifyTwoFactor = async (code: string): Promise<void> => {
+    if (!pendingTwoFactorToken.value) {
+      throw new Error('No pending two-factor token')
+    }
+
+    loading.value = true
+    error.value = null
+
+    try {
+      const tokens = await $fetch<TokenResponse>(getApiUrl('/auth/2fa/verify'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: {
+          two_factor_token: pendingTwoFactorToken.value,
+          code,
+        },
+      })
+
+      saveTokens(tokens.access_token, tokens.refresh_token)
+      requiresTwoFactor.value = false
+      pendingTwoFactorToken.value = null
+
+      await fetchCurrentUser()
+    } catch (e: unknown) {
+      const err = e as { data?: { detail?: string } }
+      error.value = err.data?.detail || 'Invalid verification code'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const clearTwoFactor = () => {
+    requiresTwoFactor.value = false
+    pendingTwoFactorToken.value = null
+    error.value = null
   }
 
   const logout = async (): Promise<void> => {
@@ -253,6 +302,8 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     loading,
     error,
+    requiresTwoFactor,
+    pendingTwoFactorToken,
 
     // Getters (tokens are now computed from cookies)
     accessToken,
@@ -274,5 +325,7 @@ export const useAuthStore = defineStore('auth', () => {
     changePassword,
     checkAuth,
     clearTokens,
+    verifyTwoFactor,
+    clearTwoFactor,
   }
 })

@@ -56,6 +56,14 @@ class NotificationService:
         push_failed = 0
         subscriptions = await self.repo.get_push_subscriptions(target_user_ids)
 
+        # Log users without push subscriptions
+        subscribed_user_ids = {sub.user_id for sub in subscriptions}
+        skipped_user_ids = set(target_user_ids) - subscribed_user_ids
+        if skipped_user_ids:
+            logger.info(
+                f"Users without push subscriptions (skipped for web push): {sorted(skipped_user_ids)}"
+            )
+
         settings = get_settings()
         if settings.vapid_private_key and subscriptions:
             try:

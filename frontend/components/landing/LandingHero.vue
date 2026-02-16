@@ -11,12 +11,13 @@
         ><span class="text-electric-green">In</span
         ><span class="text-pure-white">er</span>
       </h1>
-      <p
+      <div
         class="text-xl md:text-2xl text-pure-white/60 max-w-3xl mx-auto mb-10"
       >
-        Your personal dashboard to manage finances, track fitness progress,
-        master new skills and manage food. Join and do it seamlessly!
-      </p>
+        <p>Your personal dashboard to manage your life.</p>
+        <p>Join and do it seamlessly!</p>
+      </div>
+
       <div class="flex flex-col sm:flex-row justify-center gap-4">
         <NuxtLink
           to="/register"
