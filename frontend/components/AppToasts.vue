@@ -52,7 +52,7 @@ onUnmounted(() => {
 
 <template>
   <Teleport to="body">
-    <div class="fixed bottom-4 right-4 z-[100] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+    <div class="fixed bottom-4 left-4 right-4 z-[100] flex flex-col gap-3 pointer-events-none md:left-auto md:max-w-sm">
       <TransitionGroup
         enter-active-class="transition duration-300 ease-out"
         enter-from-class="translate-x-full opacity-0"

@@ -1,4 +1,4 @@
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[]
@@ -12,9 +12,38 @@ interface BeforeInstallPromptEvent extends Event {
 const deferredPrompt = ref<BeforeInstallPromptEvent | null>(null)
 const isInstallable = ref(false)
 const isInstalled = ref(false)
+const isIOSSafari = ref(false)
 const needRefresh = ref(false)
 const isUpdateDismissed = ref(false)
 const updateServiceWorker = ref<(() => Promise<void>) | null>(null)
+
+// Capture beforeinstallprompt immediately at module level
+// so it's not missed before onMounted runs
+if (import.meta.client) {
+  window.addEventListener('beforeinstallprompt', (e: Event) => {
+    e.preventDefault()
+    deferredPrompt.value = e as BeforeInstallPromptEvent
+    isInstallable.value = true
+  })
+
+  window.addEventListener('appinstalled', () => {
+    isInstalled.value = true
+    isInstallable.value = false
+    deferredPrompt.value = null
+  })
+
+  // Check if already running as installed PWA
+  if (window.matchMedia('(display-mode: standalone)').matches
+    || (navigator as any).standalone === true) {
+    isInstalled.value = true
+  }
+
+  // Detect iOS Safari
+  const ua = navigator.userAgent
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|Chrome/.test(ua)
+  isIOSSafari.value = isIOS && isSafari
+}
 
 export function usePWAInstall() {
   const DISMISS_KEY = 'pwa-install-dismissed'
@@ -40,18 +69,6 @@ export function usePWAInstall() {
     if (import.meta.client) {
       localStorage.setItem(DISMISS_KEY, Date.now().toString())
     }
-  }
-
-  const handleBeforeInstallPrompt = (e: Event) => {
-    e.preventDefault()
-    deferredPrompt.value = e as BeforeInstallPromptEvent
-    isInstallable.value = true
-  }
-
-  const handleAppInstalled = () => {
-    isInstalled.value = true
-    isInstallable.value = false
-    deferredPrompt.value = null
   }
 
   const installApp = async () => {
@@ -89,11 +106,6 @@ export function usePWAInstall() {
 
     checkDismissed()
 
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      isInstalled.value = true
-    }
-
     // Dynamic import to avoid SSR issues
     try {
       const { useRegisterSW } = await import('virtual:pwa-register/vue')
@@ -130,23 +142,13 @@ export function usePWAInstall() {
   }
 
   onMounted(() => {
-    if (import.meta.client) {
-      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-      window.addEventListener('appinstalled', handleAppInstalled)
-      initPWA()
-    }
-  })
-
-  onUnmounted(() => {
-    if (import.meta.client) {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-      window.removeEventListener('appinstalled', handleAppInstalled)
-    }
+    initPWA()
   })
 
   return {
     isInstallable,
     isInstalled,
+    isIOSSafari,
     isDismissed,
     needRefresh,
     installApp,

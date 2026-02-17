@@ -1,75 +1,108 @@
 <script setup lang="ts">
-const { isInstallable, isInstalled, isDismissed, installApp, dismissInstall } = usePWAInstall()
+const { isInstallable, isInstalled, isIOSSafari, isDismissed, installApp, dismissInstall } = usePWAInstall()
 
 const showBanner = computed(() => {
-  return isInstallable.value && !isInstalled.value && !isDismissed.value
+  if (isInstalled.value || isDismissed.value) return false
+  return isInstallable.value || isIOSSafari.value || !isInstalled.value
 })
 
+const isInstalling = ref(false)
+
 const handleInstall = async () => {
-  await installApp()
+  if (!isInstallable.value) return
+  isInstalling.value = true
+  try {
+    await installApp()
+  } finally {
+    isInstalling.value = false
+  }
 }
 </script>
 
 <template>
-  <Transition name="slide-up">
-    <div
-      v-if="showBanner"
-      class="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:max-w-md"
-    >
+  <Teleport to="body">
+    <Transition name="slide-down">
       <div
-        class="bg-card-black border border-border-gray rounded-xl shadow-lg overflow-hidden"
+        v-if="showBanner"
+        class="fixed top-4 left-4 right-4 z-50 flex justify-center"
       >
-        <div class="p-4">
-          <div class="flex items-start gap-3">
-            <div
-              class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyber-blue to-electric-green flex items-center justify-center flex-shrink-0"
-            >
-              <UIcon name="i-heroicons-arrow-down-tray" class="w-6 h-6 text-background-black" />
+        <div
+          class="w-full max-w-md rounded-xl overflow-hidden shadow-2xl shadow-cyber-blue/10"
+          style="padding: 1px; background: linear-gradient(135deg, #00D4FF, #00FF88, #00D4FF)"
+        >
+          <div class="bg-card-black rounded-xl p-4">
+            <div class="flex items-start gap-3">
+              <div
+                class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyber-blue/20 to-electric-green/20 flex items-center justify-center flex-shrink-0"
+              >
+                <UIcon name="i-heroicons-device-phone-mobile" class="w-5 h-5 text-cyber-blue" />
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <h3 class="text-sm font-semibold text-pure-white">
+                  Install LockIner
+                </h3>
+
+                <p v-if="isInstallable" class="text-xs text-pure-white/50 mt-0.5">
+                  Get faster access, offline mode & push notifications
+                </p>
+                <p v-else-if="isIOSSafari" class="text-xs text-pure-white/50 mt-0.5">
+                  Tap
+                  <UIcon name="i-heroicons-arrow-up-on-square" class="inline w-3.5 h-3.5 text-cyber-blue align-text-bottom" />
+                  Share, then <span class="text-pure-white/70 font-medium">Add to Home Screen</span>
+                </p>
+                <p v-else class="text-xs text-pure-white/50 mt-0.5">
+                  Use <span class="text-pure-white/70 font-medium">Chrome</span> (Android) or <span class="text-pure-white/70 font-medium">Safari</span> (iOS) to install
+                </p>
+              </div>
+
             </div>
 
-            <div class="flex-1 min-w-0">
-              <h3 class="text-base font-semibold text-pure-white">
-                Install LockIner
-              </h3>
-              <p class="text-sm text-pure-white/60 mt-1">
-                Add to your home screen for quick access and offline use.
-              </p>
+            <div class="flex items-center gap-2 mt-3">
+              <button
+                @click="dismissInstall"
+                class="flex-1 px-4 py-2 text-sm font-medium text-pure-white/50 hover:text-pure-white rounded-lg border border-border-gray hover:border-pure-white/30 transition-colors"
+              >
+                Not Now
+              </button>
+              <button
+                @click="handleInstall"
+                :disabled="isInstalling || !isInstallable"
+                class="flex-1 px-4 py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-opacity"
+                :class="isInstallable
+                  ? 'text-background-black bg-gradient-to-r from-cyber-blue to-electric-green hover:opacity-90'
+                  : 'text-pure-white/30 bg-pure-white/5 cursor-not-allowed'"
+                :title="!isInstallable ? 'Installation not available in this browser. Try Chrome on Android or Safari on iOS.' : undefined"
+              >
+                <UIcon
+                  v-if="isInstalling"
+                  name="i-heroicons-arrow-path"
+                  class="w-4 h-4 animate-spin"
+                />
+                <UIcon
+                  v-else
+                  name="i-heroicons-arrow-down-tray"
+                  class="w-4 h-4"
+                />
+                {{ isInstalling ? 'Installing...' : 'Install App' }}
+              </button>
             </div>
-          </div>
-
-          <div class="flex items-center gap-3 mt-4">
-            <button
-              @click="dismissInstall"
-              class="flex-1 px-4 py-2 text-sm font-medium text-pure-white/60 hover:text-pure-white transition-colors rounded-lg hover:bg-pure-white/5"
-            >
-              Not Now
-            </button>
-            <button
-              @click="handleInstall"
-              class="flex-1 px-4 py-2 text-sm font-medium text-background-black bg-gradient-to-r from-cyber-blue to-electric-green rounded-lg hover:opacity-90 transition-opacity"
-            >
-              Install
-            </button>
           </div>
         </div>
       </div>
-    </div>
-  </Transition>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
-.slide-up-enter-active,
-.slide-up-leave-active {
+.slide-down-enter-active,
+.slide-down-leave-active {
   transition: all 0.3s ease;
 }
 
-.slide-up-enter-from {
-  transform: translateY(100%);
-  opacity: 0;
-}
-
-.slide-up-leave-to {
-  transform: translateY(100%);
+.slide-down-enter-from,
+.slide-down-leave-to {
+  transform: translateY(-100%);
   opacity: 0;
 }
 </style>

@@ -6,14 +6,14 @@
   <nav class="border-b border-border-gray">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-14 sm:h-16">
-        <div class="flex items-center gap-2 sm:gap-3">
-          <LockIcon class="w-8 h-8 sm:w-10 sm:h-10 text-electric-green" />
+        <NuxtLink to="/" class="flex items-center gap-2 sm:gap-3 group">
+          <LockIcon class="w-8 h-8 sm:w-10 sm:h-10 text-electric-green group-hover:scale-110 transition-transform" />
           <span class="hidden sm:inline text-xl font-bold"
             ><span class="text-cyber-blue">Lock</span
             ><span class="text-electric-green">In</span
             ><span class="text-pure-white">er</span></span
           >
-        </div>
+        </NuxtLink>
         <div class="flex items-center gap-2 sm:gap-4">
           <NuxtLink
             to="/login"

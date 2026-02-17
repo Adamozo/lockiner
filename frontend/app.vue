@@ -26,6 +26,8 @@ if (import.meta.client) {
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
+    <PwaInstallBanner />
+    <PwaUpdatePrompt />
     <AppToasts />
   </div>
 </template>

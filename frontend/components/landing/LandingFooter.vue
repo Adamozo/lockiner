@@ -14,9 +14,26 @@
             ><span class="text-pure-white">er</span></span
           >
         </div>
-        <p class="text-pure-white/40 text-sm">
-          Take control of your life easly with LockIner
-        </p>
+        <div class="flex flex-col items-center md:items-end gap-2">
+          <div class="flex items-center gap-4">
+            <NuxtLink
+              to="/privacy-policy"
+              class="text-pure-white/40 text-sm hover:text-cyber-blue transition-colors"
+            >
+              Privacy Policy
+            </NuxtLink>
+            <span class="text-pure-white/20">|</span>
+            <NuxtLink
+              to="/terms"
+              class="text-pure-white/40 text-sm hover:text-cyber-blue transition-colors"
+            >
+              Terms of Service
+            </NuxtLink>
+          </div>
+          <p class="text-pure-white/30 text-xs">
+            &copy; {{ new Date().getFullYear() }} MAKE IT REMOTE Adam Naworski
+          </p>
+        </div>
       </div>
     </div>
   </footer>
