@@ -551,6 +551,7 @@ const getStatusBadgeColor = (status: string) => {
           v-if="currentUserMemberInfo"
           variant="secondary"
           icon="i-heroicons-arrow-right-on-rectangle"
+          size="sm"
           @click="handleLeave"
         >
           Leave Household
@@ -561,6 +562,7 @@ const getStatusBadgeColor = (status: string) => {
           v-if="isCurrentUserManager"
           variant="danger"
           icon="i-heroicons-trash"
+          size="sm"
           @click="showDeleteDialog = true"
         >
           Delete Household

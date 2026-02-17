@@ -380,10 +380,10 @@ const handleCancel = () => {
             or click to browse (JPEG, PNG)
           </p>
           <div class="flex justify-center gap-3">
-            <BaseButton variant="primary" @click="openFilePicker">
+            <BaseButton variant="primary" size="sm" icon="i-heroicons-document-arrow-up" @click="openFilePicker">
               Select File
             </BaseButton>
-            <BaseButton variant="secondary" icon="i-heroicons-camera" @click="openCamera">
+            <BaseButton variant="secondary" size="sm" icon="i-heroicons-camera" @click="openCamera">
               Take Photo
             </BaseButton>
           </div>
@@ -618,12 +618,14 @@ const handleCancel = () => {
       <div class="flex justify-end space-x-3 pt-4 border-t border-border-gray">
         <BaseButton
           variant="secondary"
+          size="sm"
           @click="handleCancel"
         >
           Cancel
         </BaseButton>
         <BaseButton
           variant="primary"
+          size="sm"
           @click="handleSave"
         >
           Save Receipt
@@ -645,10 +647,10 @@ const handleCancel = () => {
             class="w-full rounded-lg"
           />
           <div class="flex justify-center gap-4 mt-6">
-            <BaseButton variant="secondary" @click="closeCamera">
+            <BaseButton variant="secondary" size="sm" @click="closeCamera">
               Anuluj
             </BaseButton>
-            <BaseButton variant="primary" icon="i-heroicons-camera" @click="capturePhoto">
+            <BaseButton variant="primary" size="sm" icon="i-heroicons-camera" @click="capturePhoto">
               Zrób zdjęcie
             </BaseButton>
           </div>

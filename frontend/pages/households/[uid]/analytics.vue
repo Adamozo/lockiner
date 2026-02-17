@@ -26,23 +26,63 @@ const {
 // State
 const loading = ref(true)
 const error = ref<string | null>(null)
-const selectedMonth = ref(new Date().toISOString().slice(0, 7)) // YYYY-MM
+
+const now = new Date()
+const selectedYear = ref(now.getFullYear())
+const selectedMonthNum = ref(now.getMonth() + 1) // 1-12
+
+const selectedMonth = computed(() => {
+  return `${selectedYear.value}-${String(selectedMonthNum.value).padStart(2, '0')}`
+})
 
 const summary = ref<HouseholdMonthlySummary | null>(null)
 const spendingByMember = ref<HouseholdSpendingByMember | null>(null)
 const spendingByCategory = ref<HouseholdSpendingByCategory | null>(null)
 
-// Available months (last 12 months)
-const availableMonths = computed(() => {
-  const months = []
-  const now = new Date()
-  for (let i = 0; i < 12; i++) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const value = date.toISOString().slice(0, 7)
-    const label = date.toLocaleDateString('pl-PL', { year: 'numeric', month: 'long' })
-    months.push({ value, label })
+// Month names
+const monthOptions = [
+  { value: 1, label: 'January' },
+  { value: 2, label: 'February' },
+  { value: 3, label: 'March' },
+  { value: 4, label: 'April' },
+  { value: 5, label: 'May' },
+  { value: 6, label: 'June' },
+  { value: 7, label: 'July' },
+  { value: 8, label: 'August' },
+  { value: 9, label: 'September' },
+  { value: 10, label: 'October' },
+  { value: 11, label: 'November' },
+  { value: 12, label: 'December' },
+]
+
+// Available years (current year and 3 years back)
+const yearOptions = computed(() => {
+  const currentYear = new Date().getFullYear()
+  return Array.from({ length: 4 }, (_, i) => currentYear - i)
+})
+
+// Navigate month back/forward
+const goToPreviousMonth = () => {
+  if (selectedMonthNum.value === 1) {
+    selectedMonthNum.value = 12
+    selectedYear.value--
+  } else {
+    selectedMonthNum.value--
   }
-  return months
+}
+
+const goToNextMonth = () => {
+  if (selectedMonthNum.value === 12) {
+    selectedMonthNum.value = 1
+    selectedYear.value++
+  } else {
+    selectedMonthNum.value++
+  }
+}
+
+const isNextDisabled = computed(() => {
+  const current = new Date()
+  return selectedYear.value >= current.getFullYear() && selectedMonthNum.value >= current.getMonth() + 1
 })
 
 // Fetch all analytics data
@@ -74,8 +114,8 @@ onMounted(async () => {
   await fetchAnalytics()
 })
 
-// Watch for month changes
-watch(selectedMonth, () => {
+// Watch for month/year changes
+watch([selectedMonthNum, selectedYear], () => {
   fetchAnalytics()
 })
 
@@ -142,19 +182,48 @@ const getMemberColor = (index: number): string => {
         </div>
 
         <!-- Month selector -->
-        <div class="flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <button
+            class="p-2 border border-border-gray rounded-lg bg-background-black text-pure-white/60 hover:text-pure-white hover:border-cyber-blue/50 transition-colors"
+            @click="goToPreviousMonth"
+          >
+            <UIcon name="i-heroicons-chevron-left" class="w-5 h-5" />
+          </button>
+
           <select
-            v-model="selectedMonth"
-            class="px-4 py-2.5 border border-border-gray rounded-lg bg-background-black text-pure-white focus:outline-none focus:ring-2 focus:border-cyber-blue focus:ring-cyber-blue/30"
+            v-model.number="selectedMonthNum"
+            class="px-3 py-2 border border-border-gray rounded-lg bg-background-black text-pure-white focus:outline-none focus:ring-2 focus:border-cyber-blue focus:ring-cyber-blue/30"
           >
             <option
-              v-for="month in availableMonths"
-              :key="month.value"
-              :value="month.value"
+              v-for="m in monthOptions"
+              :key="m.value"
+              :value="m.value"
             >
-              {{ month.label }}
+              {{ m.label }}
             </option>
           </select>
+
+          <select
+            v-model.number="selectedYear"
+            class="px-3 py-2 border border-border-gray rounded-lg bg-background-black text-pure-white focus:outline-none focus:ring-2 focus:border-cyber-blue focus:ring-cyber-blue/30"
+          >
+            <option
+              v-for="y in yearOptions"
+              :key="y"
+              :value="y"
+            >
+              {{ y }}
+            </option>
+          </select>
+
+          <button
+            class="p-2 border border-border-gray rounded-lg bg-background-black transition-colors"
+            :class="isNextDisabled ? 'text-pure-white/20 cursor-not-allowed' : 'text-pure-white/60 hover:text-pure-white hover:border-cyber-blue/50'"
+            :disabled="isNextDisabled"
+            @click="goToNextMonth"
+          >
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5" />
+          </button>
         </div>
       </div>
     </header>

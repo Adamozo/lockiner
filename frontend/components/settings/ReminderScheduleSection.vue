@@ -154,6 +154,7 @@ onMounted(() => {
             :variant="isDirty ? 'primary' : 'secondary'"
             :loading="saving"
             :disabled="!isDirty"
+            size="sm"
             @click="handleSave"
           >
             Save Changes
@@ -162,16 +163,18 @@ onMounted(() => {
             v-if="isDirty"
             variant="ghost"
             :disabled="saving"
+            size="sm"
             @click="handleReset"
           >
             Reset
           </BaseButton>
           <BaseButton
-            variant="secondary"
+            variant="warning"
             :disabled="saving"
+            size="sm"
+            icon="i-heroicons-plus"
             @click="showAddDialog = true"
           >
-            <UIcon name="i-heroicons-plus" class="w-4 h-4 mr-1" />
             Add Reminder
           </BaseButton>
           <span v-if="!isDirty && !saving" class="text-xs text-pure-white/40">

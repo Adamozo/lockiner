@@ -1,6 +1,6 @@
 <script setup lang="ts">
 interface Props {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'danger' | 'warning' | 'ghost'
   size?: 'sm' | 'md' | 'lg'
   icon?: string
   loading?: boolean
@@ -27,8 +27,9 @@ const buttonClasses = computed(() => {
 
   const variants = {
     primary: 'bg-gradient-to-r from-cyber-blue to-electric-green text-background-black hover:shadow-xl hover:shadow-cyber-blue/30 hover:-translate-y-1',
-    secondary: 'border-2 border-border-gray bg-transparent text-pure-white hover:border-electric-green hover:shadow-lg hover:shadow-electric-green/20',
+    secondary: 'border-2 border-border-gray bg-background-black text-pure-white hover:border-electric-green hover:shadow-lg hover:shadow-electric-green/20',
     danger: 'bg-gradient-to-r from-danger-red to-pink-500 text-white hover:shadow-xl hover:shadow-danger-red/30 hover:-translate-y-1',
+    warning: 'bg-gradient-to-r from-warning-orange to-yellow-400 text-background-black hover:shadow-xl hover:shadow-warning-orange/30 hover:-translate-y-1',
     ghost: 'bg-transparent text-pure-white/70 hover:bg-white/5 hover:text-pure-white',
   }
 
