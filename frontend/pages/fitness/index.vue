@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FitnessStats } from '~/types/fitness'
+import type { MedicineStats, TodayDose } from '~/types/medicine'
 
 definePageMeta({
   layout: 'fitness',
@@ -12,6 +13,7 @@ useSeoMeta({
 
 const { workouts, recentWorkouts, completedWorkouts, fetchWorkouts } = useWorkouts()
 const { currentWeight, weightChange, sortedEntries, fetchEntries } = useWeight()
+const { todayDoses, fetchTodayDoses, markDose, fetchStats: fetchMedicineStats } = useMedicines()
 
 const stats = ref<FitnessStats>({
   total_workouts: 0,
@@ -21,19 +23,39 @@ const stats = ref<FitnessStats>({
   current_weight_kg: null,
   weight_change_kg: null,
 })
+const medicineStats = ref<MedicineStats>({
+  today_total: 0,
+  today_taken: 0,
+  weekly_adherence_pct: 100,
+  current_streak_days: 0,
+})
 const loading = ref(true)
 
 onMounted(async () => {
   try {
     const { fetchStats } = useWorkouts()
-    await Promise.all([fetchWorkouts(), fetchEntries()])
-    stats.value = await fetchStats()
+    await Promise.all([fetchWorkouts(), fetchEntries(), fetchTodayDoses()])
+    const [fitnessStatsData, medStatsData] = await Promise.all([
+      fetchStats(),
+      fetchMedicineStats().catch(() => medicineStats.value),
+    ])
+    stats.value = fitnessStatsData
+    medicineStats.value = medStatsData
   } catch {
     // Stats will remain at defaults
   } finally {
     loading.value = false
   }
 })
+
+const handleToggleDose = async (logId: number, taken: boolean) => {
+  try {
+    await markDose(logId, taken)
+    medicineStats.value = await fetchMedicineStats().catch(() => medicineStats.value)
+  } catch {
+    // silently fail
+  }
+}
 
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -63,7 +85,7 @@ const formatWeight = (kg: number) => {
 
     <template v-else>
       <!-- Stats cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <!-- Workouts This Week -->
         <div class="bg-card-black border border-border-gray rounded-lg p-6 relative overflow-hidden">
           <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-warning-orange to-electric-green" />
@@ -127,6 +149,39 @@ const formatWeight = (kg: number) => {
             </div>
           </div>
         </div>
+        <!-- Medicines Today -->
+        <div class="bg-card-black border border-border-gray rounded-lg p-6 relative overflow-hidden">
+          <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-cyber-blue to-purple-500" />
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-pure-white/60">Medicines Today</p>
+              <p class="mt-2 text-3xl font-bold text-cyber-blue">
+                {{ medicineStats.today_taken }}/{{ medicineStats.today_total }}
+              </p>
+              <p class="text-xs text-pure-white/40 mt-1">
+                {{ medicineStats.weekly_adherence_pct }}% weekly
+              </p>
+            </div>
+            <div class="p-3 bg-gradient-to-br from-cyber-blue/20 to-cyber-blue/5 rounded-full border border-cyber-blue/30">
+              <UIcon name="i-heroicons-beaker" class="w-8 h-8 text-cyber-blue" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today's Medicines -->
+      <div v-if="todayDoses.length > 0" class="bg-card-black border border-border-gray rounded-xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-pure-white">Today's Medicines</h2>
+          <NuxtLink to="/fitness/medicines" class="text-sm text-cyber-blue hover:text-cyber-blue/80 transition-colors">
+            View all
+          </NuxtLink>
+        </div>
+        <MedicineTodayBanner
+          :doses="todayDoses"
+          :loading="false"
+          @toggle="handleToggleDose"
+        />
       </div>
 
       <!-- Recent Workouts -->

@@ -67,6 +67,9 @@ from .fitness import Workout, Exercise, ExerciseSet, WeightEntry
 # Journal module models
 from .journal import JournalEntry, JournalItem, JournalReport
 
+# Medicine module models
+from .medicine import Medicine, MedicineSchedule, MedicineLog
+
 
 # ============================================================================
 # Indexes
@@ -157,6 +160,15 @@ Index("idx_journal_items_entry", JournalItem.entry_id)
 Index("idx_journal_items_category", JournalItem.category)
 Index("idx_journal_reports_user", JournalReport.user_id)
 
+# Medicine module indexes
+Index("idx_medicines_user", Medicine.user_id)
+Index("idx_medicines_active", Medicine.active)
+Index("idx_medicine_schedules_medicine", MedicineSchedule.medicine_id)
+Index("idx_medicine_schedules_active", MedicineSchedule.active)
+Index("idx_medicine_logs_medicine", MedicineLog.medicine_id)
+Index("idx_medicine_logs_schedule", MedicineLog.schedule_id)
+Index("idx_medicine_logs_date", MedicineLog.scheduled_date)
+
 
 # Export all models
 __all__ = [
@@ -210,4 +222,8 @@ __all__ = [
     "JournalEntry",
     "JournalItem",
     "JournalReport",
+    # Medicine
+    "Medicine",
+    "MedicineSchedule",
+    "MedicineLog",
 ]

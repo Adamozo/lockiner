@@ -6,6 +6,7 @@ const fitnessNavigation = [
   { label: 'Workouts', icon: 'i-heroicons-fire', to: '/fitness/workouts' },
   { label: 'Weight', icon: 'i-heroicons-scale', to: '/fitness/weight' },
   { label: 'Progress', icon: 'i-heroicons-chart-bar', to: '/fitness/progress' },
+  { label: 'Medicines', icon: 'i-heroicons-beaker', to: '/fitness/medicines' },
 ]
 
 // SSR-safe sidebar state using cookie

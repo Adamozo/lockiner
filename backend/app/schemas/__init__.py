@@ -200,6 +200,20 @@ from .journal import (
     CategoryReportData,
 )
 
+# Medicine schemas
+from .medicine import (
+    MedicineCreate,
+    MedicineUpdate,
+    MedicineResponse,
+    MedicineScheduleCreate,
+    MedicineScheduleUpdate,
+    MedicineScheduleResponse,
+    MedicineLogResponse,
+    MedicineLogMarkTaken,
+    TodayDoseResponse,
+    MedicineStatsResponse,
+)
+
 # Two-factor authentication schemas
 from .two_factor import (
     TwoFactorSetupResponse,
@@ -352,6 +366,17 @@ __all__ = [
     "TwoFactorRegenerateRequest",
     "TwoFactorRegenerateResponse",
     "LoginResponse",
+    # Medicine
+    "MedicineCreate",
+    "MedicineUpdate",
+    "MedicineResponse",
+    "MedicineScheduleCreate",
+    "MedicineScheduleUpdate",
+    "MedicineScheduleResponse",
+    "MedicineLogResponse",
+    "MedicineLogMarkTaken",
+    "TodayDoseResponse",
+    "MedicineStatsResponse",
     # Journal
     "JournalItemCreate",
     "JournalItemResponse",

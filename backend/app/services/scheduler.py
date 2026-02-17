@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from ..database import AsyncSessionLocal
 from ..repositories.notification_schedule import NotificationScheduleRepository
 from ..repositories.notification import NotificationRepository
+from ..repositories.medicine import MedicineScheduleRepository
 from ..config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -59,6 +60,8 @@ async def _check_and_send_reminders_inner():
     )
 
     async with AsyncSessionLocal() as db:
+        # Check medicine reminders
+        await _check_medicine_reminders(db, now, current_hour, current_minute, settings)
         schedule_repo = NotificationScheduleRepository(db)
         notification_repo = NotificationRepository(db)
 
@@ -176,6 +179,100 @@ async def _check_and_send_reminders_inner():
                         logger.warning(f"Push failed for user {schedule.user_id}: {e}")
                 except Exception as e:
                     logger.warning(f"Push error for user {schedule.user_id}: {e}")
+
+
+async def _check_medicine_reminders(db, now, current_hour, current_minute, settings):
+    """Check medicine schedules and send reminders for doses due now."""
+    from .medicine import MedicineService
+
+    schedule_repo = MedicineScheduleRepository(db)
+    notification_repo = NotificationRepository(db)
+
+    active_schedules = await schedule_repo.get_active_with_notifications()
+    if not active_schedules:
+        return
+
+    today = now.date()
+    time_str = f"{current_hour:02d}:{current_minute:02d}"
+
+    due_schedules = []
+    for schedule in active_schedules:
+        if schedule.time_of_day != time_str:
+            continue
+        if not MedicineService._is_schedule_due_on_date(schedule, today):
+            continue
+        due_schedules.append(schedule)
+
+    if not due_schedules:
+        return
+
+    logger.info(f"Found {len(due_schedules)} medicine reminder(s) to send")
+
+    # Try to import pywebpush once
+    webpush_available = False
+    webpush_func = None
+    WebPushException = None
+    vapid_key = settings.vapid_private_key_raw
+    if vapid_key:
+        try:
+            from pywebpush import webpush as _webpush, WebPushException as _WPE
+            webpush_func = _webpush
+            WebPushException = _WPE
+            webpush_available = True
+        except ImportError:
+            pass
+
+    for schedule in due_schedules:
+        medicine = schedule.medicine
+        if not medicine or not medicine.active:
+            continue
+
+        user_id = medicine.user_id
+        title = "Medicine Reminder"
+        body = f"Time to take {medicine.name}"
+        if medicine.dosage:
+            body += f" ({medicine.dosage}{medicine.unit or ''})"
+
+        # Create in-app notification
+        notification = await notification_repo.create_notification(
+            title=title,
+            body=body,
+            notification_type="reminder",
+            created_by_user_id=None,
+        )
+        await notification_repo.create_user_notifications(notification.id, [user_id])
+        logger.info(f"Created medicine reminder for '{medicine.name}', user {user_id}")
+
+        # Send web push
+        if not webpush_available:
+            continue
+
+        subscriptions = await notification_repo.get_push_subscriptions([user_id])
+        if not subscriptions:
+            continue
+
+        payload = json.dumps({"title": title, "body": body})
+
+        for sub in subscriptions:
+            try:
+                webpush_func(
+                    subscription_info={
+                        "endpoint": sub.endpoint,
+                        "keys": {"p256dh": sub.p256dh_key, "auth": sub.auth_key},
+                    },
+                    data=payload,
+                    vapid_private_key=vapid_key,
+                    vapid_claims={"sub": f"mailto:{settings.vapid_contact_email}"},
+                )
+                logger.info(f"Sent medicine push for '{medicine.name}' to user {user_id}")
+            except WebPushException as e:
+                if hasattr(e, "response") and e.response is not None and e.response.status_code == 410:
+                    await notification_repo.delete_push_subscription_by_endpoint(sub.endpoint)
+                    logger.info(f"Removed stale push subscription: {sub.endpoint[:50]}")
+                else:
+                    logger.warning(f"Medicine push failed for user {user_id}: {e}")
+            except Exception as e:
+                logger.warning(f"Medicine push error for user {user_id}: {e}")
 
 
 def start_scheduler():
