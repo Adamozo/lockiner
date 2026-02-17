@@ -13,6 +13,12 @@ useSeoMeta({
 const admin = useAdmin()
 const toast = useToast()
 
+function copyToClipboard(text: string) {
+  navigator.clipboard.writeText(text).then(() => {
+    toast.add({ title: 'Copied', description: 'Voucher code copied to clipboard', color: 'green' })
+  })
+}
+
 // Tab state
 const activeTab = ref<'vouchers' | 'users' | 'notifications'>('vouchers')
 
@@ -268,7 +274,7 @@ const statusColor = (status: string) => {
                     <button
                       class="p-1 rounded text-pure-white/30 hover:text-cyber-blue hover:bg-cyber-blue/10 transition-colors"
                       title="Copy full code"
-                      @click="navigator.clipboard.writeText(v.code); toast.add({ title: 'Copied', description: 'Voucher code copied to clipboard', color: 'green' })"
+                      @click="copyToClipboard(v.code)"
                     >
                       <UIcon name="i-heroicons-clipboard-document" class="w-3.5 h-3.5" />
                     </button>
