@@ -65,7 +65,8 @@ class NotificationService:
             )
 
         settings = get_settings()
-        if settings.vapid_private_key and subscriptions:
+        vapid_key = settings.vapid_private_key_raw
+        if vapid_key and subscriptions:
             try:
                 from pywebpush import webpush, WebPushException
 
@@ -82,7 +83,7 @@ class NotificationService:
                                 },
                             },
                             data=payload,
-                            vapid_private_key=settings.vapid_private_key,
+                            vapid_private_key=vapid_key,
                             vapid_claims={
                                 "sub": f"mailto:{settings.vapid_contact_email}",
                             },

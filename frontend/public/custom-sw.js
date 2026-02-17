@@ -8,14 +8,26 @@ self.addEventListener('push', (event) => {
       body: data.body,
       icon: '/pwa-icons/pwa-192x192.png',
       badge: '/pwa-icons/pwa-64x64.png',
-      data: { url: '/notifications' },
+      tag: data.tag || 'lockiner-notification',
+      renotify: true,
+      data: { url: data.url || '/notifications' },
     })
   )
 })
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
+  const targetUrl = event.notification.data?.url || '/notifications'
+
   event.waitUntil(
-    clients.openWindow(event.notification.data?.url || '/notifications')
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (new URL(client.url).origin === self.location.origin) {
+          client.navigate(targetUrl)
+          return client.focus()
+        }
+      }
+      return clients.openWindow(targetUrl)
+    })
   )
 })

@@ -2,10 +2,11 @@
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from zoneinfo import ZoneInfo
 
 from ..database import AsyncSessionLocal
 from ..repositories.notification_schedule import NotificationScheduleRepository
@@ -45,7 +46,9 @@ async def check_and_send_reminders():
 
 
 async def _check_and_send_reminders_inner():
-    now = datetime.now(timezone.utc)
+    settings = get_settings()
+    tz = ZoneInfo(settings.app_timezone)
+    now = datetime.now(tz)
     current_hour = now.hour
     current_minute = now.minute
     current_dow = now.weekday()  # 0=Mon..6=Sun
@@ -58,7 +61,6 @@ async def _check_and_send_reminders_inner():
     async with AsyncSessionLocal() as db:
         schedule_repo = NotificationScheduleRepository(db)
         notification_repo = NotificationRepository(db)
-        settings = get_settings()
 
         due_schedules = []
 
@@ -91,7 +93,8 @@ async def _check_and_send_reminders_inner():
         webpush_available = False
         webpush_func = None
         WebPushException = None
-        if settings.vapid_private_key:
+        vapid_key = settings.vapid_private_key_raw
+        if vapid_key:
             try:
                 from pywebpush import webpush as _webpush, WebPushException as _WPE
                 webpush_func = _webpush
@@ -157,7 +160,7 @@ async def _check_and_send_reminders_inner():
                             },
                         },
                         data=payload,
-                        vapid_private_key=settings.vapid_private_key,
+                        vapid_private_key=vapid_key,
                         vapid_claims={
                             "sub": f"mailto:{settings.vapid_contact_email}",
                         },
