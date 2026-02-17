@@ -262,7 +262,18 @@ const statusColor = (status: string) => {
                 :key="v.id"
                 class="border-b border-border-gray/50 hover:bg-background-black/30"
               >
-                <td class="px-4 py-3 font-mono text-xs text-pure-white/80">{{ v.code }}</td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-xs text-pure-white/80">{{ v.code.split('-')[0] }}<span class="text-pure-white/30">...</span></span>
+                    <button
+                      class="p-1 rounded text-pure-white/30 hover:text-cyber-blue hover:bg-cyber-blue/10 transition-colors"
+                      title="Copy full code"
+                      @click="navigator.clipboard.writeText(v.code); toast.add({ title: 'Copied', description: 'Voucher code copied to clipboard', color: 'green' })"
+                    >
+                      <UIcon name="i-heroicons-clipboard-document" class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </td>
                 <td class="px-4 py-3">
                   <span class="text-xs font-semibold uppercase" :class="statusColor(v.status)">{{ v.status }}</span>
                 </td>
