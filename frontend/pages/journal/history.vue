@@ -6,11 +6,16 @@ const router = useRouter()
 const { fetchEntries, entries, loading } = useJournal()
 
 const newEntryDate = ref('')
+const dateInputRef = ref<HTMLInputElement | null>(null)
 
 const goToDate = () => {
   if (newEntryDate.value) {
     router.push(`/journal/${newEntryDate.value}`)
   }
+}
+
+const openDatePicker = () => {
+  dateInputRef.value?.showPicker?.()
 }
 
 const now = new Date()
@@ -65,14 +70,16 @@ const nextMonth = () => {
       <h2 class="text-2xl font-bold text-pure-white">History</h2>
       <div class="flex items-center gap-2">
         <input
+          ref="dateInputRef"
           v-model="newEntryDate"
           type="date"
-          class="bg-background-black border border-border-gray rounded-lg px-3 py-2 text-sm text-pure-white focus:outline-none focus:border-cyber-blue/50 transition-colors"
+          @click="openDatePicker"
+          class="bg-background-black border border-border-gray rounded-lg px-3 py-2 text-sm text-pure-white focus:outline-none focus:border-cyber-blue/50 transition-colors cursor-pointer"
         />
         <button
           @click="goToDate"
           :disabled="!newEntryDate"
-          class="px-4 py-2 bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/30 rounded-lg hover:bg-cyber-blue/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm font-medium"
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-300 bg-gradient-to-r from-cyber-blue to-electric-green text-background-black shadow-lg shadow-electric-green/20 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           New Entry
         </button>
@@ -80,23 +87,20 @@ const nextMonth = () => {
     </div>
 
     <!-- Month Picker -->
-    <div class="flex items-center justify-between">
-      <div />
-      <div class="flex items-center gap-3">
-        <button
-          @click="prevMonth"
-          class="p-2 rounded-lg border border-border-gray text-pure-white/60 hover:text-pure-white hover:border-pure-white/30 transition-all"
-        >
-          <UIcon name="i-heroicons-chevron-left" class="w-5 h-5" />
-        </button>
-        <span class="text-pure-white font-medium min-w-[160px] text-center">{{ monthLabel }}</span>
-        <button
-          @click="nextMonth"
-          class="p-2 rounded-lg border border-border-gray text-pure-white/60 hover:text-pure-white hover:border-pure-white/30 transition-all"
-        >
-          <UIcon name="i-heroicons-chevron-right" class="w-5 h-5" />
-        </button>
-      </div>
+    <div class="flex items-center justify-center gap-3">
+      <button
+        @click="prevMonth"
+        class="p-2 rounded-lg border border-border-gray text-pure-white/60 hover:text-pure-white hover:border-pure-white/30 transition-all"
+      >
+        <UIcon name="i-heroicons-chevron-left" class="w-5 h-5" />
+      </button>
+      <span class="text-pure-white font-medium min-w-[160px] text-center">{{ monthLabel }}</span>
+      <button
+        @click="nextMonth"
+        class="p-2 rounded-lg border border-border-gray text-pure-white/60 hover:text-pure-white hover:border-pure-white/30 transition-all"
+      >
+        <UIcon name="i-heroicons-chevron-right" class="w-5 h-5" />
+      </button>
     </div>
 
     <!-- Entry List -->

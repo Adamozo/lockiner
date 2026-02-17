@@ -55,13 +55,13 @@ const handleKeydown = (e: KeyboardEvent) => {
       <div
         v-for="(item, index) in items"
         :key="index"
-        class="flex items-start gap-2 group"
+        class="flex items-center gap-2 group"
       >
-        <span class="text-pure-white/30 text-sm mt-0.5 w-4 text-right flex-shrink-0">{{ index + 1 }}.</span>
+        <span class="text-pure-white/30 text-sm w-4 text-right flex-shrink-0">{{ index + 1 }}.</span>
         <p class="flex-1 text-pure-white/80 text-sm">{{ item.content }}</p>
         <button
           @click="removeItem(index)"
-          class="text-danger-red/60 hover:text-danger-red transition-all p-0.5"
+          class="p-2 rounded-lg border border-danger-red/30 text-danger-red/60 hover:text-danger-red hover:border-danger-red/60 hover:bg-danger-red/10 transition-all flex-shrink-0"
         >
           <UIcon name="i-heroicons-x-mark" class="w-4 h-4" />
         </button>

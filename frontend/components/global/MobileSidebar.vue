@@ -14,6 +14,7 @@ const modules: ModuleItem[] = [
   { name: 'Fitness', icon: 'i-heroicons-fire', to: '/fitness' },
   { name: 'Skills', icon: 'i-heroicons-academic-cap', to: '/skills' },
   { name: 'Food', icon: 'i-heroicons-shopping-cart', to: '/food' },
+  { name: 'Journal', icon: 'i-heroicons-book-open', to: '/journal' },
 ]
 
 const route = useRoute()

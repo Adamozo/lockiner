@@ -30,7 +30,7 @@ onMounted(async () => {
       <h2 class="text-2xl font-bold text-pure-white">Journal Dashboard</h2>
       <NuxtLink
         :to="`/journal/today`"
-        class="px-4 py-2 bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/30 rounded-lg hover:bg-cyber-blue/20 transition-all text-sm font-medium"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-300 bg-gradient-to-r from-cyber-blue to-electric-green text-background-black shadow-lg shadow-electric-green/20 hover:opacity-90"
       >
         Write Today
       </NuxtLink>
@@ -70,7 +70,7 @@ onMounted(async () => {
         <p class="text-pure-white/40 mb-4">No journal entries yet</p>
         <NuxtLink
           to="/journal/today"
-          class="inline-block px-4 py-2 bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/30 rounded-lg hover:bg-cyber-blue/20 transition-all text-sm"
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-300 bg-gradient-to-r from-cyber-blue to-electric-green text-background-black shadow-lg shadow-electric-green/20 hover:opacity-90"
         >
           Write your first entry
         </NuxtLink>

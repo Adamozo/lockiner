@@ -129,7 +129,7 @@ const formatPeriod = (type: string, period: string) => {
         <button
           @click="handleGenerate"
           :disabled="loadingGenerate"
-          class="px-4 py-2 bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/30 rounded-lg hover:bg-cyber-blue/20 disabled:opacity-50 transition-all text-sm font-medium"
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-300 bg-gradient-to-r from-cyber-blue to-electric-green text-background-black shadow-lg shadow-electric-green/20 hover:opacity-90 disabled:opacity-50"
         >
           {{ loadingGenerate ? 'Generating...' : 'Generate' }}
         </button>

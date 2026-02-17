@@ -157,28 +157,53 @@ onUnmounted(() => {
 <template>
   <div class="max-w-3xl mx-auto space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-2xl font-bold text-pure-white">{{ formatDateDisplay(date) }}</h2>
-        <div class="flex items-center gap-2 mt-1">
-          <span v-if="isSaving" class="text-xs text-cyber-blue animate-pulse">Saving...</span>
-          <span v-else-if="hasUnsavedChanges" class="text-xs text-warning-orange">Unsaved changes</span>
-          <span v-else-if="!isNew" class="text-xs text-electric-green">Saved</span>
+    <div>
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-bold text-pure-white">{{ formatDateDisplay(date) }}</h2>
+          <div class="flex items-center gap-2 mt-1">
+            <span v-if="isSaving" class="text-xs text-cyber-blue animate-pulse">Saving...</span>
+            <span v-else-if="hasUnsavedChanges" class="text-xs text-warning-orange">Unsaved changes</span>
+            <span v-else-if="!isNew" class="text-xs text-electric-green">Saved</span>
+          </div>
+        </div>
+        <!-- Desktop buttons -->
+        <div class="hidden md:flex gap-2">
+          <button
+            v-if="!isNew"
+            @click="handleDelete"
+            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-300 bg-gradient-to-r from-danger-red to-pink-500 text-white shadow-lg shadow-danger-red/30"
+          >
+            <UIcon name="i-heroicons-trash" class="w-4 h-4" />
+            Delete
+          </button>
+          <button
+            @click="saveEntry"
+            :disabled="isSaving"
+            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-300 bg-gradient-to-r from-electric-green to-cyan-400 text-background-black shadow-lg shadow-electric-green/30 disabled:opacity-50"
+          >
+            <UIcon name="i-heroicons-check" class="w-4 h-4" />
+            {{ isSaving ? 'Saving...' : 'Save Now' }}
+          </button>
         </div>
       </div>
-      <div class="flex gap-2">
+
+      <!-- Mobile buttons -->
+      <div class="flex gap-3 mt-4 md:hidden">
         <button
           v-if="!isNew"
           @click="handleDelete"
-          class="px-3 py-2 text-sm text-danger-red/70 hover:text-danger-red border border-danger-red/20 hover:border-danger-red/40 rounded-lg transition-all"
+          class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all duration-300 bg-gradient-to-r from-danger-red to-pink-500 text-white shadow-lg shadow-danger-red/30"
         >
+          <UIcon name="i-heroicons-trash" class="w-5 h-5" />
           Delete
         </button>
         <button
           @click="saveEntry"
           :disabled="isSaving"
-          class="px-4 py-2 text-sm bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/30 rounded-lg hover:bg-cyber-blue/20 disabled:opacity-50 transition-all font-medium"
+          class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all duration-300 bg-gradient-to-r from-electric-green to-cyan-400 text-background-black shadow-lg shadow-electric-green/30 disabled:opacity-50"
         >
+          <UIcon name="i-heroicons-check" class="w-5 h-5" />
           {{ isSaving ? 'Saving...' : 'Save Now' }}
         </button>
       </div>
