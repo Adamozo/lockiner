@@ -64,6 +64,9 @@ from .notification import Notification, UserNotification, PushSubscription, Noti
 # Fitness module models
 from .fitness import Workout, Exercise, ExerciseSet, WeightEntry
 
+# Journal module models
+from .journal import JournalEntry, JournalItem, JournalReport
+
 
 # ============================================================================
 # Indexes
@@ -147,6 +150,13 @@ Index("idx_exercise_sets_exercise", ExerciseSet.exercise_id)
 Index("idx_weight_entries_user", WeightEntry.user_id)
 Index("idx_weight_entries_date", WeightEntry.date)
 
+# Journal module indexes
+Index("idx_journal_entries_user", JournalEntry.user_id)
+Index("idx_journal_entries_date", JournalEntry.date)
+Index("idx_journal_items_entry", JournalItem.entry_id)
+Index("idx_journal_items_category", JournalItem.category)
+Index("idx_journal_reports_user", JournalReport.user_id)
+
 
 # Export all models
 __all__ = [
@@ -196,4 +206,8 @@ __all__ = [
     "Exercise",
     "ExerciseSet",
     "WeightEntry",
+    # Journal
+    "JournalEntry",
+    "JournalItem",
+    "JournalReport",
 ]

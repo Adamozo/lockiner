@@ -186,6 +186,20 @@ from .notification_schedule import (
     CustomReminderCreate,
 )
 
+# Journal schemas
+from .journal import (
+    JournalItemCreate,
+    JournalItemResponse,
+    JournalEntryCreate,
+    JournalEntryUpdate,
+    JournalEntryResponse,
+    JournalStatsResponse,
+    ReportGenerateRequest,
+    JournalReportResponse,
+    ReportData,
+    CategoryReportData,
+)
+
 # Two-factor authentication schemas
 from .two_factor import (
     TwoFactorSetupResponse,
@@ -338,4 +352,15 @@ __all__ = [
     "TwoFactorRegenerateRequest",
     "TwoFactorRegenerateResponse",
     "LoginResponse",
+    # Journal
+    "JournalItemCreate",
+    "JournalItemResponse",
+    "JournalEntryCreate",
+    "JournalEntryUpdate",
+    "JournalEntryResponse",
+    "JournalStatsResponse",
+    "ReportGenerateRequest",
+    "JournalReportResponse",
+    "ReportData",
+    "CategoryReportData",
 ]

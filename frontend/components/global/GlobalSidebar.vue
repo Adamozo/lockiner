@@ -45,6 +45,12 @@ const modules: ModuleItem[] = [
     to: "/food",
     color: "electric-green",
   },
+  {
+    name: "Journal",
+    icon: "i-heroicons-book-open",
+    to: "/journal",
+    color: "cyber-blue",
+  },
 ];
 
 const route = useRoute();
