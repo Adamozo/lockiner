@@ -3,7 +3,7 @@ const { isInstallable, isInstalled, isIOSSafari, isDismissed, installApp, dismis
 
 const showBanner = computed(() => {
   if (isInstalled.value || isDismissed.value) return false
-  return isInstallable.value || isIOSSafari.value || !isInstalled.value
+  return isInstallable.value || isIOSSafari.value
 })
 
 const isInstalling = ref(false)
