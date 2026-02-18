@@ -3,7 +3,7 @@
  * Handles notification API calls and push subscription
  */
 
-import type { NotificationItem, UnreadCountResponse } from '~/types/api'
+import type { NotificationItem, UnreadCountResponse, DevicePushSubscription } from '~/types/api'
 
 export const useNotifications = () => {
   const api = useApi()
@@ -74,6 +74,25 @@ export const useNotifications = () => {
     }
   }
 
+  const fetchSubscriptions = async (): Promise<DevicePushSubscription[]> => {
+    return await api<DevicePushSubscription[]>('/api/v1/notifications/subscriptions')
+  }
+
+  const deleteSubscription = async (id: number): Promise<void> => {
+    await api(`/api/v1/notifications/subscriptions/${id}`, { method: 'DELETE' })
+  }
+
+  const getCurrentEndpoint = async (): Promise<string | null> => {
+    try {
+      if (!('serviceWorker' in navigator)) return null
+      const registration = await navigator.serviceWorker.ready
+      const sub = await registration.pushManager.getSubscription()
+      return sub?.endpoint ?? null
+    } catch {
+      return null
+    }
+  }
+
   return {
     unreadCount,
     fetchNotifications,
@@ -83,6 +102,9 @@ export const useNotifications = () => {
     markAllAsRead,
     deleteNotification,
     subscribeToPush,
+    fetchSubscriptions,
+    deleteSubscription,
+    getCurrentEndpoint,
   }
 }
 

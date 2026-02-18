@@ -45,3 +45,12 @@ class PushSubscribeRequest(BaseModel):
     endpoint: str
     p256dh: str
     auth: str
+
+
+class PushSubscriptionResponse(BaseModel):
+    """Push subscription info returned to the user."""
+    id: int
+    endpoint: str
+    created_at: str
+
+    model_config = ConfigDict(from_attributes=True)

@@ -676,6 +676,15 @@ export interface UnreadCountResponse {
   count: number
 }
 
+/**
+ * DevicePushSubscription - Active push subscription for a user device
+ */
+export interface DevicePushSubscription {
+  id: number
+  endpoint: string
+  created_at: string
+}
+
 // ============================================
 // Admin Types
 // ============================================

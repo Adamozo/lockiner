@@ -12,6 +12,8 @@ useSeoMeta({
 
 const { fetchNotifications, fetchUnreadCount, markAsRead, markAsUnread, markAllAsRead, deleteNotification } = useNotifications()
 
+const activeTab = ref<'notifications' | 'devices'>('notifications')
+
 const notifications = ref<NotificationItem[]>([])
 const loading = ref(true)
 const loadingMore = ref(false)
@@ -87,9 +89,10 @@ const typeColor = (type: string) => {
   }
 }
 
+const unreadCount = computed(() => notifications.value.filter(n => n.status === 'unread').length)
+
 onMounted(async () => {
   await loadNotifications()
-  // Auto-mark all as read when visiting
   await markAllAsRead()
 })
 </script>
@@ -103,7 +106,7 @@ onMounted(async () => {
         <p class="mt-1 text-pure-white/60">Your notification center</p>
       </div>
       <button
-        v-if="notifications.some(n => n.status === 'unread')"
+        v-if="activeTab === 'notifications' && notifications.some(n => n.status === 'unread')"
         @click="handleMarkAllRead"
         class="px-4 py-2 text-sm bg-cyber-blue/10 border border-cyber-blue/30 rounded-lg text-cyber-blue hover:bg-cyber-blue/20 transition-colors"
       >
@@ -111,84 +114,125 @@ onMounted(async () => {
       </button>
     </header>
 
-    <!-- Loading -->
-    <div v-if="loading" class="space-y-4">
-      <div v-for="i in 5" :key="i" class="bg-card-black border border-border-gray rounded-xl p-4 animate-pulse">
-        <div class="h-4 bg-border-gray rounded w-1/3 mb-2" />
-        <div class="h-3 bg-border-gray rounded w-2/3" />
-      </div>
-    </div>
-
-    <!-- Empty state -->
-    <div v-else-if="notifications.length === 0" class="text-center py-16">
-      <UIcon name="i-heroicons-bell-slash" class="w-16 h-16 text-pure-white/20 mx-auto mb-4" />
-      <p class="text-pure-white/40 text-lg">No notifications yet</p>
-    </div>
-
-    <!-- Notification list -->
-    <div v-else class="space-y-3">
-      <div
-        v-for="item in notifications"
-        :key="item.id"
-        class="bg-card-black border rounded-xl p-4 transition-all duration-200"
-        :class="item.status === 'unread'
-          ? 'border-cyber-blue/30 bg-cyber-blue/5'
-          : 'border-border-gray'"
+    <!-- Tabs -->
+    <div class="flex gap-1 bg-card-black border border-border-gray rounded-xl p-1">
+      <button
+        class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200"
+        :class="activeTab === 'notifications'
+          ? 'bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/30 shadow-[0_0_12px_rgba(0,178,255,0.1)]'
+          : 'text-pure-white/40 hover:text-pure-white/70 border border-transparent'"
+        @click="activeTab = 'notifications'"
       >
-        <div class="flex items-start gap-3">
-          <!-- Type icon -->
-          <div class="flex-shrink-0 mt-0.5">
-            <UIcon :name="typeIcon(item.notification_type)" class="w-5 h-5" :class="typeColor(item.notification_type)" />
-          </div>
+        <UIcon name="i-heroicons-bell" class="w-4 h-4" />
+        Notifications
+        <span
+          v-if="unreadCount > 0"
+          class="ml-0.5 text-xs font-bold rounded-full px-1.5 py-0.5 leading-none transition-colors"
+          :class="activeTab === 'notifications'
+            ? 'bg-cyber-blue text-background-black'
+            : 'bg-pure-white/20 text-pure-white/60'"
+        >
+          {{ unreadCount }}
+        </span>
+      </button>
+      <button
+        class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200"
+        :class="activeTab === 'devices'
+          ? 'bg-electric-green/10 text-electric-green border border-electric-green/30 shadow-[0_0_12px_rgba(0,255,128,0.08)]'
+          : 'text-pure-white/40 hover:text-pure-white/70 border border-transparent'"
+        @click="activeTab = 'devices'"
+      >
+        <UIcon name="i-heroicons-device-phone-mobile" class="w-4 h-4" />
+        Devices
+      </button>
+    </div>
 
-          <!-- Content -->
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2">
-              <h3
-                class="text-sm truncate"
-                :class="item.status === 'unread' ? 'font-bold text-pure-white' : 'font-medium text-pure-white/70'"
-              >
-                {{ item.title }}
-              </h3>
-              <div v-if="item.status === 'unread'" class="w-2 h-2 bg-cyber-blue rounded-full flex-shrink-0" />
-            </div>
-            <p class="text-sm text-pure-white/50 mt-1">{{ item.body }}</p>
-            <p class="text-xs text-pure-white/30 mt-2">{{ formatDate(item.created_at) }}</p>
-          </div>
-
-          <!-- Actions -->
-          <div class="flex items-center gap-1 flex-shrink-0">
-            <button
-              @click="handleToggleRead(item)"
-              class="p-1.5 rounded-lg text-pure-white/40 hover:text-pure-white hover:bg-background-black/50 transition-colors"
-              :title="item.status === 'unread' ? 'Mark as read' : 'Mark as unread'"
-            >
-              <UIcon
-                :name="item.status === 'unread' ? 'i-heroicons-envelope-open' : 'i-heroicons-envelope'"
-                class="w-4 h-4"
-              />
-            </button>
-            <button
-              @click="handleDelete(item)"
-              class="p-1.5 rounded-lg text-pure-white/40 hover:text-danger-red hover:bg-danger-red/10 transition-colors"
-              title="Delete"
-            >
-              <UIcon name="i-heroicons-trash" class="w-4 h-4" />
-            </button>
-          </div>
+    <!-- Tab: Notifications -->
+    <div v-if="activeTab === 'notifications'">
+      <!-- Loading -->
+      <div v-if="loading" class="space-y-4">
+        <div v-for="i in 5" :key="i" class="bg-card-black border border-border-gray rounded-xl p-4 animate-pulse">
+          <div class="h-4 bg-border-gray rounded w-1/3 mb-2" />
+          <div class="h-3 bg-border-gray rounded w-2/3" />
         </div>
       </div>
 
-      <!-- Load more -->
-      <div v-if="hasMore" class="text-center pt-4">
-        <button
-          @click="loadMore"
-          :disabled="loadingMore"
-          class="px-6 py-2 text-sm bg-card-black border border-border-gray rounded-lg text-pure-white/60 hover:text-pure-white hover:border-cyber-blue/30 transition-colors disabled:opacity-50"
-        >
-          {{ loadingMore ? 'Loading...' : 'Load more' }}
-        </button>
+      <!-- Empty state -->
+      <div v-else-if="notifications.length === 0" class="text-center py-16">
+        <UIcon name="i-heroicons-bell-slash" class="w-16 h-16 text-pure-white/20 mx-auto mb-4" />
+        <p class="text-pure-white/40 text-lg">No notifications yet</p>
       </div>
+
+      <!-- Notification list -->
+      <div v-else class="space-y-3">
+        <div
+          v-for="item in notifications"
+          :key="item.id"
+          class="bg-card-black border rounded-xl p-4 transition-all duration-200"
+          :class="item.status === 'unread'
+            ? 'border-cyber-blue/30 bg-cyber-blue/5'
+            : 'border-border-gray'"
+        >
+          <div class="flex items-start gap-3">
+            <!-- Type icon -->
+            <div class="flex-shrink-0 mt-0.5">
+              <UIcon :name="typeIcon(item.notification_type)" class="w-5 h-5" :class="typeColor(item.notification_type)" />
+            </div>
+
+            <!-- Content -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <h3
+                  class="text-sm truncate"
+                  :class="item.status === 'unread' ? 'font-bold text-pure-white' : 'font-medium text-pure-white/70'"
+                >
+                  {{ item.title }}
+                </h3>
+                <div v-if="item.status === 'unread'" class="w-2 h-2 bg-cyber-blue rounded-full flex-shrink-0" />
+              </div>
+              <p class="text-sm text-pure-white/50 mt-1">{{ item.body }}</p>
+              <p class="text-xs text-pure-white/30 mt-2">{{ formatDate(item.created_at) }}</p>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <button
+                @click="handleToggleRead(item)"
+                class="p-1.5 rounded-lg text-pure-white/40 hover:text-pure-white hover:bg-background-black/50 transition-colors"
+                :title="item.status === 'unread' ? 'Mark as read' : 'Mark as unread'"
+              >
+                <UIcon
+                  :name="item.status === 'unread' ? 'i-heroicons-envelope-open' : 'i-heroicons-envelope'"
+                  class="w-4 h-4"
+                />
+              </button>
+              <button
+                @click="handleDelete(item)"
+                class="p-1.5 rounded-lg text-pure-white/40 hover:text-danger-red hover:bg-danger-red/10 transition-colors"
+                title="Delete"
+              >
+                <UIcon name="i-heroicons-trash" class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Load more -->
+        <div v-if="hasMore" class="text-center pt-4">
+          <button
+            @click="loadMore"
+            :disabled="loadingMore"
+            class="px-6 py-2 text-sm bg-card-black border border-border-gray rounded-lg text-pure-white/60 hover:text-pure-white hover:border-cyber-blue/30 transition-colors disabled:opacity-50"
+          >
+            {{ loadingMore ? 'Loading...' : 'Load more' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Devices -->
+    <div v-else-if="activeTab === 'devices'">
+      <NotificationsPushDevicesSection />
     </div>
   </div>
 </template>

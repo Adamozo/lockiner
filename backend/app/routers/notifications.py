@@ -13,7 +13,9 @@ from ..schemas.notification import (
     SendNotificationRequest,
     SendNotificationResponse,
     PushSubscribeRequest,
+    PushSubscriptionResponse,
 )
+from ..repositories.notification import NotificationRepository
 from ..services.notification import NotificationService
 from ..config import get_settings
 
@@ -50,6 +52,33 @@ async def unsubscribe_push(
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subscription not found")
     return {"status": "unsubscribed"}
+
+
+# ============================================================================
+# Push Subscription Management (list / revoke by ID)
+# ============================================================================
+
+@router.get("/subscriptions", response_model=List[PushSubscriptionResponse])
+async def list_push_subscriptions(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all active push subscriptions for the current user."""
+    repo = NotificationRepository(db)
+    return await repo.get_user_push_subscriptions(current_user.id)
+
+
+@router.delete("/subscriptions/{subscription_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_push_subscription_by_id(
+    subscription_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Revoke a push subscription by ID (user can only revoke their own)."""
+    repo = NotificationRepository(db)
+    deleted = await repo.delete_push_subscription_by_id(current_user.id, subscription_id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subscription not found")
 
 
 # ============================================================================

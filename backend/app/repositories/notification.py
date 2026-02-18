@@ -2,7 +2,7 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 from ..models.notification import Notification, UserNotification, PushSubscription
 from ..models.base import utc_now
@@ -200,6 +200,26 @@ class NotificationRepository:
             delete(PushSubscription).filter(
                 PushSubscription.user_id == user_id,
                 PushSubscription.endpoint == endpoint,
+            )
+        )
+        await self.db.commit()
+        return result.rowcount > 0
+
+    async def get_user_push_subscriptions(self, user_id: int) -> List[PushSubscription]:
+        """Get all push subscriptions for a single user, newest first."""
+        result = await self.db.execute(
+            select(PushSubscription)
+            .filter(PushSubscription.user_id == user_id)
+            .order_by(PushSubscription.created_at.desc())
+        )
+        return list(result.scalars().all())
+
+    async def delete_push_subscription_by_id(self, user_id: int, subscription_id: int) -> bool:
+        """Delete a push subscription by its ID (ownership enforced by user_id)."""
+        result = await self.db.execute(
+            delete(PushSubscription).filter(
+                PushSubscription.id == subscription_id,
+                PushSubscription.user_id == user_id,
             )
         )
         await self.db.commit()
