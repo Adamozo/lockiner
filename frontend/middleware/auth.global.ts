@@ -7,7 +7,7 @@
 import { useAuthStore } from '~/stores/auth'
 
 // Routes that don't require authentication
-const publicRoutes = ['/', '/login', '/register', '/privacy-policy', '/terms']
+const publicRoutes = ['/', '/login', '/register', '/privacy-policy', '/terms', '/changelog']
 
 // Routes that start with these prefixes are also public
 const publicPrefixes = ['/join/']

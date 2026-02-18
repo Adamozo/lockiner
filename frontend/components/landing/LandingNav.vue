@@ -16,10 +16,22 @@
         </NuxtLink>
         <div class="flex items-center gap-2 sm:gap-4">
           <NuxtLink
+            to="/changelog"
+            class="hidden sm:inline text-pure-white/50 hover:text-pure-white transition-colors text-sm font-medium"
+          >
+            Changelog
+          </NuxtLink>
+          <NuxtLink
             to="/login"
             class="hidden sm:inline text-pure-white/70 hover:text-pure-white transition-colors font-medium"
           >
             Sign in
+          </NuxtLink>
+          <NuxtLink
+            to="/changelog"
+            class="sm:hidden text-pure-white/50 hover:text-pure-white transition-colors text-sm font-medium"
+          >
+            Changelog
           </NuxtLink>
           <NuxtLink
             to="/login"

@@ -14,6 +14,10 @@ useSeoMeta({
     <LandingNav />
     <LandingHero />
     <LandingFeatures />
+    <LandingFinance />
+    <LandingFitness />
+    <LandingFood />
+    <LandingJournal />
     <LandingFooter />
   </div>
 </template>

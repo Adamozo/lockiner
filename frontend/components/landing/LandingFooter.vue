@@ -29,9 +29,16 @@
             >
               Terms of Service
             </NuxtLink>
+            <span class="text-pure-white/20">|</span>
+            <NuxtLink
+              to="/changelog"
+              class="text-pure-white/40 text-sm hover:text-cyber-blue transition-colors"
+            >
+              Changelog
+            </NuxtLink>
           </div>
           <p class="text-pure-white/30 text-xs">
-            &copy; {{ new Date().getFullYear() }} MAKE IT REMOTE Adam Naworski
+            &copy; {{ new Date().getFullYear() }} MAKE IT REMOTE
           </p>
         </div>
       </div>
