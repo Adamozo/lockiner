@@ -2,6 +2,7 @@
 const { needRefresh, refreshApp, dismissUpdate } = usePWAInstall()
 
 const isUpdating = ref(false)
+const isPWA = import.meta.client && window.matchMedia('(display-mode: standalone)').matches
 
 const handleUpdate = async () => {
   isUpdating.value = true
@@ -18,7 +19,7 @@ const handleUpdate = async () => {
 <template>
   <Transition name="slide-down">
     <div
-      v-if="needRefresh"
+      v-if="needRefresh && isPWA"
       class="fixed top-4 left-4 right-4 z-50 md:left-auto md:right-4 md:max-w-md"
     >
       <div
