@@ -76,6 +76,9 @@ from .backup import BackupSettings, HouseholdBackupSettings
 # Todo module models
 from .todo import TodoList, TodoItem, TodoPostponeLog, TodoNotificationRule
 
+# Shopping module models
+from .shopping import ShoppingList, ShoppingListItem
+
 
 # ============================================================================
 # Indexes
@@ -190,6 +193,14 @@ Index("idx_todo_postpone_logs_user", TodoPostponeLog.user_id)
 Index("idx_todo_notification_rules_user", TodoNotificationRule.user_id)
 Index("idx_todo_notification_rules_enabled", TodoNotificationRule.enabled)
 
+# Shopping module indexes
+Index("idx_shopping_lists_owner", ShoppingList.owner_id)
+Index("idx_shopping_lists_household", ShoppingList.household_id)
+Index("idx_shopping_lists_status", ShoppingList.status)
+Index("idx_shopping_list_items_list", ShoppingListItem.list_id)
+Index("idx_shopping_list_items_added_by", ShoppingListItem.added_by)
+Index("idx_shopping_list_items_status", ShoppingListItem.status)
+
 
 # Export all models
 __all__ = [
@@ -255,4 +266,7 @@ __all__ = [
     "TodoItem",
     "TodoPostponeLog",
     "TodoNotificationRule",
+    # Shopping
+    "ShoppingList",
+    "ShoppingListItem",
 ]

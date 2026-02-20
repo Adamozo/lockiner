@@ -46,9 +46,33 @@ const badgeConfig: Record<BadgeVariant, { label: string; classes: string }> = {
 
 const releases: ChangelogRelease[] = [
   {
-    version: "Alpha 0.10",
+    version: "Alpha 0.11",
     date: "20 February 2026",
     tag: "Current",
+    highlight: "Shopping Lists — collaborative shopping with household sharing",
+    changes: [
+      {
+        date: "20 Feb 2026",
+        label: "Shopping Lists",
+        badge: "new",
+        items: [
+          "Standalone Shopping module — lists can be for any store type (grocery, hardware, etc.)",
+          "Create lists with optional store name and planned date",
+          "Private lists (owner only) or household-shared lists (all active household members have equal access)",
+          "3-state item status cycle: Pending → In Cart → Purchased — tap the icon to advance",
+          "Items grouped by category with purchased items collapsed into a separate section",
+          "Progress bar showing purchased / total items, with in-cart count displayed separately",
+          "Quick-add form with optional details: quantity, unit, category and note",
+          "Inline editing of list name and store name directly on the detail page",
+          "Mark list as Completed to archive it; Completed lists have a dedicated view",
+        ],
+      },
+    ],
+  },
+  {
+    version: "Alpha 0.10",
+    date: "20 February 2026",
+    tag: "",
     highlight: "Backup & Data Export with Google Drive integration",
     changes: [
       {

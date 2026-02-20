@@ -34,6 +34,7 @@ class HouseholdMemberResponse(BaseModel):
 
 class HouseholdResponse(HouseholdBase):
     """Schema for household response."""
+    id: int
     uid: str
     created_at: str
     updated_at: Optional[str] = None

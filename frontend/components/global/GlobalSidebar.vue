@@ -57,6 +57,12 @@ const modules: ModuleItem[] = [
     to: "/todo",
     color: "electric-green",
   },
+  {
+    name: "Shopping",
+    icon: "i-heroicons-shopping-bag",
+    to: "/shopping",
+    color: "warning-orange",
+  },
 ];
 
 const route = useRoute();

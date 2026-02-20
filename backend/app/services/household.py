@@ -93,6 +93,7 @@ class HouseholdService:
                 )
 
         base_data = {
+            "id": household.id,
             "uid": household.uid,
             "name": household.name,
             "description": household.description,
@@ -122,6 +123,7 @@ class HouseholdService:
 
             result.append(
                 HouseholdResponse(
+                    id=household.id,
                     uid=household.uid,
                     name=household.name,
                     description=household.description,
@@ -173,6 +175,7 @@ class HouseholdService:
         await self.repository.add_member(member)
 
         return HouseholdResponse(
+            id=household.id,
             uid=household.uid,
             name=household.name,
             description=household.description,
@@ -211,6 +214,7 @@ class HouseholdService:
         member_count = await self.repository.count_members(household.id)
 
         return HouseholdResponse(
+            id=household.id,
             uid=household.uid,
             name=household.name,
             description=household.description,
