@@ -33,6 +33,14 @@ class Settings(BaseSettings):
     # Timezone for reminder schedules (IANA format)
     app_timezone: str = "Europe/Warsaw"
 
+    # Frontend URL (for OAuth redirects back to the UI)
+    frontend_url: str = "http://localhost:3000"
+
+    # Google OAuth for Drive backup
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+    google_redirect_uri: str = "http://localhost:8000/api/v1/backup/google-drive/callback"
+
     @computed_field
     @property
     def vapid_private_key_raw(self) -> str:

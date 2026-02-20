@@ -200,6 +200,14 @@ from .journal import (
     CategoryReportData,
 )
 
+# Backup schemas
+from .backup import (
+    BackupScheduleUpdate,
+    BackupPasswordSet,
+    BackupSettingsResponse,
+    HouseholdBackupSettingsResponse,
+)
+
 # Medicine schemas
 from .medicine import (
     MedicineCreate,
@@ -377,6 +385,11 @@ __all__ = [
     "MedicineLogMarkTaken",
     "TodayDoseResponse",
     "MedicineStatsResponse",
+    # Backup
+    "BackupScheduleUpdate",
+    "BackupPasswordSet",
+    "BackupSettingsResponse",
+    "HouseholdBackupSettingsResponse",
     # Journal
     "JournalItemCreate",
     "JournalItemResponse",

@@ -56,7 +56,7 @@ export default defineNuxtConfig({
 
   // PWA configuration
   pwa: {
-    registerType: 'prompt',
+    registerType: 'autoUpdate',
     includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
     manifest: {
       name: 'LockIner - Lock In and Improve',

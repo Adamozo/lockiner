@@ -118,6 +118,15 @@ body {
   scrollbar-width: thin;
 }
 
+/* Hide scrollbar (keep scrollability) */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Skeleton loader utility */
 .skeleton {
   background: linear-gradient(

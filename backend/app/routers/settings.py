@@ -124,7 +124,7 @@ async def delete_api_provider(
 # Notification Schedule Endpoints
 # ========================================================================
 
-VALID_REMINDER_TYPES = {"workout", "weight", "receipt", "finance"}
+VALID_REMINDER_TYPES = {"workout", "weight", "receipt", "finance", "backup"}
 
 
 def _is_valid_reminder_type(reminder_type: str) -> bool:

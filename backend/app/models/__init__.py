@@ -70,6 +70,9 @@ from .journal import JournalEntry, JournalItem, JournalReport
 # Medicine module models
 from .medicine import Medicine, MedicineSchedule, MedicineLog
 
+# Backup module models
+from .backup import BackupSettings, HouseholdBackupSettings
+
 
 # ============================================================================
 # Indexes
@@ -169,6 +172,10 @@ Index("idx_medicine_logs_medicine", MedicineLog.medicine_id)
 Index("idx_medicine_logs_schedule", MedicineLog.schedule_id)
 Index("idx_medicine_logs_date", MedicineLog.scheduled_date)
 
+# Backup module indexes
+Index("idx_backup_settings_user", BackupSettings.user_id)
+Index("idx_household_backup_settings_household", HouseholdBackupSettings.household_id)
+
 
 # Export all models
 __all__ = [
@@ -226,4 +233,7 @@ __all__ = [
     "Medicine",
     "MedicineSchedule",
     "MedicineLog",
+    # Backup
+    "BackupSettings",
+    "HouseholdBackupSettings",
 ]

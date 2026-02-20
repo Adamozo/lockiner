@@ -46,9 +46,49 @@ const badgeConfig: Record<BadgeVariant, { label: string; classes: string }> = {
 
 const releases: ChangelogRelease[] = [
   {
+    version: "Alpha 0.10",
+    date: "20 February 2026",
+    tag: "Current",
+    highlight: "Backup & Data Export with Google Drive integration",
+    changes: [
+      {
+        date: "20 Feb 2026",
+        label: "Backup & Data Export",
+        badge: "new",
+        items: [
+          "Full data export: all personal data (workouts, journal, medicines, finance, food) packed into an AES-256 encrypted ZIP",
+          "Household backup: household admins can export the entire household dataset separately",
+          "Password-protected archives — set your own encryption password, viewable any time in settings",
+          "Manual download from the Settings → Backup tab",
+        ],
+      },
+      {
+        date: "20 Feb 2026",
+        label: "Google Drive integration",
+        badge: "new",
+        items: [
+          "Connect your Google account via OAuth to enable automatic Drive uploads",
+          "Scheduled auto-backup: daily, weekly or monthly at a chosen time",
+          "Backups uploaded to your own Google Drive — app stores only a refresh token, never the file contents",
+          "Household managers can connect a separate Drive account for household backups",
+          "Error notifications: app alerts you if Drive access is revoked, quota is exceeded or a folder is missing",
+        ],
+      },
+      {
+        date: "20 Feb 2026",
+        label: "Settings",
+        badge: "improved",
+        items: [
+          "Settings page reorganised into tabs: General, Notifications, Backup, Integrations",
+          "Mobile view uses a custom styled dropdown instead of a raw tab bar",
+        ],
+      },
+    ],
+  },
+  {
     version: "Alpha 0.9",
     date: "17 February 2026",
-    tag: "Current",
+    tag: "",
     highlight: "Medicines, per-set workout tracking & journal encryption",
     changes: [
       {

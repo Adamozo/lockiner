@@ -33,6 +33,10 @@ REMINDER_MESSAGES = {
         "title": "Finance Reminder",
         "body": "Take a moment to review your financial summary.",
     },
+    "backup": {
+        "title": "Backup Reminder",
+        "body": "Time to download your data backup and store it safely.",
+    },
 }
 
 scheduler = AsyncIOScheduler()
@@ -275,12 +279,65 @@ async def _check_medicine_reminders(db, now, current_hour, current_minute, setti
                 logger.warning(f"Medicine push error for user {user_id}: {e}")
 
 
+async def check_auto_backups():
+    """Check and run any due automatic backups."""
+    try:
+        await _check_auto_backups_inner()
+    except Exception as e:
+        logger.error(f"Auto-backup scheduler error: {e}", exc_info=True)
+
+
+async def _check_auto_backups_inner():
+    settings = get_settings()
+    tz = ZoneInfo(settings.app_timezone)
+    now = datetime.now(tz)
+
+    async with AsyncSessionLocal() as db:
+        from ..repositories.backup import BackupSettingsRepository, HouseholdBackupSettingsRepository
+        from ..services.backup import BackupService, HouseholdBackupService
+
+        user_repo = BackupSettingsRepository(db)
+        for bs in await user_repo.get_all_enabled_auto_backup():
+            if _is_backup_due(bs, now):
+                await BackupService(db).run_user_auto_backup(bs.user_id, bs)
+
+        hh_repo = HouseholdBackupSettingsRepository(db)
+        for bs in await hh_repo.get_all_enabled_auto_backup():
+            if _is_backup_due(bs, now):
+                await HouseholdBackupService(db).run_household_auto_backup(bs.household_id, bs)
+
+
+def _is_backup_due(bs, now) -> bool:
+    """Return True if the backup schedule matches the current time."""
+    if bs.frequency == "daily":
+        return bs.hour == now.hour and bs.minute == now.minute
+    elif bs.frequency == "weekly":
+        return (
+            bs.hour == now.hour
+            and bs.minute == now.minute
+            and bs.day_of_week == now.weekday()
+        )
+    elif bs.frequency == "monthly":
+        return (
+            bs.hour == now.hour
+            and bs.minute == now.minute
+            and bs.day_of_month == now.day
+        )
+    return False
+
+
 def start_scheduler():
     """Start the background scheduler with a per-minute cron job."""
     scheduler.add_job(
         check_and_send_reminders,
         trigger=CronTrigger(minute="*"),
         id="reminder_check",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        check_auto_backups,
+        trigger=CronTrigger(minute="*"),
+        id="auto_backup_check",
         replace_existing=True,
     )
     scheduler.start()
