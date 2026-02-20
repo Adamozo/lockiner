@@ -73,6 +73,9 @@ from .medicine import Medicine, MedicineSchedule, MedicineLog
 # Backup module models
 from .backup import BackupSettings, HouseholdBackupSettings
 
+# Todo module models
+from .todo import TodoList, TodoItem, TodoPostponeLog, TodoNotificationRule
+
 
 # ============================================================================
 # Indexes
@@ -176,6 +179,17 @@ Index("idx_medicine_logs_date", MedicineLog.scheduled_date)
 Index("idx_backup_settings_user", BackupSettings.user_id)
 Index("idx_household_backup_settings_household", HouseholdBackupSettings.household_id)
 
+# Todo module indexes
+Index("idx_todo_lists_user", TodoList.user_id)
+Index("idx_todo_lists_date", TodoList.date)
+Index("idx_todo_items_list", TodoItem.list_id)
+Index("idx_todo_items_user", TodoItem.user_id)
+Index("idx_todo_items_completed", TodoItem.completed)
+Index("idx_todo_postpone_logs_item", TodoPostponeLog.todo_item_id)
+Index("idx_todo_postpone_logs_user", TodoPostponeLog.user_id)
+Index("idx_todo_notification_rules_user", TodoNotificationRule.user_id)
+Index("idx_todo_notification_rules_enabled", TodoNotificationRule.enabled)
+
 
 # Export all models
 __all__ = [
@@ -236,4 +250,9 @@ __all__ = [
     # Backup
     "BackupSettings",
     "HouseholdBackupSettings",
+    # Todo
+    "TodoList",
+    "TodoItem",
+    "TodoPostponeLog",
+    "TodoNotificationRule",
 ]

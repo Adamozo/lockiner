@@ -279,6 +279,193 @@ async def _check_medicine_reminders(db, now, current_hour, current_minute, setti
                 logger.warning(f"Medicine push error for user {user_id}: {e}")
 
 
+async def check_todo_notifications():
+    """Check todo notification rules and send due notifications."""
+    try:
+        await _check_todo_notifications_inner()
+    except Exception as e:
+        logger.error(f"Todo notification scheduler error: {e}", exc_info=True)
+
+
+async def _check_todo_notifications_inner():
+    settings = get_settings()
+    tz = ZoneInfo(settings.app_timezone)
+    now = datetime.now(tz)
+    today_str = now.strftime("%Y-%m-%d")
+    time_str = now.strftime("%H:%M")
+
+    # End of day reference: 23:59 local time
+    end_of_day_minutes = 23 * 60 + 59
+    now_minutes = now.hour * 60 + now.minute
+
+    async with AsyncSessionLocal() as db:
+        from ..repositories.todo import TodoNotificationRuleRepository, TodoListRepository, TodoItemRepository
+        from ..repositories.notification import NotificationRepository
+
+        rule_repo = TodoNotificationRuleRepository(db)
+        list_repo = TodoListRepository(db)
+        item_repo = TodoItemRepository(db)
+        notification_repo = NotificationRepository(db)
+
+        rules = await rule_repo.get_enabled_all_users()
+        if not rules:
+            return
+
+        # Preload today's lists once
+        today_lists = await list_repo.get_all_with_enabled_rules()
+        lists_by_user: dict[int, list] = {}
+        for lst in today_lists:
+            lists_by_user.setdefault(lst.user_id, []).append(lst)
+
+        # Setup pywebpush once
+        webpush_available = False
+        webpush_func = None
+        WebPushException = None
+        vapid_key = settings.vapid_private_key_raw
+        if vapid_key:
+            try:
+                from pywebpush import webpush as _webpush, WebPushException as _WPE
+                webpush_func = _webpush
+                WebPushException = _WPE
+                webpush_available = True
+            except ImportError:
+                pass
+
+        for rule in rules:
+            should_fire = False
+
+            if rule.trigger_type == "fixed_time" and rule.fixed_time:
+                # Fire at exact minute, once per day
+                last_sent_date = rule.last_sent_at[:10] if rule.last_sent_at else None
+                should_fire = (rule.fixed_time == time_str) and (last_sent_date != today_str)
+
+            elif rule.trigger_type == "before_end_of_day" and rule.minutes_before_end is not None:
+                target_minutes = end_of_day_minutes - rule.minutes_before_end
+                target_h, target_m = divmod(target_minutes, 60)
+                target_time = f"{target_h:02d}:{target_m:02d}"
+                last_sent_date = rule.last_sent_at[:10] if rule.last_sent_at else None
+                should_fire = (target_time == time_str) and (last_sent_date != today_str)
+
+            elif rule.trigger_type == "interval" and rule.interval_minutes and rule.window_start and rule.window_end:
+                start_h, start_m = map(int, rule.window_start.split(":"))
+                end_h, end_m = map(int, rule.window_end.split(":"))
+                window_start_min = start_h * 60 + start_m
+                window_end_min = end_h * 60 + end_m
+                in_window = window_start_min <= now_minutes <= window_end_min
+                if in_window:
+                    if rule.last_sent_at is None:
+                        should_fire = True
+                    else:
+                        from datetime import datetime as dt, timezone as _tz
+                        last = dt.fromisoformat(rule.last_sent_at)
+                        # Normalise both to UTC before comparing to avoid DST issues
+                        now_utc = now.astimezone(_tz.utc)
+                        last_utc = last.astimezone(_tz.utc) if last.tzinfo else last.replace(tzinfo=_tz.utc)
+                        elapsed_seconds = (now_utc - last_utc).total_seconds()
+                        should_fire = elapsed_seconds >= rule.interval_minutes * 60
+
+            if not should_fire:
+                continue
+
+            user_lists = lists_by_user.get(rule.user_id, [])
+            if not user_lists:
+                continue
+
+            # Collect incomplete items from today's lists
+            all_items = [item for lst in user_lists for item in lst.items]
+            incomplete = [i for i in all_items if not i.completed]
+
+            if rule.notify_only_if_incomplete and not incomplete:
+                continue
+
+            # Build notification body
+            if incomplete:
+                names = ", ".join(i.title for i in incomplete[:5])
+                suffix = f" (+{len(incomplete) - 5} more)" if len(incomplete) > 5 else ""
+                body = f"To do: {names}{suffix}"
+            else:
+                body = "All tasks for today completed!"
+
+            label = rule.label or "Todo reminder"
+            title = f"Todo – {label}"
+
+            # Create in-app notification
+            notification = await notification_repo.create_notification(
+                title=title,
+                body=body,
+                notification_type="reminder",
+                created_by_user_id=None,
+            )
+            await notification_repo.create_user_notifications(notification.id, [rule.user_id])
+            logger.info(f"Sent todo notification (rule {rule.id}) to user {rule.user_id}")
+
+            # Update last_sent_at
+            rule.last_sent_at = now.isoformat()
+            await db.commit()
+
+            # Web push
+            if not webpush_available:
+                continue
+
+            subscriptions = await notification_repo.get_push_subscriptions([rule.user_id])
+            payload = json.dumps({"title": title, "body": body})
+            for sub in subscriptions:
+                try:
+                    webpush_func(
+                        subscription_info={
+                            "endpoint": sub.endpoint,
+                            "keys": {"p256dh": sub.p256dh_key, "auth": sub.auth_key},
+                        },
+                        data=payload,
+                        vapid_private_key=vapid_key,
+                        vapid_claims={"sub": f"mailto:{settings.vapid_contact_email}"},
+                    )
+                except WebPushException as e:
+                    if hasattr(e, "response") and e.response is not None and e.response.status_code == 410:
+                        await notification_repo.delete_push_subscription_by_endpoint(sub.endpoint)
+                    else:
+                        logger.warning(f"Todo push failed for user {rule.user_id}: {e}")
+                except Exception as e:
+                    logger.warning(f"Todo push error for user {rule.user_id}: {e}")
+
+        # Per-item reminders
+        items_with_reminders = await item_repo.get_items_with_reminders_at(time_str, today_str)
+        for item in items_with_reminders:
+            title = "Task Reminder"
+            body = item.title
+            notification = await notification_repo.create_notification(
+                title=title,
+                body=body,
+                notification_type="reminder",
+                created_by_user_id=None,
+            )
+            await notification_repo.create_user_notifications(notification.id, [item.user_id])
+            logger.info(f"Sent item reminder for todo item {item.id}, user {item.user_id}")
+
+            if not webpush_available:
+                continue
+            subscriptions = await notification_repo.get_push_subscriptions([item.user_id])
+            payload = json.dumps({"title": title, "body": body})
+            for sub in subscriptions:
+                try:
+                    webpush_func(
+                        subscription_info={
+                            "endpoint": sub.endpoint,
+                            "keys": {"p256dh": sub.p256dh_key, "auth": sub.auth_key},
+                        },
+                        data=payload,
+                        vapid_private_key=vapid_key,
+                        vapid_claims={"sub": f"mailto:{settings.vapid_contact_email}"},
+                    )
+                except WebPushException as e:
+                    if hasattr(e, "response") and e.response is not None and e.response.status_code == 410:
+                        await notification_repo.delete_push_subscription_by_endpoint(sub.endpoint)
+                    else:
+                        logger.warning(f"Todo item push failed for user {item.user_id}: {e}")
+                except Exception as e:
+                    logger.warning(f"Todo item push error for user {item.user_id}: {e}")
+
+
 async def check_auto_backups():
     """Check and run any due automatic backups."""
     try:
@@ -338,6 +525,12 @@ def start_scheduler():
         check_auto_backups,
         trigger=CronTrigger(minute="*"),
         id="auto_backup_check",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        check_todo_notifications,
+        trigger=CronTrigger(minute="*"),
+        id="todo_notification_check",
         replace_existing=True,
     )
     scheduler.start()

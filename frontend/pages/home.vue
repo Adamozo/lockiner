@@ -55,6 +55,7 @@ const quickLinks: QuickLink[] = [
   { name: 'Food', icon: 'i-heroicons-shopping-cart', to: '/food', color: 'electric-green', description: 'Food inventory & expiry' },
   { name: 'Journal', icon: 'i-heroicons-book-open', to: '/journal', color: 'cyber-blue', description: 'Daily reflection & reports' },
   { name: 'Skills', icon: 'i-heroicons-academic-cap', to: '/skills', color: 'cyber-blue', description: 'Learning journeys' },
+  { name: 'Todo', icon: 'i-heroicons-check-circle', to: '/todo', color: 'electric-green', description: 'Listy zadań na każdy dzień' },
 ]
 
 const getColorClasses = (color: string) => {
