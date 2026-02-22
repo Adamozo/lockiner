@@ -11,11 +11,9 @@
         ><span class="text-electric-green">In</span
         ><span class="text-pure-white">er</span>
       </h1>
-      <div
-        class="text-xl md:text-2xl text-pure-white/60 max-w-3xl mx-auto mb-10"
-      >
-        <p>Your personal dashboard to manage your life.</p>
-        <p>Join and do it seamlessly!</p>
+      <div class="text-xl md:text-2xl text-pure-white/60 max-w-3xl mx-auto mb-10">
+        <p>{{ $t('landing.hero_tagline1') }}</p>
+        <p>{{ $t('landing.hero_tagline2') }}</p>
       </div>
 
       <div class="flex flex-col sm:flex-row justify-center gap-4">
@@ -23,13 +21,13 @@
           to="/register"
           class="px-8 py-3 bg-electric-green hover:bg-electric-green/90 text-background-black font-semibold rounded-lg text-lg transition-colors"
         >
-          Get Started Free
+          {{ $t('landing.hero_cta_start') }}
         </NuxtLink>
         <NuxtLink
           to="/login"
           class="px-8 py-3 border border-border-gray hover:border-pure-white/40 text-pure-white font-semibold rounded-lg text-lg transition-colors"
         >
-          Sign In
+          {{ $t('landing.hero_cta_signin') }}
         </NuxtLink>
       </div>
     </div>

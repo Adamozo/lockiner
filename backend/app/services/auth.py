@@ -142,6 +142,7 @@ class AuthService:
             email_hash=email_hash,
             password_hash=hash_password(data.password),
             name=data.name,
+            language=data.language,
         )
 
         # Create the user first
@@ -295,7 +296,7 @@ class AuthService:
 
         return user
 
-    async def update_user(self, user_id: int, name: Optional[str] = None) -> User:
+    async def update_user(self, user_id: int, name: Optional[str] = None, language: Optional[str] = None) -> User:
         """Update user profile."""
         user = await self.repository.get_by_id(user_id)
 
@@ -304,5 +305,8 @@ class AuthService:
 
         if name is not None:
             user.name = name
+
+        if language is not None:
+            user.language = language
 
         return await self.repository.update(user)

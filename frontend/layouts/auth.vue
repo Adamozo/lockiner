@@ -24,6 +24,11 @@
 
       <!-- Content Slot -->
       <slot />
+
+      <!-- Language switcher -->
+      <div class="flex justify-center mt-6">
+        <LanguageSwitcher />
+      </div>
     </div>
   </div>
 </template>

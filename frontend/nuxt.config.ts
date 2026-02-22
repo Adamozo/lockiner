@@ -8,7 +8,26 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@pinia/nuxt',
     '@vite-pwa/nuxt',
+    '@nuxtjs/i18n',
   ],
+
+  i18n: {
+    defaultLocale: 'en',
+    strategy: 'no_prefix',
+    restructureDir: false,
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'scrooge_language',
+      redirectOn: 'root',
+      alwaysRedirect: false,
+    },
+    locales: [
+      { code: 'en', name: 'English', file: 'en.json' },
+      { code: 'pl', name: 'Polski', file: 'pl.json' },
+    ],
+    lazy: true,
+    langDir: 'locales/',
+  },
 
   // Icon configuration - bundle icons at build time for production
   icon: {

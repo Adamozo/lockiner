@@ -20,21 +20,21 @@
               to="/privacy-policy"
               class="text-pure-white/40 text-sm hover:text-cyber-blue transition-colors"
             >
-              Privacy Policy
+              {{ $t('landing.footer_privacy') }}
             </NuxtLink>
             <span class="text-pure-white/20">|</span>
             <NuxtLink
               to="/terms"
               class="text-pure-white/40 text-sm hover:text-cyber-blue transition-colors"
             >
-              Terms of Service
+              {{ $t('landing.footer_terms') }}
             </NuxtLink>
             <span class="text-pure-white/20">|</span>
             <NuxtLink
               to="/changelog"
               class="text-pure-white/40 text-sm hover:text-cyber-blue transition-colors"
             >
-              Changelog
+              {{ $t('landing.footer_changelog') }}
             </NuxtLink>
           </div>
           <p class="text-pure-white/30 text-xs">

@@ -19,6 +19,7 @@ import type {
 // Cookie keys
 const ACCESS_TOKEN_KEY = 'scrooge_access_token'
 const REFRESH_TOKEN_KEY = 'scrooge_refresh_token'
+const LANGUAGE_COOKIE_KEY = 'scrooge_language'
 
 export const useAuthStore = defineStore('auth', () => {
   // SSR-safe token storage using cookies
@@ -95,10 +96,11 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
+      const languageCookie = useCookie<string>(LANGUAGE_COOKIE_KEY, { default: () => 'en' })
       const response = await $fetch<User>(getApiUrl('/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: userData,
+        body: { ...userData, language: userData.language ?? languageCookie.value ?? 'en' },
       })
 
       return response
@@ -132,7 +134,18 @@ export const useAuthStore = defineStore('auth', () => {
 
       if (response.access_token && response.refresh_token) {
         saveTokens(response.access_token, response.refresh_token)
-        await fetchCurrentUser()
+        const fetchedUser = await fetchCurrentUser()
+        if (fetchedUser) {
+          const languageCookie = useCookie<string>(LANGUAGE_COOKIE_KEY, { default: () => 'en' })
+          const cookieLang = languageCookie.value
+          if (cookieLang && fetchedUser.language !== cookieLang) {
+            // Cookie takes precedence — sync to DB
+            await updateProfile({ language: cookieLang })
+          } else if (!cookieLang && fetchedUser.language) {
+            // No cookie — apply language from DB
+            languageCookie.value = fetchedUser.language
+          }
+        }
       }
     } catch (e: unknown) {
       const err = e as { data?: { detail?: string } }

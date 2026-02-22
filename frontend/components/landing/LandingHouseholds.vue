@@ -1,52 +1,38 @@
 <script setup lang="ts">
 import type { ModuleData } from "./LandingModuleSection.vue";
 
-const module: ModuleData = {
-  name: "Households",
-  headline: "Shared costs. Zero awkwardness.",
-  subheadline:
-    "Splitting bills between flatmates or managing family finances shouldn't need a group chat thread. Households puts everyone on the same page, automatically.",
+const { t } = useI18n()
+
+const module = computed<ModuleData>(() => ({
+  name: t('landing.households_name'),
+  headline: t('landing.households_headline'),
+  subheadline: t('landing.households_sub'),
   icon: "i-heroicons-home-modern",
   color: "cyber-blue",
   slides: [
     {
-      tab: "Overview",
+      tab: t('landing.households_tab1'),
       icon: "i-heroicons-home",
-      title: "One app, multiple homes.",
-      description:
-        "Switch between your personal context and shared household contexts instantly. Manage your own finances and shared ones — without mixing them up.",
-      highlights: [
-        "Personal & shared contexts",
-        "Multiple households",
-        "One-click switching",
-      ],
+      title: t('landing.households_slide1_title'),
+      description: t('landing.households_slide1_desc'),
+      highlights: [t('landing.households_slide1_h1'), t('landing.households_slide1_h2'), t('landing.households_slide1_h3')],
     },
     {
-      tab: "Members",
+      tab: t('landing.households_tab2'),
       icon: "i-heroicons-user-group",
-      title: "Invite. Manage. Collaborate.",
-      description:
-        "Share access to a household with a simple invitation link. Control who's in, manage members, and keep the shared space organised.",
-      highlights: [
-        "Invite by link",
-        "Member management",
-        "Shared access control",
-      ],
+      title: t('landing.households_slide2_title'),
+      description: t('landing.households_slide2_desc'),
+      highlights: [t('landing.households_slide2_h1'), t('landing.households_slide2_h2'), t('landing.households_slide2_h3')],
     },
     {
-      tab: "Analytics",
+      tab: t('landing.households_tab3'),
       icon: "i-heroicons-chart-pie",
-      title: "Who spent what? Now you know.",
-      description:
-        "Household-level breakdowns show shared spending, contributions per member and category totals. No guessing. No awkward conversations.",
-      highlights: [
-        "Shared spending overview",
-        "Per-member breakdown",
-        "Category totals",
-      ],
+      title: t('landing.households_slide3_title'),
+      description: t('landing.households_slide3_desc'),
+      highlights: [t('landing.households_slide3_h1'), t('landing.households_slide3_h2'), t('landing.households_slide3_h3')],
     },
   ],
-};
+}))
 </script>
 
 <template>

@@ -10,6 +10,7 @@ useSeoMeta({
   description: "Configure application settings and API providers",
 });
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -21,10 +22,10 @@ const toast = useToast();
 // ─── Tabs ─────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'general',       label: 'General',       icon: 'i-heroicons-cog-6-tooth' },
-  { id: 'notifications', label: 'Notifications',  icon: 'i-heroicons-bell' },
-  { id: 'backup',        label: 'Backup',         icon: 'i-heroicons-archive-box-arrow-down' },
-  { id: 'integrations',  label: 'Integrations',   icon: 'i-heroicons-puzzle-piece' },
+  { id: 'general',       labelKey: 'settings.tab_general',       icon: 'i-heroicons-cog-6-tooth' },
+  { id: 'notifications', labelKey: 'settings.tab_notifications',  icon: 'i-heroicons-bell' },
+  { id: 'backup',        labelKey: 'settings.tab_backup',         icon: 'i-heroicons-archive-box-arrow-down' },
+  { id: 'integrations',  labelKey: 'settings.tab_integrations',   icon: 'i-heroicons-puzzle-piece' },
 ] as const
 
 type TabId = typeof TABS[number]['id']
@@ -67,7 +68,7 @@ const handleInstallPWA = async () => {
   try {
     const success = await installApp();
     if (success) {
-      toast.add({ title: "Success", description: "LockIner has been installed!", color: "green" });
+      toast.add({ title: t('common.success'), description: t('settings.install_success'), color: "green" });
     }
   } finally {
     isInstallingPWA.value = false;
@@ -78,10 +79,10 @@ const handleUpdatePWA = async () => {
   isUpdatingPWA.value = true;
   try {
     await refreshApp();
-    toast.add({ title: "Updating...", description: "The app will reload with the latest version", color: "green" });
+    toast.add({ title: t('settings.updating_title'), description: t('settings.updating_desc'), color: "green" });
     setTimeout(() => window.location.reload(), 1000);
   } catch {
-    toast.add({ title: "Error", description: "Failed to update the app", color: "red" });
+    toast.add({ title: t('common.error'), description: t('settings.update_failed'), color: "red" });
     isUpdatingPWA.value = false;
   }
 };
@@ -101,7 +102,7 @@ const loadProviders = async () => {
     providers.value = response.providers;
     activeProvider.value = response.active_provider;
   } catch {
-    toast.add({ title: "Error", description: "Failed to load API providers", color: "red" });
+    toast.add({ title: t('common.error'), description: t('settings.providers_failed'), color: "red" });
   }
 };
 
@@ -109,11 +110,11 @@ const handleAddProvider = async (newProvider: { provider: string; api_key: strin
   loading.value = true;
   try {
     await addAPIProvider(newProvider);
-    toast.add({ title: "Success", description: "API provider added successfully", color: "green" });
+    toast.add({ title: t('common.success'), description: t('settings.provider_added'), color: "green" });
     showAddDialog.value = false;
     await loadProviders();
   } catch {
-    toast.add({ title: "Error", description: "Failed to add API provider", color: "red" });
+    toast.add({ title: t('common.error'), description: t('settings.provider_add_failed'), color: "red" });
   } finally {
     loading.value = false;
   }
@@ -123,10 +124,10 @@ const setActive = async (provider: string) => {
   loading.value = true;
   try {
     await setActiveProvider(provider);
-    toast.add({ title: "Success", description: `${getProviderName(provider)} set as active provider`, color: "green" });
+    toast.add({ title: t('common.success'), description: t('settings.provider_set_active', { name: getProviderName(provider) }), color: "green" });
     await loadProviders();
   } catch {
-    toast.add({ title: "Error", description: "Failed to set active provider", color: "red" });
+    toast.add({ title: t('common.error'), description: t('settings.provider_set_active_failed'), color: "red" });
   } finally {
     loading.value = false;
   }
@@ -142,12 +143,12 @@ const handleDelete = async () => {
   loading.value = true;
   try {
     await deleteAPIProvider(providerToDelete.value);
-    toast.add({ title: "Success", description: "API provider deleted successfully", color: "green" });
+    toast.add({ title: t('common.success'), description: t('settings.provider_deleted'), color: "green" });
     showDeleteDialog.value = false;
     providerToDelete.value = null;
     await loadProviders();
   } catch {
-    toast.add({ title: "Error", description: "Failed to delete API provider", color: "red" });
+    toast.add({ title: t('common.error'), description: t('settings.provider_delete_failed'), color: "red" });
   } finally {
     loading.value = false;
   }
@@ -171,8 +172,8 @@ onMounted(() => {
   <div class="space-y-6">
     <!-- Page header -->
     <SettingsHeader
-      title="Settings"
-      description="Configure your LockIner application"
+      :title="$t('settings.title')"
+      :description="$t('settings.description')"
     />
 
     <!-- Tab bar -->
@@ -186,7 +187,7 @@ onMounted(() => {
         >
           <span class="flex items-center gap-2">
             <UIcon :name="currentTabDef.icon" class="w-4 h-4 text-cyber-blue" />
-            <span class="text-pure-white">{{ currentTabDef.label }}</span>
+            <span class="text-pure-white">{{ $t(currentTabDef.labelKey) }}</span>
           </span>
           <UIcon
             name="i-heroicons-chevron-down"
@@ -210,7 +211,7 @@ onMounted(() => {
             @click="setTab(tab.id)"
           >
             <UIcon :name="tab.icon" class="w-4 h-4 flex-shrink-0" />
-            {{ tab.label }}
+            {{ $t(tab.labelKey) }}
             <UIcon
               v-if="activeTab === tab.id"
               name="i-heroicons-check"
@@ -235,7 +236,7 @@ onMounted(() => {
             @click="setTab(tab.id)"
           >
             <UIcon :name="tab.icon" class="w-4 h-4 flex-shrink-0" />
-            {{ tab.label }}
+            {{ $t(tab.labelKey) }}
             <span
               v-if="activeTab === tab.id"
               class="absolute bottom-0 left-0 right-0 h-0.5 bg-cyber-blue"
@@ -252,7 +253,7 @@ onMounted(() => {
 
           <!-- App Installation -->
           <div>
-            <h3 class="text-base font-semibold text-pure-white mb-3">App Installation</h3>
+            <h3 class="text-base font-semibold text-pure-white mb-3">{{ $t('settings.app_installation') }}</h3>
             <div class="space-y-3">
               <!-- Install Status -->
               <div class="p-4 bg-background-black rounded-lg border border-border-gray">
@@ -268,8 +269,8 @@ onMounted(() => {
                     />
                   </div>
                   <div class="flex-1 min-w-0">
-                    <p class="text-pure-white font-medium">{{ isInstalled ? 'App Installed' : 'Install App' }}</p>
-                    <p class="text-sm text-pure-white/60">{{ isInstalled ? 'Installed on device' : 'Add to home screen' }}</p>
+                    <p class="text-pure-white font-medium">{{ isInstalled ? $t('settings.app_installed') : $t('settings.install_app') }}</p>
+                    <p class="text-sm text-pure-white/60">{{ isInstalled ? $t('settings.installed_on_device') : $t('settings.add_to_home_screen') }}</p>
                   </div>
                   <div class="flex-shrink-0">
                     <BaseButton
@@ -280,10 +281,10 @@ onMounted(() => {
                       :loading="isInstallingPWA"
                       @click="handleInstallPWA"
                     >
-                      Install
+                      {{ $t('settings.install') }}
                     </BaseButton>
-                    <span v-else-if="isInstalled" class="text-sm text-electric-green font-medium">Installed</span>
-                    <span v-else class="text-sm text-pure-white/40">N/A</span>
+                    <span v-else-if="isInstalled" class="text-sm text-electric-green font-medium">{{ $t('settings.installed') }}</span>
+                    <span v-else class="text-sm text-pure-white/40">{{ $t('common.na') }}</span>
                   </div>
                 </div>
               </div>
@@ -302,8 +303,8 @@ onMounted(() => {
                     />
                   </div>
                   <div class="flex-1 min-w-0">
-                    <p class="text-pure-white font-medium">{{ needRefresh ? 'Update Ready' : 'Updates' }}</p>
-                    <p class="text-sm text-pure-white/60">{{ needRefresh ? 'New version available' : 'Up to date' }}</p>
+                    <p class="text-pure-white font-medium">{{ needRefresh ? $t('settings.update_ready') : $t('settings.updates') }}</p>
+                    <p class="text-sm text-pure-white/60">{{ needRefresh ? $t('settings.new_version') : $t('settings.up_to_date') }}</p>
                   </div>
                   <div class="flex-shrink-0">
                     <BaseButton
@@ -314,7 +315,7 @@ onMounted(() => {
                       :loading="isUpdatingPWA"
                       @click="handleUpdatePWA"
                     >
-                      Update
+                      {{ $t('settings.update') }}
                     </BaseButton>
                     <BaseButton
                       v-else
@@ -324,7 +325,7 @@ onMounted(() => {
                       :loading="isUpdatingPWA"
                       @click="handleUpdatePWA"
                     >
-                      Check
+                      {{ $t('common.check') }}
                     </BaseButton>
                   </div>
                 </div>
@@ -332,9 +333,16 @@ onMounted(() => {
             </div>
           </div>
 
+          <!-- Language -->
+          <div>
+            <h3 class="text-base font-semibold text-pure-white mb-3">{{ $t('settings.language') }}</h3>
+            <p class="text-sm text-pure-white/60 mb-3">{{ $t('settings.language_desc') }}</p>
+            <LanguageSwitcher />
+          </div>
+
           <!-- 2FA -->
           <div>
-            <h3 class="text-base font-semibold text-pure-white mb-3">Security</h3>
+            <h3 class="text-base font-semibold text-pure-white mb-3">{{ $t('settings.security') }}</h3>
             <SettingsTwoFactorSection />
           </div>
         </div>
@@ -352,8 +360,8 @@ onMounted(() => {
         <!-- ── INTEGRATIONS ───────────────────────────────────────────── -->
         <div v-show="activeTab === 'integrations'" class="space-y-6">
           <div>
-            <h3 class="text-base font-semibold text-pure-white mb-1">OCR API Configuration</h3>
-            <p class="text-sm text-pure-white/60 mb-4">Configure API providers for receipt OCR processing</p>
+            <h3 class="text-base font-semibold text-pure-white mb-1">{{ $t('settings.ocr_api_config') }}</h3>
+            <p class="text-sm text-pure-white/60 mb-4">{{ $t('settings.ocr_api_desc') }}</p>
 
             <div class="space-y-4">
               <SettingsOcrActiveProviderBanner
@@ -372,14 +380,14 @@ onMounted(() => {
 
               <div v-if="providers.length === 0" class="text-center py-10 text-pure-white/60">
                 <UIcon name="i-heroicons-key" class="w-12 h-12 mx-auto text-pure-white/40 mb-3" />
-                <p>No API providers configured yet</p>
-                <p class="text-sm mt-1">Add a provider to enable OCR processing</p>
+                <p>{{ $t('settings.no_providers') }}</p>
+                <p class="text-sm mt-1">{{ $t('settings.no_providers_hint') }}</p>
               </div>
             </div>
 
             <div class="mt-4 space-y-4">
               <BaseButton variant="primary" icon="i-heroicons-plus" @click="showAddDialog = true">
-                Add API Provider
+                {{ $t('settings.add_provider') }}
               </BaseButton>
               <SettingsOcrInfoBox />
             </div>

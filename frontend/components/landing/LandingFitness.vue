@@ -1,78 +1,52 @@
 <script setup lang="ts">
 import type { ModuleData } from "./LandingModuleSection.vue";
 
-const module: ModuleData = {
-  name: "Fitness",
-  headline: "Stop relying on memory!",
-  subheadline:
-    "You won't remember what you lifted last Tuesday. Fitness logs every set, every kilo, every session — so you always know exactly how far you've come.",
+const { t } = useI18n()
+
+const module = computed<ModuleData>(() => ({
+  name: t('landing.fitness_name'),
+  headline: t('landing.fitness_headline'),
+  subheadline: t('landing.fitness_sub'),
   icon: "i-heroicons-fire",
   color: "warning-orange",
   slides: [
     {
-      tab: "Dashboard",
+      tab: t('landing.fitness_tab1'),
       icon: "i-heroicons-home",
-      title: "This week, at a glance",
-      description:
-        "How many workouts this week? What's your current weight? Did you take your supplements? All of it — answered the moment you open the app.",
-      highlights: [
-        "Workouts this week",
-        "Current body weight",
-        "Today's medicines",
-        "Total volume lifted",
-      ],
+      title: t('landing.fitness_slide1_title'),
+      description: t('landing.fitness_slide1_desc'),
+      highlights: [t('landing.fitness_slide1_h1'), t('landing.fitness_slide1_h2'), t('landing.fitness_slide1_h3'), t('landing.fitness_slide1_h4')],
     },
     {
-      tab: "Workouts",
+      tab: t('landing.fitness_tab2'),
       icon: "i-heroicons-bolt",
-      title: "Log smarter, not harder",
-      description:
-        "Track every exercise with per-set weight and reps. Build a complete workout history. See what you did last session — and beat it.",
-      highlights: [
-        "Per-set weight & reps",
-        "Full exercise library",
-        "Workout history",
-        "Draft workouts (auto-saved)",
-      ],
+      title: t('landing.fitness_slide2_title'),
+      description: t('landing.fitness_slide2_desc'),
+      highlights: [t('landing.fitness_slide2_h1'), t('landing.fitness_slide2_h2'), t('landing.fitness_slide2_h3'), t('landing.fitness_slide2_h4')],
     },
     {
-      tab: "Weight",
+      tab: t('landing.fitness_tab3'),
       icon: "i-heroicons-arrow-trending-up",
-      title: "The scale tells a story",
-      description:
-        "Log your body weight regularly. See it plotted over time. Weekly changes, monthly trends — the data shows progress your eyes might miss.",
-      highlights: [
-        "Daily weigh-in logging",
-        "Weight history chart",
-        "Change indicators",
-      ],
+      title: t('landing.fitness_slide3_title'),
+      description: t('landing.fitness_slide3_desc'),
+      highlights: [t('landing.fitness_slide3_h1'), t('landing.fitness_slide3_h2'), t('landing.fitness_slide3_h3')],
     },
     {
-      tab: "Progress",
+      tab: t('landing.fitness_tab4'),
       icon: "i-heroicons-chart-bar",
-      title: "Your long game, visualized",
-      description:
-        "Charts, personal records and volume trends. Progress isn't always obvious day-to-day — but over months, the numbers don't lie.",
-      highlights: [
-        "Strength progress charts",
-        "Personal records",
-        "Volume over time",
-      ],
+      title: t('landing.fitness_slide4_title'),
+      description: t('landing.fitness_slide4_desc'),
+      highlights: [t('landing.fitness_slide4_h1'), t('landing.fitness_slide4_h2'), t('landing.fitness_slide4_h3')],
     },
     {
-      tab: "Medicines",
+      tab: t('landing.fitness_tab5'),
       icon: "i-heroicons-beaker",
-      title: "Consistency is the supplement",
-      description:
-        "Track daily supplements and medications. Mark each dose. See your adherence rate. The routine you've been meaning to build — finally built.",
-      highlights: [
-        "Daily dose tracking",
-        "Adherence rate",
-        "Custom medication schedules",
-      ],
+      title: t('landing.fitness_slide5_title'),
+      description: t('landing.fitness_slide5_desc'),
+      highlights: [t('landing.fitness_slide5_h1'), t('landing.fitness_slide5_h2'), t('landing.fitness_slide5_h3')],
     },
   ],
-};
+}))
 </script>
 
 <template>

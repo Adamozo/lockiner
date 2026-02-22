@@ -1,48 +1,38 @@
 <script setup lang="ts">
 import type { ModuleData } from "./LandingModuleSection.vue";
 
-const module: ModuleData = {
-  name: "Food",
-  headline: "Your fridge is a graveyard?",
-  subheadline:
-    "Expired yoghurt. Forgotten leftovers. Vegetables you had plans for. Food tracks your entire pantry with live expiry status — so nothing disappears quietly.",
+const { t } = useI18n()
+
+const module = computed<ModuleData>(() => ({
+  name: t('landing.food_name'),
+  headline: t('landing.food_headline'),
+  subheadline: t('landing.food_sub'),
   icon: "i-heroicons-cake",
   color: "electric-green",
   slides: [
     {
-      tab: "Inventory",
+      tab: t('landing.food_tab1'),
       icon: "i-heroicons-archive-box",
-      title: "Know exactly what you have",
-      description:
-        "Your full pantry, one view. Items expiring in 3 days are flagged. Items already expired are highlighted. Consume with one tap. Never buy duplicates again.",
-      highlights: [
-        "Live expiry status",
-        "3-day warning alerts",
-        "Multi-location support",
-        "One-tap consume",
-      ],
+      title: t('landing.food_slide1_title'),
+      description: t('landing.food_slide1_desc'),
+      highlights: [t('landing.food_slide1_h1'), t('landing.food_slide1_h2'), t('landing.food_slide1_h3'), t('landing.food_slide1_h4')],
     },
     {
-      tab: "Imports",
+      tab: t('landing.food_tab2'),
       icon: "i-heroicons-arrow-down-tray",
-      title: "Just got back from shopping?",
-      description:
-        "Add everything at once instead of one by one. Bulk import keeps your inventory current without making restocking feel like a chore.",
-      highlights: ["Batch product entry", "Fast inventory updates"],
+      title: t('landing.food_slide2_title'),
+      description: t('landing.food_slide2_desc'),
+      highlights: [t('landing.food_slide2_h1'), t('landing.food_slide2_h2')],
     },
     {
-      tab: "Recipes",
+      tab: t('landing.food_tab3'),
       icon: "i-heroicons-book-open",
-      title: "Cook what you already have",
-      description:
-        "Your personal recipe library, tied to your pantry. Plan meals around ingredients you need to use up. Less waste, more intention.",
-      highlights: [
-        "Personal recipe collection",
-        "Ingredient-based meal planning",
-      ],
+      title: t('landing.food_slide3_title'),
+      description: t('landing.food_slide3_desc'),
+      highlights: [t('landing.food_slide3_h1'), t('landing.food_slide3_h2')],
     },
   ],
-};
+}))
 </script>
 
 <template>

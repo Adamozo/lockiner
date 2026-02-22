@@ -351,6 +351,7 @@ export interface User {
   totp_enabled: boolean
   created_at: string
   updated_at: string | null
+  language: string
 }
 
 /**
@@ -361,6 +362,7 @@ export interface UserCreate {
   password: string
   name: string
   voucher_code: string
+  language?: string
 }
 
 /**
@@ -368,6 +370,7 @@ export interface UserCreate {
  */
 export interface UserUpdate {
   name?: string
+  language?: string
 }
 
 /**

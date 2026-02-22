@@ -1,68 +1,25 @@
 <script setup lang="ts">
 import { useAuthStore } from "~/stores/auth";
 
+const { t } = useI18n()
+
 interface ModuleItem {
-  name: string;
+  nameKey: string;
   icon: string;
   to: string;
   color: string;
 }
 
 const modules: ModuleItem[] = [
-  {
-    name: "Home",
-    icon: "i-heroicons-home",
-    to: "/home",
-    color: "cyber-blue",
-  },
-  {
-    name: "Finance",
-    icon: "i-heroicons-banknotes",
-    to: "/finance",
-    color: "electric-green",
-  },
-  {
-    name: "Households",
-    icon: "i-heroicons-home-modern",
-    to: "/households",
-    color: "cyber-blue",
-  },
-  {
-    name: "Fitness",
-    icon: "i-heroicons-fire",
-    to: "/fitness",
-    color: "warning-orange",
-  },
-  {
-    name: "Skills",
-    icon: "i-heroicons-academic-cap",
-    to: "/skills",
-    color: "cyber-blue",
-  },
-  {
-    name: "Food",
-    icon: "i-heroicons-shopping-cart",
-    to: "/food",
-    color: "electric-green",
-  },
-  {
-    name: "Journal",
-    icon: "i-heroicons-book-open",
-    to: "/journal",
-    color: "cyber-blue",
-  },
-  {
-    name: "Todo",
-    icon: "i-heroicons-check-circle",
-    to: "/todo",
-    color: "electric-green",
-  },
-  {
-    name: "Shopping",
-    icon: "i-heroicons-shopping-bag",
-    to: "/shopping",
-    color: "warning-orange",
-  },
+  { nameKey: "nav.home",        icon: "i-heroicons-home",           to: "/home",       color: "cyber-blue" },
+  { nameKey: "nav.finance",     icon: "i-heroicons-banknotes",      to: "/finance",    color: "electric-green" },
+  { nameKey: "nav.households",  icon: "i-heroicons-home-modern",    to: "/households", color: "cyber-blue" },
+  { nameKey: "nav.fitness",     icon: "i-heroicons-fire",           to: "/fitness",    color: "warning-orange" },
+  { nameKey: "nav.skills",      icon: "i-heroicons-academic-cap",   to: "/skills",     color: "cyber-blue" },
+  { nameKey: "nav.food",        icon: "i-heroicons-shopping-cart",  to: "/food",       color: "electric-green" },
+  { nameKey: "nav.journal",     icon: "i-heroicons-book-open",      to: "/journal",    color: "cyber-blue" },
+  { nameKey: "nav.todo",        icon: "i-heroicons-check-circle",   to: "/todo",       color: "electric-green" },
+  { nameKey: "nav.shopping",    icon: "i-heroicons-shopping-bag",   to: "/shopping",   color: "warning-orange" },
 ];
 
 const route = useRoute();
@@ -182,7 +139,7 @@ onUnmounted(() => {
       <button
         @click="toggleSidebar"
         class="p-2 rounded-lg hover:bg-background-black/50 text-pure-white/60 hover:text-pure-white transition-colors"
-        :title="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+        :title="isCollapsed ? $t('nav.expand_sidebar') : $t('nav.collapse_sidebar')"
       >
         <UIcon
           :name="
@@ -207,10 +164,10 @@ onUnmounted(() => {
           getColorClass(mod.color, isActiveModule(mod.to)),
           getBgClass(mod.color, isActiveModule(mod.to)),
         ]"
-        :title="isCollapsed ? mod.name : undefined"
+        :title="isCollapsed ? $t(mod.nameKey) : undefined"
       >
         <UIcon :name="mod.icon" class="w-5 h-5 flex-shrink-0" />
-        <span v-if="!isCollapsed" class="font-medium">{{ mod.name }}</span>
+        <span v-if="!isCollapsed" class="font-medium">{{ $t(mod.nameKey) }}</span>
       </NuxtLink>
 
       <!-- Divider -->
@@ -226,7 +183,7 @@ onUnmounted(() => {
             ? 'text-cyber-blue bg-cyber-blue/10 border-l-2 border-cyber-blue'
             : 'text-pure-white/60 hover:text-pure-white hover:bg-card-black/50',
         ]"
-        :title="isCollapsed ? 'Notifications' : undefined"
+        :title="isCollapsed ? $t('nav.notifications') : undefined"
       >
         <div class="relative">
           <UIcon name="i-heroicons-bell" class="w-5 h-5 flex-shrink-0" />
@@ -237,7 +194,7 @@ onUnmounted(() => {
             {{ unreadCount > 99 ? '99+' : unreadCount }}
           </span>
         </div>
-        <span v-if="!isCollapsed" class="font-medium">Notifications</span>
+        <span v-if="!isCollapsed" class="font-medium">{{ $t('nav.notifications') }}</span>
       </NuxtLink>
 
       <!-- Admin (conditional) -->
@@ -251,10 +208,10 @@ onUnmounted(() => {
             ? 'text-warning-orange bg-warning-orange/10 border-l-2 border-warning-orange'
             : 'text-pure-white/60 hover:text-pure-white hover:bg-card-black/50',
         ]"
-        :title="isCollapsed ? 'Admin' : undefined"
+        :title="isCollapsed ? $t('nav.admin') : undefined"
       >
         <UIcon name="i-heroicons-shield-check" class="w-5 h-5 flex-shrink-0" />
-        <span v-if="!isCollapsed" class="font-medium">Admin</span>
+        <span v-if="!isCollapsed" class="font-medium">{{ $t('nav.admin') }}</span>
       </NuxtLink>
     </nav>
 
@@ -317,7 +274,7 @@ onUnmounted(() => {
                   : 'text-pure-white/80 hover:bg-background-black/50'"
               >
                 <UIcon name="i-heroicons-user-circle" class="w-5 h-5 flex-shrink-0" />
-                <span class="font-medium">Profile</span>
+                <span class="font-medium">{{ $t('nav.profile') }}</span>
                 <UIcon
                   v-if="route.path === '/profile'"
                   name="i-heroicons-check"
@@ -335,7 +292,7 @@ onUnmounted(() => {
                   : 'text-pure-white/80 hover:bg-background-black/50'"
               >
                 <UIcon name="i-heroicons-cog-6-tooth" class="w-5 h-5 flex-shrink-0" />
-                <span class="font-medium">Settings</span>
+                <span class="font-medium">{{ $t('nav.settings') }}</span>
                 <UIcon
                   v-if="route.path === '/settings'"
                   name="i-heroicons-check"
@@ -352,7 +309,7 @@ onUnmounted(() => {
                 class="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-left text-pure-white/80 hover:text-danger-red hover:bg-danger-red/10 transition-colors"
               >
                 <UIcon name="i-heroicons-arrow-right-on-rectangle" class="w-5 h-5 flex-shrink-0" />
-                <span class="font-medium">Logout</span>
+                <span class="font-medium">{{ $t('nav.logout') }}</span>
               </button>
             </div>
           </div>
@@ -367,13 +324,13 @@ onUnmounted(() => {
         :class="
           isCollapsed ? 'justify-center px-2 py-3' : 'px-3 py-3 space-x-3'
         "
-        :title="isCollapsed ? 'Login' : undefined"
+        :title="isCollapsed ? $t('nav.login') : undefined"
       >
         <UIcon
           name="i-heroicons-arrow-right-end-on-rectangle"
           class="w-5 h-5 flex-shrink-0"
         />
-        <span v-if="!isCollapsed" class="font-medium">Login</span>
+        <span v-if="!isCollapsed" class="font-medium">{{ $t('nav.login') }}</span>
       </NuxtLink>
     </div>
   </aside>

@@ -1,22 +1,24 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/auth'
 
+const { t } = useI18n()
+
 interface ModuleItem {
-  name: string
+  nameKey: string
   icon: string
   to: string
 }
 
 const modules: ModuleItem[] = [
-  { name: 'Home', icon: 'i-heroicons-home', to: '/home' },
-  { name: 'Finance', icon: 'i-heroicons-banknotes', to: '/finance' },
-  { name: 'Households', icon: 'i-heroicons-home-modern', to: '/households' },
-  { name: 'Fitness', icon: 'i-heroicons-fire', to: '/fitness' },
-  { name: 'Skills', icon: 'i-heroicons-academic-cap', to: '/skills' },
-  { name: 'Food', icon: 'i-heroicons-shopping-cart', to: '/food' },
-  { name: 'Journal', icon: 'i-heroicons-book-open', to: '/journal' },
-  { name: 'Shopping', icon: 'i-heroicons-shopping-bag', to: '/shopping' },
-  { name: 'Todo', icon: 'i-heroicons-check-circle', to: '/todo' },
+  { nameKey: 'nav.home',       icon: 'i-heroicons-home',           to: '/home' },
+  { nameKey: 'nav.finance',    icon: 'i-heroicons-banknotes',      to: '/finance' },
+  { nameKey: 'nav.households', icon: 'i-heroicons-home-modern',    to: '/households' },
+  { nameKey: 'nav.fitness',    icon: 'i-heroicons-fire',           to: '/fitness' },
+  { nameKey: 'nav.skills',     icon: 'i-heroicons-academic-cap',   to: '/skills' },
+  { nameKey: 'nav.food',       icon: 'i-heroicons-shopping-cart',  to: '/food' },
+  { nameKey: 'nav.journal',    icon: 'i-heroicons-book-open',      to: '/journal' },
+  { nameKey: 'nav.shopping',   icon: 'i-heroicons-shopping-bag',   to: '/shopping' },
+  { nameKey: 'nav.todo',       icon: 'i-heroicons-check-circle',   to: '/todo' },
 ]
 
 const route = useRoute()
@@ -117,14 +119,14 @@ const handleLogout = async () => {
       <nav v-if="menuOpen" class="mt-3 pt-3 border-t border-border-gray">
         <!-- Module Switcher -->
         <div class="mb-3">
-          <label class="block text-xs font-medium text-pure-white/40 uppercase tracking-wider mb-2">Go to Module</label>
+          <label class="block text-xs font-medium text-pure-white/40 uppercase tracking-wider mb-2">{{ $t('nav.home') }}</label>
           <select
             :value="currentModule"
             @change="handleModuleChange"
             class="w-full px-3 py-2.5 bg-card-black border border-border-gray rounded-lg text-pure-white focus:outline-none focus:border-electric-green transition-colors"
           >
             <option v-for="mod in modules" :key="mod.to" :value="mod.to">
-              {{ mod.name }}
+              {{ $t(mod.nameKey) }}
             </option>
           </select>
         </div>
@@ -134,7 +136,6 @@ const handleLogout = async () => {
 
         <!-- Household Context Selector -->
         <div v-if="authStore.isAuthenticated" class="mb-3">
-          <label class="block text-xs font-medium text-pure-white/40 uppercase tracking-wider mb-2">View Context</label>
           <HouseholdSelectorMobile />
         </div>
 
@@ -170,7 +171,7 @@ const handleLogout = async () => {
             "
           >
             <UIcon name="i-heroicons-cog-6-tooth" class="w-5 h-5" />
-            <span class="font-medium">Settings</span>
+            <span class="font-medium">{{ $t('nav.settings') }}</span>
           </NuxtLink>
 
           <!-- Admin (conditional) -->
@@ -185,7 +186,7 @@ const handleLogout = async () => {
             "
           >
             <UIcon name="i-heroicons-shield-check" class="w-5 h-5" />
-            <span class="font-medium">Admin</span>
+            <span class="font-medium">{{ $t('nav.admin') }}</span>
           </NuxtLink>
 
           <!-- Logout -->
@@ -194,7 +195,7 @@ const handleLogout = async () => {
             class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-pure-white/70 hover:text-danger-red hover:bg-danger-red/10"
           >
             <UIcon name="i-heroicons-arrow-right-on-rectangle" class="w-5 h-5" />
-            <span class="font-medium">Logout</span>
+            <span class="font-medium">{{ $t('nav.logout') }}</span>
           </button>
         </div>
 
@@ -205,7 +206,7 @@ const handleLogout = async () => {
           class="flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-pure-white/70 hover:text-electric-green hover:bg-electric-green/10"
         >
           <UIcon name="i-heroicons-arrow-right-end-on-rectangle" class="w-5 h-5" />
-          <span class="font-medium">Login</span>
+          <span class="font-medium">{{ $t('nav.login') }}</span>
         </NuxtLink>
       </nav>
     </div>

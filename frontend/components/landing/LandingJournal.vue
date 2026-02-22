@@ -1,65 +1,45 @@
 <script setup lang="ts">
 import type { ModuleData } from "./LandingModuleSection.vue";
 
-const module: ModuleData = {
-  name: "Journal",
-  headline: "The year ends. You can't remember it",
-  subheadline:
-    "You did things. Overcame things. Achieved things. But when someone asks — or when you ask yourself — it's all a blur. Journal is your personal record: daily entries, mood, what's been grinding you down and what's genuinely been making you proud. So when December rolls around, you actually know what happened.",
+const { t } = useI18n()
+
+const module = computed<ModuleData>(() => ({
+  name: t('landing.journal_name'),
+  headline: t('landing.journal_headline'),
+  subheadline: t('landing.journal_sub'),
   icon: "i-heroicons-pencil-square",
   color: "cyber-blue",
   slides: [
     {
-      tab: "Dashboard",
+      tab: t('landing.journal_tab1'),
       icon: "i-heroicons-home",
-      title: "Your year, already taking shape",
-      description:
-        "Streak, entry count, average mood, monthly consistency. At a glance — the proof that you showed up. Or the reminder that you should.",
-      highlights: [
-        "Current writing streak",
-        "Average mood score",
-        "Total & monthly entries",
-        "Longest streak ever",
-      ],
+      title: t('landing.journal_slide1_title'),
+      description: t('landing.journal_slide1_desc'),
+      highlights: [t('landing.journal_slide1_h1'), t('landing.journal_slide1_h2'), t('landing.journal_slide1_h3'), t('landing.journal_slide1_h4')],
     },
     {
-      tab: "Today",
+      tab: t('landing.journal_tab2'),
       icon: "i-heroicons-pencil",
-      title: "What happened today? Write it down",
-      description:
-        "Free-form entry for whatever's on your mind. Rate your mood. Add what annoyed you today and what made you genuinely proud. Two minutes now — priceless context later.",
-      highlights: [
-        "Free-form daily entry",
-        "Mood rating (1–10)",
-        "Annoyed by today",
-        "Proud of today",
-      ],
+      title: t('landing.journal_slide2_title'),
+      description: t('landing.journal_slide2_desc'),
+      highlights: [t('landing.journal_slide2_h1'), t('landing.journal_slide2_h2'), t('landing.journal_slide2_h3'), t('landing.journal_slide2_h4')],
     },
     {
-      tab: "History",
+      tab: t('landing.journal_tab3'),
       icon: "i-heroicons-calendar-days",
-      title: "Proof that a lot happened",
-      description:
-        "Scroll back through your entries. Read what you wrote in March. See the version of you that was struggling, or thriving, or somewhere in between. It's all there.",
-      highlights: [
-        "Full chronological history",
-        "Easy date navigation",
-      ],
+      title: t('landing.journal_slide3_title'),
+      description: t('landing.journal_slide3_desc'),
+      highlights: [t('landing.journal_slide3_h1'), t('landing.journal_slide3_h2')],
     },
     {
-      tab: "Reports",
+      tab: t('landing.journal_tab4'),
       icon: "i-heroicons-chart-bar",
-      title: "Patterns you didn't know were there",
-      description:
-        "Which months were rough? What's been consistently annoying you? Where does your mood dip — and what came right after? Reports turn your entries into answers.",
-      highlights: [
-        "Mood trends over time",
-        "Writing consistency",
-        "Monthly breakdowns",
-      ],
+      title: t('landing.journal_slide4_title'),
+      description: t('landing.journal_slide4_desc'),
+      highlights: [t('landing.journal_slide4_h1'), t('landing.journal_slide4_h2'), t('landing.journal_slide4_h3')],
     },
   ],
-};
+}))
 </script>
 
 <template>

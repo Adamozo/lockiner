@@ -25,233 +25,169 @@ interface ChangelogRelease {
   changes: ChangelogEntry[];
 }
 
-const badgeConfig: Record<BadgeVariant, { label: string; classes: string }> = {
-  new: {
-    label: "New",
-    classes: "bg-electric-green/10 text-electric-green border border-electric-green/20",
-  },
-  improved: {
-    label: "Improved",
-    classes: "bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/20",
-  },
-  fixed: {
-    label: "Fixed",
-    classes: "bg-warning-orange/10 text-warning-orange border border-warning-orange/20",
-  },
-  infra: {
-    label: "Infra",
-    classes: "bg-pure-white/5 text-pure-white/50 border border-border-gray",
-  },
+const { t } = useI18n()
+
+const badgeConfig: Record<BadgeVariant, { classes: string }> = {
+  new:      { classes: "bg-electric-green/10 text-electric-green border border-electric-green/20" },
+  improved: { classes: "bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/20" },
+  fixed:    { classes: "bg-warning-orange/10 text-warning-orange border border-warning-orange/20" },
+  infra:    { classes: "bg-pure-white/5 text-pure-white/50 border border-border-gray" },
 };
 
-const releases: ChangelogRelease[] = [
+const releases = computed<ChangelogRelease[]>(() => [
   {
     version: "Alpha 0.12",
-    date: "22 February 2026",
+    date: t('landing.cl_r1_date'),
     tag: "Current",
-    highlight: "Body Measurements, Meditation tracking & Workout timer with rest intervals",
+    highlight: t('landing.cl_r1_highlight'),
     changes: [
       {
-        date: "22 Feb 2026",
-        label: "Fitness — Body Measurements",
+        date: t('landing.cl_r1_g1_date'),
+        label: t('landing.cl_r1_g1_label'),
         badge: "new",
         items: [
-          "Replaced the Weight tab with a full Body Measurements module (new route: /fitness/measurements)",
-          "Height profile card with inline editing and live BMI calculation",
-          "Circumference tracking over time: bicep, waist, thigh, calf, chest — all fields optional per entry",
-          "Latest measurements summary grid with colour-coded cards per measurement type",
-          "Weight section preserved: bar chart, full history, body fat % support",
-          "Stats row: current weight, weight change, BMI (when height is set)",
+          t('landing.cl_r1_g1_i1'), t('landing.cl_r1_g1_i2'), t('landing.cl_r1_g1_i3'),
+          t('landing.cl_r1_g1_i4'), t('landing.cl_r1_g1_i5'), t('landing.cl_r1_g1_i6'),
         ],
       },
       {
-        date: "22 Feb 2026",
-        label: "Journal — Meditation",
+        date: t('landing.cl_r1_g2_date'),
+        label: t('landing.cl_r1_g2_label'),
         badge: "new",
         items: [
-          "New Meditation tab in the Journal module (route: /journal/meditation)",
-          "Start Meditation button creates a server-side draft session with a precise start timestamp",
-          "Live stopwatch with glowing cyber-style display — timer resumes correctly after page refresh",
-          "Optional notes field during an active session",
-          "Stop & Save commits the session with actual duration; Discard deletes the draft",
-          "Stats cards: total sessions, total time, average session length, current streak (days)",
-          "Session history list with duration, date and notes",
+          t('landing.cl_r1_g2_i1'), t('landing.cl_r1_g2_i2'), t('landing.cl_r1_g2_i3'),
+          t('landing.cl_r1_g2_i4'), t('landing.cl_r1_g2_i5'), t('landing.cl_r1_g2_i6'), t('landing.cl_r1_g2_i7'),
         ],
       },
       {
-        date: "22 Feb 2026",
-        label: "Fitness — Workout Timer",
+        date: t('landing.cl_r1_g3_date'),
+        label: t('landing.cl_r1_g3_label'),
         badge: "new",
         items: [
-          "Start / Pause / Resume / Stop timer controls on the workout edit page",
-          "Timer state persisted server-side — resumes correctly after navigation or refresh",
-          "Separate tracking of active time, break time and total elapsed time",
-          "Stop auto-computes and saves duration_minutes from actual active workout time",
-          "Completing a workout auto-stops a running timer before saving",
-          "Completed workout shows a summary card: Active / Breaks / Total with start → end timestamps",
-          "Rest timer with configurable duration (default 90 s), saved per workout",
-          "Countdown progress bar and 3-beep Web Audio notification when rest period ends",
-          "New workout page shows a banner explaining timer availability; redirects to edit page after first draft save",
+          t('landing.cl_r1_g3_i1'), t('landing.cl_r1_g3_i2'), t('landing.cl_r1_g3_i3'),
+          t('landing.cl_r1_g3_i4'), t('landing.cl_r1_g3_i5'), t('landing.cl_r1_g3_i6'),
+          t('landing.cl_r1_g3_i7'), t('landing.cl_r1_g3_i8'), t('landing.cl_r1_g3_i9'),
         ],
       },
     ],
   },
   {
     version: "Alpha 0.11",
-    date: "20 February 2026",
+    date: t('landing.cl_r2_date'),
     tag: "",
-    highlight: "Shopping Lists — collaborative shopping with household sharing",
+    highlight: t('landing.cl_r2_highlight'),
     changes: [
       {
-        date: "20 Feb 2026",
-        label: "Shopping Lists",
+        date: t('landing.cl_r2_g1_date'),
+        label: t('landing.cl_r2_g1_label'),
         badge: "new",
         items: [
-          "Standalone Shopping module — lists can be for any store type (grocery, hardware, etc.)",
-          "Create lists with optional store name and planned date",
-          "Private lists (owner only) or household-shared lists (all active household members have equal access)",
-          "3-state item status cycle: Pending → In Cart → Purchased — tap the icon to advance",
-          "Items grouped by category with purchased items collapsed into a separate section",
-          "Progress bar showing purchased / total items, with in-cart count displayed separately",
-          "Quick-add form with optional details: quantity, unit, category and note",
-          "Inline editing of list name and store name directly on the detail page",
-          "Mark list as Completed to archive it; Completed lists have a dedicated view",
+          t('landing.cl_r2_g1_i1'), t('landing.cl_r2_g1_i2'), t('landing.cl_r2_g1_i3'),
+          t('landing.cl_r2_g1_i4'), t('landing.cl_r2_g1_i5'), t('landing.cl_r2_g1_i6'),
+          t('landing.cl_r2_g1_i7'), t('landing.cl_r2_g1_i8'), t('landing.cl_r2_g1_i9'),
         ],
       },
     ],
   },
   {
     version: "Alpha 0.10",
-    date: "20 February 2026",
+    date: t('landing.cl_r3_date'),
     tag: "",
-    highlight: "Backup & Data Export with Google Drive integration",
+    highlight: t('landing.cl_r3_highlight'),
     changes: [
       {
-        date: "20 Feb 2026",
-        label: "Backup & Data Export",
+        date: t('landing.cl_r3_g1_date'),
+        label: t('landing.cl_r3_g1_label'),
         badge: "new",
         items: [
-          "Full data export: all personal data (workouts, journal, medicines, finance, food) packed into an AES-256 encrypted ZIP",
-          "Household backup: household admins can export the entire household dataset separately",
-          "Password-protected archives — set your own encryption password, viewable any time in settings",
-          "Manual download from the Settings → Backup tab",
+          t('landing.cl_r3_g1_i1'), t('landing.cl_r3_g1_i2'), t('landing.cl_r3_g1_i3'), t('landing.cl_r3_g1_i4'),
         ],
       },
       {
-        date: "20 Feb 2026",
-        label: "Google Drive integration",
+        date: t('landing.cl_r3_g2_date'),
+        label: t('landing.cl_r3_g2_label'),
         badge: "new",
         items: [
-          "Connect your Google account via OAuth to enable automatic Drive uploads",
-          "Scheduled auto-backup: daily, weekly or monthly at a chosen time",
-          "Backups uploaded to your own Google Drive — app stores only a refresh token, never the file contents",
-          "Household managers can connect a separate Drive account for household backups",
-          "Error notifications: app alerts you if Drive access is revoked, quota is exceeded or a folder is missing",
+          t('landing.cl_r3_g2_i1'), t('landing.cl_r3_g2_i2'), t('landing.cl_r3_g2_i3'),
+          t('landing.cl_r3_g2_i4'), t('landing.cl_r3_g2_i5'),
         ],
       },
       {
-        date: "20 Feb 2026",
-        label: "Settings",
+        date: t('landing.cl_r3_g3_date'),
+        label: t('landing.cl_r3_g3_label'),
         badge: "improved",
-        items: [
-          "Settings page reorganised into tabs: General, Notifications, Backup, Integrations",
-          "Mobile view uses a custom styled dropdown instead of a raw tab bar",
-        ],
+        items: [t('landing.cl_r3_g3_i1'), t('landing.cl_r3_g3_i2')],
       },
     ],
   },
   {
     version: "Alpha 0.9",
-    date: "17 February 2026",
+    date: t('landing.cl_r4_date'),
     tag: "",
-    highlight: "Medicines, per-set workout tracking & journal encryption",
+    highlight: t('landing.cl_r4_highlight'),
     changes: [
       {
-        date: "17 Feb 2026",
-        label: "Fitness — Medicines",
+        date: t('landing.cl_r4_g1_date'),
+        label: t('landing.cl_r4_g1_label'),
+        badge: "new",
+        items: [t('landing.cl_r4_g1_i1'), t('landing.cl_r4_g1_i2'), t('landing.cl_r4_g1_i3')],
+      },
+      {
+        date: t('landing.cl_r4_g2_date'),
+        label: t('landing.cl_r4_g2_label'),
         badge: "new",
         items: [
-          "Medicine cabinet: add medications with name, dosage and frequency",
-          "Individual medicine detail pages with schedule and edit support",
-          "Medicine log entries encrypted client-side before leaving the device",
+          t('landing.cl_r4_g2_i1'), t('landing.cl_r4_g2_i2'), t('landing.cl_r4_g2_i3'), t('landing.cl_r4_g2_i4'),
         ],
       },
       {
-        date: "17 Feb 2026",
-        label: "Fitness — Workouts",
+        date: t('landing.cl_r4_g3_date'),
+        label: t('landing.cl_r4_g3_label'),
         badge: "new",
         items: [
-          "Per-set weight & rep tracking — each set logged independently",
-          "Full-page workout form replaces modal (routes: /fitness/workouts/new, /fitness/workouts/[id])",
-          "Draft workout support: workouts auto-saved every 3 seconds while in progress",
-          "Set completion toggling with visual feedback",
+          t('landing.cl_r4_g3_i1'), t('landing.cl_r4_g3_i2'), t('landing.cl_r4_g3_i3'), t('landing.cl_r4_g3_i4'),
         ],
       },
       {
-        date: "17 Feb 2026",
-        label: "Journal",
-        badge: "new",
-        items: [
-          "Daily journal entries with mood tracking (1–5 scale)",
-          "Client-side AES-GCM encryption — server stores only ciphertext",
-          "History view with calendar navigation",
-          "Monthly report summaries with mood trend charts",
-        ],
-      },
-      {
-        date: "17 Feb 2026",
-        label: "Landing page",
+        date: t('landing.cl_r4_g4_date'),
+        label: t('landing.cl_r4_g4_label'),
         badge: "improved",
-        items: [
-          "Module sections for Finance, Fitness, Food, Journal — each with screenshots and feature highlights",
-          "PWA install prompt dialog",
-          "Privacy Policy and Terms of Service subpages",
-        ],
+        items: [t('landing.cl_r4_g4_i1'), t('landing.cl_r4_g4_i2'), t('landing.cl_r4_g4_i3')],
       },
     ],
   },
   {
     version: "Alpha 0.8",
-    date: "January 2026",
+    date: t('landing.cl_r5_date'),
     tag: "",
-    highlight: "Finance analytics, receipt scanning & household budgets",
+    highlight: t('landing.cl_r5_highlight'),
     changes: [
       {
-        date: "Jan 2026",
-        label: "Finance",
+        date: t('landing.cl_r5_g1_date'),
+        label: t('landing.cl_r5_g1_label'),
         badge: "new",
         items: [
-          "Transaction list with category tagging and search",
-          "Spending limits per category with over-budget alerts",
-          "CSV/bank import for bulk transaction upload",
-          "Receipt scanning — upload photo, extract merchant and total automatically",
-          "Finance analytics dashboard: monthly breakdown, top categories, trend charts",
+          t('landing.cl_r5_g1_i1'), t('landing.cl_r5_g1_i2'), t('landing.cl_r5_g1_i3'),
+          t('landing.cl_r5_g1_i4'), t('landing.cl_r5_g1_i5'),
         ],
       },
       {
-        date: "Jan 2026",
-        label: "Households",
+        date: t('landing.cl_r5_g2_date'),
+        label: t('landing.cl_r5_g2_label'),
         badge: "new",
         items: [
-          "Create and join households via invite token",
-          "Shared household finance view with per-member contribution breakdown",
-          "Household-level analytics separate from personal finance",
-          "Invitation management page for household admins",
+          t('landing.cl_r5_g2_i1'), t('landing.cl_r5_g2_i2'), t('landing.cl_r5_g2_i3'), t('landing.cl_r5_g2_i4'),
         ],
       },
       {
-        date: "Jan 2026",
-        label: "Notifications",
+        date: t('landing.cl_r5_g3_date'),
+        label: t('landing.cl_r5_g3_label'),
         badge: "new",
-        items: [
-          "In-app notification centre",
-          "Admin broadcast notifications to all users",
-          "Unread badge on nav icon",
-        ],
+        items: [t('landing.cl_r5_g3_i1'), t('landing.cl_r5_g3_i2'), t('landing.cl_r5_g3_i3')],
       },
     ],
   },
-];
+]);
 </script>
 
 <template>
@@ -263,14 +199,13 @@ const releases: ChangelogRelease[] = [
       <!-- Page header -->
       <div class="mb-14">
         <p class="text-xs font-bold tracking-widest uppercase text-pure-white/35 mb-3">
-          Release history
+          {{ $t('landing.changelog_subtitle') }}
         </p>
         <h1 class="text-3xl md:text-4xl font-bold text-pure-white mb-4 leading-tight">
-          Changelog
+          {{ $t('landing.changelog_title') }}
         </h1>
         <p class="text-pure-white/50 text-base leading-relaxed max-w-xl">
-          LockIner is in active alpha development. This page tracks what's been
-          shipped — features, improvements and fixes — in rough chronological order.
+          {{ $t('landing.changelog_desc') }}
         </p>
       </div>
 
@@ -278,7 +213,7 @@ const releases: ChangelogRelease[] = [
       <div class="inline-flex items-center gap-2 px-4 py-2 bg-warning-orange/10 border border-warning-orange/25 rounded-full mb-14">
         <span class="w-2 h-2 rounded-full bg-warning-orange animate-pulse" />
         <span class="text-xs font-semibold text-warning-orange tracking-wide uppercase">
-          Alpha — invite-only access
+          {{ $t('landing.changelog_alpha_badge') }}
         </span>
       </div>
 
@@ -305,7 +240,7 @@ const releases: ChangelogRelease[] = [
                 v-if="release.tag"
                 class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-electric-green/10 text-electric-green border border-electric-green/25"
               >
-                {{ release.tag }}
+                {{ release.tag === 'Current' ? $t('landing.changelog_current') : release.tag }}
               </span>
             </div>
             <p class="text-xs text-pure-white/35 font-medium mb-1">{{ release.date }}</p>
@@ -323,7 +258,7 @@ const releases: ChangelogRelease[] = [
                     class="text-xs font-semibold px-2.5 py-1 rounded-full"
                     :class="badgeConfig[group.badge].classes"
                   >
-                    {{ badgeConfig[group.badge].label }}
+                    {{ $t('landing.badge_' + group.badge) }}
                   </span>
                   <span class="text-sm font-semibold text-pure-white">{{ group.label }}</span>
                   <span class="text-xs text-pure-white/30 ml-auto">{{ group.date }}</span>

@@ -6,6 +6,8 @@ definePageMeta({
   middleware: "guest",
 });
 
+const { t } = useI18n()
+
 useSeoMeta({
   title: "Register - LockIner",
   description: "Create your LockIner account",
@@ -47,10 +49,10 @@ const passwordStrength = computed(() => {
   if (/\d/.test(password)) score++;
   if (/[^a-zA-Z0-9]/.test(password)) score++;
 
-  if (score <= 1) return { score, label: "Weak", color: "bg-danger-red" };
-  if (score <= 2) return { score, label: "Fair", color: "bg-warning-orange" };
-  if (score <= 3) return { score, label: "Good", color: "bg-cyber-blue" };
-  return { score, label: "Strong", color: "bg-electric-green" };
+  if (score <= 1) return { score, label: t('auth.password_strength_weak'), color: "bg-danger-red" };
+  if (score <= 2) return { score, label: t('auth.password_strength_fair'), color: "bg-warning-orange" };
+  if (score <= 3) return { score, label: t('auth.password_strength_good'), color: "bg-cyber-blue" };
+  return { score, label: t('auth.password_strength_strong'), color: "bg-electric-green" };
 });
 
 // Validation
@@ -66,36 +68,36 @@ const validateForm = (): boolean => {
   let valid = true;
 
   if (!form.value.voucherCode || form.value.voucherCode.trim().length === 0) {
-    errors.value.voucherCode = "Voucher code is required";
+    errors.value.voucherCode = t('auth.voucher_required');
     valid = false;
   }
 
   if (!form.value.name || form.value.name.trim().length < 2) {
-    errors.value.name = "Name must be at least 2 characters";
+    errors.value.name = t('auth.name_min');
     valid = false;
   }
 
   if (!form.value.email) {
-    errors.value.email = "Email is required";
+    errors.value.email = t('auth.email_required');
     valid = false;
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
-    errors.value.email = "Invalid email format";
+    errors.value.email = t('auth.email_invalid');
     valid = false;
   }
 
   if (!form.value.password) {
-    errors.value.password = "Password is required";
+    errors.value.password = t('auth.password_required');
     valid = false;
   } else if (form.value.password.length < 8) {
-    errors.value.password = "Password must be at least 8 characters";
+    errors.value.password = t('auth.password_min');
     valid = false;
   }
 
   if (!form.value.confirmPassword) {
-    errors.value.confirmPassword = "Please confirm your password";
+    errors.value.confirmPassword = t('auth.confirm_password_required');
     valid = false;
   } else if (form.value.password !== form.value.confirmPassword) {
-    errors.value.confirmPassword = "Passwords do not match";
+    errors.value.confirmPassword = t('auth.passwords_mismatch');
     valid = false;
   }
 
@@ -119,8 +121,8 @@ const handleSubmit = async () => {
     });
 
     toast.add({
-      title: "Account created!",
-      description: "Please sign in with your new account",
+      title: t('auth.register_success_title'),
+      description: t('auth.register_success_desc'),
       color: "green",
     });
 
@@ -133,13 +135,13 @@ const handleSubmit = async () => {
       err.statusCode === 400 &&
       err.data?.detail?.toLowerCase().includes("voucher")
     ) {
-      errors.value.voucherCode = "Invalid or already used voucher code";
+      errors.value.voucherCode = t('auth.voucher_invalid');
     } else if (err.statusCode === 409 && err.data?.detail?.includes("email")) {
-      errors.value.email = "This email is already registered";
+      errors.value.email = t('auth.email_taken');
     } else if (err.data?.detail) {
       errors.value.general = err.data.detail;
     } else {
-      errors.value.general = "An error occurred. Please try again.";
+      errors.value.general = t('auth.error_generic');
     }
   } finally {
     loading.value = false;
@@ -156,7 +158,7 @@ const handleSubmit = async () => {
       <div
         class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-cyber-blue to-electric-green"
       />
-      <h1 class="text-2xl font-bold text-pure-white">Create an account</h1>
+      <h1 class="text-2xl font-bold text-pure-white">{{ $t('auth.create_account') }}</h1>
     </div>
 
     <!-- Form -->
@@ -181,7 +183,7 @@ const handleSubmit = async () => {
           for="voucherCode"
           class="block text-sm font-medium text-pure-white mb-2"
         >
-          Voucher Code
+          {{ $t('auth.voucher_code') }}
           <span class="text-danger-red">*</span>
         </label>
         <div class="relative">
@@ -190,7 +192,7 @@ const handleSubmit = async () => {
             v-model="form.voucherCode"
             type="text"
             autocomplete="off"
-            placeholder="Enter your voucher code"
+            :placeholder="$t('auth.voucher_placeholder')"
             :class="[
               'w-full px-4 py-2.5 pl-11 border rounded-lg bg-background-black text-pure-white placeholder-pure-white/40 focus:outline-none focus:ring-2 transition-colors font-mono uppercase tracking-wider',
               errors.voucherCode
@@ -207,7 +209,7 @@ const handleSubmit = async () => {
           {{ errors.voucherCode }}
         </p>
         <p v-else class="mt-1 text-xs text-pure-white/40">
-          Registration requires a valid voucher code
+          {{ $t('auth.voucher_hint') }}
         </p>
       </div>
 
@@ -217,14 +219,14 @@ const handleSubmit = async () => {
           for="name"
           class="block text-sm font-medium text-pure-white mb-2"
         >
-          Name
+          {{ $t('auth.name') }}
         </label>
         <input
           id="name"
           v-model="form.name"
           type="text"
           autocomplete="name"
-          placeholder="Your name"
+          :placeholder="$t('auth.name_placeholder')"
           :class="[
             'w-full px-4 py-2.5 border rounded-lg bg-background-black text-pure-white placeholder-pure-white/40 focus:outline-none focus:ring-2 transition-colors',
             errors.name
@@ -243,14 +245,14 @@ const handleSubmit = async () => {
           for="email"
           class="block text-sm font-medium text-pure-white mb-2"
         >
-          Email
+          {{ $t('auth.email') }}
         </label>
         <input
           id="email"
           v-model="form.email"
           type="email"
           autocomplete="email"
-          placeholder="you@example.com"
+          :placeholder="$t('auth.email_placeholder')"
           :class="[
             'w-full px-4 py-2.5 border rounded-lg bg-background-black text-pure-white placeholder-pure-white/40 focus:outline-none focus:ring-2 transition-colors',
             errors.email
@@ -269,7 +271,7 @@ const handleSubmit = async () => {
           for="password"
           class="block text-sm font-medium text-pure-white mb-2"
         >
-          Password
+          {{ $t('auth.password') }}
         </label>
         <div class="relative">
           <input
@@ -277,7 +279,7 @@ const handleSubmit = async () => {
             v-model="form.password"
             :type="showPassword ? 'text' : 'password'"
             autocomplete="new-password"
-            placeholder="Create a strong password"
+            :placeholder="$t('auth.password_create_placeholder')"
             :class="[
               'w-full px-4 py-2.5 pr-12 border rounded-lg bg-background-black text-pure-white placeholder-pure-white/40 focus:outline-none focus:ring-2 transition-colors',
               errors.password
@@ -328,7 +330,7 @@ const handleSubmit = async () => {
           for="confirmPassword"
           class="block text-sm font-medium text-pure-white mb-2"
         >
-          Confirm Password
+          {{ $t('auth.confirm_password') }}
         </label>
         <div class="relative">
           <input
@@ -336,7 +338,7 @@ const handleSubmit = async () => {
             v-model="form.confirmPassword"
             :type="showConfirmPassword ? 'text' : 'password'"
             autocomplete="new-password"
-            placeholder="Confirm your password"
+            :placeholder="$t('auth.confirm_password_placeholder')"
             :class="[
               'w-full px-4 py-2.5 pr-12 border rounded-lg bg-background-black text-pure-white placeholder-pure-white/40 focus:outline-none focus:ring-2 transition-colors',
               errors.confirmPassword
@@ -371,17 +373,17 @@ const handleSubmit = async () => {
         :loading="loading"
         class="w-full"
       >
-        Create account
+        {{ $t('auth.create_account_btn') }}
       </BaseButton>
 
       <!-- Login link -->
       <p class="text-center text-sm text-pure-white/60">
-        Already have an account?
+        {{ $t('auth.already_account') }}
         <NuxtLink
           to="/login"
           class="text-cyber-blue hover:text-cyber-blue/80 font-medium transition-colors"
         >
-          Sign in
+          {{ $t('auth.sign_in') }}
         </NuxtLink>
       </p>
     </form>

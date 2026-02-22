@@ -67,6 +67,7 @@ async def register(
             created_at=user.created_at,
             is_active=user.is_active,
             totp_enabled=user.totp_enabled or False,
+            language=user.language,
         )
 
     except InvalidVoucherError as e:
@@ -150,6 +151,7 @@ async def get_current_user_info(
         created_at=current_user.created_at,
         is_active=current_user.is_active,
         totp_enabled=current_user.totp_enabled or False,
+        language=current_user.language,
     )
 
 
@@ -161,7 +163,7 @@ async def update_profile(
 ):
     """Update current user's profile."""
     try:
-        user = await service.update_user(current_user.id, name=data.name)
+        user = await service.update_user(current_user.id, name=data.name, language=data.language)
         return UserResponse(
             id=user.id,
             name=user.name,
@@ -169,6 +171,7 @@ async def update_profile(
             created_at=user.created_at,
             is_active=user.is_active,
             totp_enabled=user.totp_enabled or False,
+            language=user.language,
         )
 
     except UserNotFoundError as e:

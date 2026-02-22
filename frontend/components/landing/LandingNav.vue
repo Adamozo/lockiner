@@ -15,35 +15,36 @@
           >
         </NuxtLink>
         <div class="flex items-center gap-2 sm:gap-4">
+          <LanguageSwitcher />
           <NuxtLink
             to="/changelog"
             class="hidden sm:inline text-pure-white/50 hover:text-pure-white transition-colors text-sm font-medium"
           >
-            Changelog
+            {{ $t('landing.nav_changelog') }}
           </NuxtLink>
           <NuxtLink
             to="/login"
             class="hidden sm:inline text-pure-white/70 hover:text-pure-white transition-colors font-medium"
           >
-            Sign in
+            {{ $t('landing.nav_sign_in') }}
           </NuxtLink>
           <NuxtLink
             to="/changelog"
             class="sm:hidden text-pure-white/50 hover:text-pure-white transition-colors text-sm font-medium"
           >
-            Changelog
+            {{ $t('landing.nav_changelog') }}
           </NuxtLink>
           <NuxtLink
             to="/login"
             class="sm:hidden px-3 py-1.5 border border-border-gray text-pure-white text-sm font-medium rounded-lg transition-colors"
           >
-            Sign in
+            {{ $t('landing.nav_sign_in') }}
           </NuxtLink>
           <NuxtLink
             to="/register"
             class="px-3 py-1.5 sm:px-4 sm:py-2 bg-electric-green hover:bg-electric-green/90 text-background-black text-sm sm:text-base font-semibold rounded-lg transition-colors"
           >
-            Get Started
+            {{ $t('landing.nav_get_started') }}
           </NuxtLink>
         </div>
       </div>

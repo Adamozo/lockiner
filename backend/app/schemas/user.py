@@ -14,11 +14,13 @@ class UserCreate(UserBase):
     """Schema for creating a new user (registration)."""
     password: str = Field(..., min_length=8, description="Password (min 8 characters)")
     voucher_code: str = Field(..., description="Registration voucher code (required)")
+    language: str = "en"
 
 
 class UserUpdate(BaseModel):
     """Schema for updating user profile."""
     name: Optional[str] = Field(None, min_length=1, max_length=100)
+    language: Optional[str] = None
 
 
 class UserResponse(BaseModel):
@@ -29,6 +31,7 @@ class UserResponse(BaseModel):
     created_at: str
     is_active: bool
     totp_enabled: bool = False
+    language: str = "en"
 
     model_config = ConfigDict(from_attributes=True)
 

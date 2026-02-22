@@ -6,6 +6,8 @@ definePageMeta({
   middleware: "guest",
 });
 
+const { t } = useI18n()
+
 useSeoMeta({
   title: "Login - LockIner",
   description: "Login to your LockIner account",
@@ -35,15 +37,15 @@ const validateForm = (): boolean => {
   let valid = true;
 
   if (!form.value.email) {
-    errors.value.email = "Email is required";
+    errors.value.email = t('auth.email_required');
     valid = false;
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
-    errors.value.email = "Invalid email format";
+    errors.value.email = t('auth.email_invalid');
     valid = false;
   }
 
   if (!form.value.password) {
-    errors.value.password = "Password is required";
+    errors.value.password = t('auth.password_required');
     valid = false;
   }
 
@@ -69,8 +71,8 @@ const handleSubmit = async () => {
     }
 
     toast.add({
-      title: "Welcome back!",
-      description: "You have been logged in successfully",
+      title: t('auth.login_success_title'),
+      description: t('auth.login_success_desc'),
       color: "green",
     });
 
@@ -81,11 +83,11 @@ const handleSubmit = async () => {
     const err = e as { data?: { detail?: string }; statusCode?: number };
 
     if (err.statusCode === 401) {
-      errors.value.general = "Invalid email or password";
+      errors.value.general = t('auth.invalid_credentials');
     } else if (err.data?.detail) {
       errors.value.general = err.data.detail;
     } else {
-      errors.value.general = "An error occurred. Please try again.";
+      errors.value.general = t('auth.error_generic');
     }
   } finally {
     loading.value = false;
@@ -107,15 +109,15 @@ const handleTwoFactorVerify = async () => {
     await authStore.verifyTwoFactor(twoFactorCode.value);
 
     toast.add({
-      title: "Welcome back!",
-      description: "You have been logged in successfully",
+      title: t('auth.login_success_title'),
+      description: t('auth.login_success_desc'),
       color: "green",
     });
 
     const redirect = (route.query.redirect as string) || "/home";
     await router.push(redirect);
   } catch {
-    errors.value.general = "Invalid verification code. Please try again.";
+    errors.value.general = t('auth.invalid_verification_code');
     twoFactorCode.value = "";
   } finally {
     twoFactorLoading.value = false;
@@ -141,7 +143,7 @@ const cancelTwoFactor = () => {
         <div
           class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-cyber-blue to-electric-green"
         />
-        <h1 class="text-2xl font-bold text-pure-white">Welcome back</h1>
+        <h1 class="text-2xl font-bold text-pure-white">{{ $t('auth.welcome_back') }}</h1>
       </div>
 
       <!-- Form -->
@@ -166,14 +168,14 @@ const cancelTwoFactor = () => {
             for="email"
             class="block text-sm font-medium text-pure-white mb-2"
           >
-            Email
+            {{ $t('auth.email') }}
           </label>
           <input
             id="email"
             v-model="form.email"
             type="email"
             autocomplete="email"
-            placeholder="you@example.com"
+            :placeholder="$t('auth.email_placeholder')"
             :class="[
               'w-full px-4 py-2.5 border rounded-lg bg-background-black text-pure-white placeholder-pure-white/40 focus:outline-none focus:ring-2 transition-colors',
               errors.email
@@ -192,7 +194,7 @@ const cancelTwoFactor = () => {
             for="password"
             class="block text-sm font-medium text-pure-white mb-2"
           >
-            Password
+            {{ $t('auth.password') }}
           </label>
           <div class="relative">
             <input
@@ -200,7 +202,7 @@ const cancelTwoFactor = () => {
               v-model="form.password"
               :type="showPassword ? 'text' : 'password'"
               autocomplete="current-password"
-              placeholder="Enter your password"
+              :placeholder="$t('auth.password_placeholder')"
               :class="[
                 'w-full px-4 py-2.5 pr-12 border rounded-lg bg-background-black text-pure-white placeholder-pure-white/40 focus:outline-none focus:ring-2 transition-colors',
                 errors.password
@@ -231,17 +233,17 @@ const cancelTwoFactor = () => {
           :loading="loading"
           class="w-full"
         >
-          Sign in
+          {{ $t('auth.sign_in') }}
         </BaseButton>
 
         <!-- Register link -->
         <p class="text-center text-sm text-pure-white/60">
-          Don't have an account?
+          {{ $t('auth.no_account') }}
           <NuxtLink
             to="/register"
             class="text-cyber-blue hover:text-cyber-blue/80 font-medium transition-colors"
           >
-            Create one
+            {{ $t('auth.create_one') }}
           </NuxtLink>
         </p>
       </form>
@@ -254,9 +256,9 @@ const cancelTwoFactor = () => {
         <div
           class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-cyber-blue to-electric-green"
         />
-        <h1 class="text-2xl font-bold text-pure-white">Two-Factor Authentication</h1>
+        <h1 class="text-2xl font-bold text-pure-white">{{ $t('auth.two_factor_title') }}</h1>
         <p class="mt-1 text-sm text-pure-white/60">
-          {{ useRecoveryCode ? 'Enter a recovery code' : 'Enter the 6-digit code from your authenticator app' }}
+          {{ useRecoveryCode ? $t('auth.two_factor_enter_recovery') : $t('auth.two_factor_enter_code') }}
         </p>
       </div>
 
@@ -281,7 +283,7 @@ const cancelTwoFactor = () => {
             for="twoFactorCode"
             class="block text-sm font-medium text-pure-white mb-2"
           >
-            {{ useRecoveryCode ? 'Recovery Code' : 'Verification Code' }}
+            {{ useRecoveryCode ? $t('auth.recovery_code') : $t('auth.verification_code') }}
           </label>
           <input
             id="twoFactorCode"
@@ -300,7 +302,7 @@ const cancelTwoFactor = () => {
           class="text-sm text-cyber-blue hover:text-cyber-blue/80 transition-colors"
           @click="useRecoveryCode = !useRecoveryCode; twoFactorCode = ''"
         >
-          {{ useRecoveryCode ? 'Use authenticator code instead' : 'Use a recovery code instead' }}
+          {{ useRecoveryCode ? $t('auth.use_authenticator_instead') : $t('auth.use_recovery_instead') }}
         </button>
 
         <!-- Buttons -->
@@ -311,7 +313,7 @@ const cancelTwoFactor = () => {
             class="flex-1"
             @click="cancelTwoFactor"
           >
-            Cancel
+            {{ $t('common.cancel') }}
           </BaseButton>
           <BaseButton
             type="submit"
@@ -319,7 +321,7 @@ const cancelTwoFactor = () => {
             :loading="twoFactorLoading"
             class="flex-1"
           >
-            Verify
+            {{ $t('auth.verify') }}
           </BaseButton>
         </div>
       </form>
