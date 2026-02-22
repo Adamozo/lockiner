@@ -142,11 +142,13 @@ const saveDraft = async () => {
     if (draftId.value) {
       const payload: WorkoutUpdate = buildWorkoutPayload(false)
       await updateWorkout(draftId.value, payload)
+      saveStatus.value = 'saved'
     } else {
       const result = await createWorkout(buildWorkoutPayload(false))
       draftId.value = result.id
+      // Redirect to the edit page which has timer and rest timer functionality
+      router.push(`/fitness/workouts/${result.id}`)
     }
-    saveStatus.value = 'saved'
   } catch {
     saveStatus.value = 'idle'
   }
@@ -231,6 +233,12 @@ const handleComplete = async () => {
     </div>
 
     <div class="space-y-6">
+      <!-- Timer info banner (before first save) -->
+      <div class="flex items-center gap-3 px-4 py-3 rounded-lg border border-border-gray bg-card-black text-pure-white/50 text-sm">
+        <UIcon name="i-heroicons-clock" class="w-4 h-4 flex-shrink-0 text-warning-orange/60" />
+        <span>Workout timer and rest timer will be available after saving your first draft.</span>
+      </div>
+
       <!-- Workout Template chips -->
       <div>
         <label class="block text-sm font-medium text-pure-white/60 mb-3">Workout Type</label>

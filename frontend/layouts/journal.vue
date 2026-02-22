@@ -5,6 +5,7 @@ const journalNavigation = [
   { label: 'Dashboard', icon: 'i-heroicons-home', to: '/journal' },
   { label: 'Today', icon: 'i-heroicons-pencil-square', to: `/journal/${today}` },
   { label: 'History', icon: 'i-heroicons-clock', to: '/journal/history' },
+  { label: 'Meditation', icon: 'i-heroicons-moon', to: '/journal/meditation' },
   { label: 'Reports', icon: 'i-heroicons-chart-bar', to: '/journal/reports' },
 ]
 

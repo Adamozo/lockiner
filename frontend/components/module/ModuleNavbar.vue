@@ -45,6 +45,7 @@ const allModules: ModuleItem[] = [
   { name: 'Food', icon: 'i-heroicons-shopping-cart', to: '/food', color: 'electric-green' },
   { name: 'Journal', icon: 'i-heroicons-book-open', to: '/journal', color: 'cyber-blue' },
   { name: 'Todo', icon: 'i-heroicons-check-circle', to: '/todo', color: 'electric-green' },
+  { name: 'Shopping', icon: 'i-heroicons-shopping-bag', to: '/shopping', color: 'warning-orange' },
 ]
 
 // Current module based on route

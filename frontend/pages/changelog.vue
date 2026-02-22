@@ -46,9 +46,60 @@ const badgeConfig: Record<BadgeVariant, { label: string; classes: string }> = {
 
 const releases: ChangelogRelease[] = [
   {
+    version: "Alpha 0.12",
+    date: "22 February 2026",
+    tag: "Current",
+    highlight: "Body Measurements, Meditation tracking & Workout timer with rest intervals",
+    changes: [
+      {
+        date: "22 Feb 2026",
+        label: "Fitness — Body Measurements",
+        badge: "new",
+        items: [
+          "Replaced the Weight tab with a full Body Measurements module (new route: /fitness/measurements)",
+          "Height profile card with inline editing and live BMI calculation",
+          "Circumference tracking over time: bicep, waist, thigh, calf, chest — all fields optional per entry",
+          "Latest measurements summary grid with colour-coded cards per measurement type",
+          "Weight section preserved: bar chart, full history, body fat % support",
+          "Stats row: current weight, weight change, BMI (when height is set)",
+        ],
+      },
+      {
+        date: "22 Feb 2026",
+        label: "Journal — Meditation",
+        badge: "new",
+        items: [
+          "New Meditation tab in the Journal module (route: /journal/meditation)",
+          "Start Meditation button creates a server-side draft session with a precise start timestamp",
+          "Live stopwatch with glowing cyber-style display — timer resumes correctly after page refresh",
+          "Optional notes field during an active session",
+          "Stop & Save commits the session with actual duration; Discard deletes the draft",
+          "Stats cards: total sessions, total time, average session length, current streak (days)",
+          "Session history list with duration, date and notes",
+        ],
+      },
+      {
+        date: "22 Feb 2026",
+        label: "Fitness — Workout Timer",
+        badge: "new",
+        items: [
+          "Start / Pause / Resume / Stop timer controls on the workout edit page",
+          "Timer state persisted server-side — resumes correctly after navigation or refresh",
+          "Separate tracking of active time, break time and total elapsed time",
+          "Stop auto-computes and saves duration_minutes from actual active workout time",
+          "Completing a workout auto-stops a running timer before saving",
+          "Completed workout shows a summary card: Active / Breaks / Total with start → end timestamps",
+          "Rest timer with configurable duration (default 90 s), saved per workout",
+          "Countdown progress bar and 3-beep Web Audio notification when rest period ends",
+          "New workout page shows a banner explaining timer availability; redirects to edit page after first draft save",
+        ],
+      },
+    ],
+  },
+  {
     version: "Alpha 0.11",
     date: "20 February 2026",
-    tag: "Current",
+    tag: "",
     highlight: "Shopping Lists — collaborative shopping with household sharing",
     changes: [
       {

@@ -4,7 +4,7 @@
 const fitnessNavigation = [
   { label: 'Dashboard', icon: 'i-heroicons-home', to: '/fitness' },
   { label: 'Workouts', icon: 'i-heroicons-fire', to: '/fitness/workouts' },
-  { label: 'Weight', icon: 'i-heroicons-scale', to: '/fitness/weight' },
+  { label: 'Measurements', icon: 'i-heroicons-clipboard-document-list', to: '/fitness/measurements' },
   { label: 'Progress', icon: 'i-heroicons-chart-bar', to: '/fitness/progress' },
   { label: 'Medicines', icon: 'i-heroicons-beaker', to: '/fitness/medicines' },
 ]

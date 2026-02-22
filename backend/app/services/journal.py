@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
 from datetime import datetime, timezone, timedelta
 
-from ..models.journal import JournalEntry, JournalItem, JournalReport
+from ..models.journal import JournalEntry, JournalItem, JournalReport, MeditationSession
 from ..models.base import utc_now
 from ..schemas.journal import (
     JournalEntryCreate,
@@ -13,11 +13,15 @@ from ..schemas.journal import (
     ReportData,
     CategoryReportData,
     JOURNAL_CATEGORIES,
+    MeditationSessionCreate,
+    MeditationSessionUpdate,
+    MeditationStatsResponse,
 )
 from ..repositories.journal import (
     JournalEntryRepository,
     JournalItemRepository,
     JournalReportRepository,
+    MeditationRepository,
 )
 
 
@@ -55,6 +59,12 @@ class JournalReportNotFoundError(Exception):
         super().__init__(f"Report not found: {report_type}/{period}")
 
 
+class MeditationSessionNotFoundError(Exception):
+    def __init__(self, session_id: int):
+        self.session_id = session_id
+        super().__init__(f"Meditation session {session_id} not found")
+
+
 # --- Service ---
 
 class JournalService:
@@ -62,6 +72,7 @@ class JournalService:
         self.entry_repo = JournalEntryRepository(db)
         self.item_repo = JournalItemRepository(db)
         self.report_repo = JournalReportRepository(db)
+        self.meditation_repository = MeditationRepository(db)
         self.db = db
 
     # --- Entries ---
@@ -296,3 +307,90 @@ class JournalService:
             check -= timedelta(days=1)
 
         return current, longest
+
+    # --- Meditation ---
+
+    async def list_meditation_sessions(
+        self,
+        user_id: int,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[MeditationSession]:
+        return await self.meditation_repository.get_all(user_id=user_id, skip=skip, limit=limit)
+
+    async def get_active_meditation(self, user_id: int) -> Optional[MeditationSession]:
+        return await self.meditation_repository.get_active_draft(user_id)
+
+    async def start_meditation(self, data: MeditationSessionCreate, user_id: int) -> MeditationSession:
+        session = MeditationSession(
+            user_id=user_id,
+            date=data.date,
+            started_at=utc_now().isoformat(),
+            notes=data.notes,
+            completed=False,
+        )
+        return await self.meditation_repository.create(session)
+
+    async def update_meditation(
+        self, session_id: int, data: MeditationSessionUpdate, user_id: int
+    ) -> MeditationSession:
+        session = await self.meditation_repository.get_by_id(session_id)
+        if session is None:
+            raise MeditationSessionNotFoundError(session_id)
+        if session.user_id != user_id:
+            raise JournalAccessDeniedError("meditation_session", session_id)
+
+        update_data = data.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(session, field, value)
+
+        return await self.meditation_repository.update(session)
+
+    async def delete_meditation(self, session_id: int, user_id: int) -> None:
+        session = await self.meditation_repository.get_by_id(session_id)
+        if session is None:
+            raise MeditationSessionNotFoundError(session_id)
+        if session.user_id != user_id:
+            raise JournalAccessDeniedError("meditation_session", session_id)
+        await self.meditation_repository.delete(session)
+
+    async def get_meditation_stats(self, user_id: int) -> MeditationStatsResponse:
+        sessions = await self.meditation_repository.get_all(user_id=user_id, completed_only=True, limit=10000)
+
+        total_sessions = len(sessions)
+        total_seconds = sum(s.duration_seconds or 0 for s in sessions)
+        total_minutes = total_seconds / 60.0
+        avg_duration_minutes = total_minutes / total_sessions if total_sessions > 0 else 0.0
+        longest_seconds = max((s.duration_seconds or 0 for s in sessions), default=0)
+        longest_session_minutes = longest_seconds / 60.0
+
+        dates = await self.meditation_repository.get_completed_dates(user_id)
+        current_streak_days = self._calculate_meditation_streak(dates)
+
+        return MeditationStatsResponse(
+            total_sessions=total_sessions,
+            total_minutes=round(total_minutes, 1),
+            avg_duration_minutes=round(avg_duration_minutes, 1),
+            longest_session_minutes=round(longest_session_minutes, 1),
+            current_streak_days=current_streak_days,
+        )
+
+    @staticmethod
+    def _calculate_meditation_streak(dates: List[str]) -> int:
+        if not dates:
+            return 0
+        today = datetime.now(timezone.utc).date()
+        date_set = {d for d in dates}
+        streak = 0
+        check = today
+        while check.isoformat() in date_set:
+            streak += 1
+            check -= timedelta(days=1)
+        if streak == 0:
+            yesterday = (today - timedelta(days=1)).isoformat()
+            if yesterday in date_set:
+                check = today - timedelta(days=1)
+                while check.isoformat() in date_set:
+                    streak += 1
+                    check -= timedelta(days=1)
+        return streak

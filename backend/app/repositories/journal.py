@@ -3,7 +3,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import Optional, List
 
-from ..models.journal import JournalEntry, JournalItem, JournalReport
+from ..models.journal import JournalEntry, JournalItem, JournalReport, MeditationSession
 
 
 class JournalEntryRepository:
@@ -188,3 +188,64 @@ class JournalReportRepository:
         await self.db.commit()
         await self.db.refresh(report)
         return report
+
+
+class MeditationRepository:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def get_all(
+        self,
+        user_id: int,
+        skip: int = 0,
+        limit: int = 100,
+        completed_only: bool = False,
+    ) -> List[MeditationSession]:
+        query = select(MeditationSession).filter(MeditationSession.user_id == user_id)
+        if completed_only:
+            query = query.filter(MeditationSession.completed == True)
+        query = query.order_by(MeditationSession.date.desc(), MeditationSession.id.desc())
+        query = query.offset(skip).limit(limit)
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
+    async def get_active_draft(self, user_id: int) -> Optional[MeditationSession]:
+        """Get the most recent in-progress (not completed) session."""
+        result = await self.db.execute(
+            select(MeditationSession)
+            .filter(MeditationSession.user_id == user_id, MeditationSession.completed == False)
+            .order_by(MeditationSession.id.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_id(self, session_id: int) -> Optional[MeditationSession]:
+        result = await self.db.execute(
+            select(MeditationSession).filter(MeditationSession.id == session_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_completed_dates(self, user_id: int) -> List[str]:
+        """Return sorted list of unique dates with completed sessions."""
+        result = await self.db.execute(
+            select(MeditationSession.date)
+            .filter(MeditationSession.user_id == user_id, MeditationSession.completed == True)
+            .distinct()
+            .order_by(MeditationSession.date.asc())
+        )
+        return [row[0] for row in result.all()]
+
+    async def create(self, session: MeditationSession) -> MeditationSession:
+        self.db.add(session)
+        await self.db.commit()
+        await self.db.refresh(session)
+        return session
+
+    async def update(self, session: MeditationSession) -> MeditationSession:
+        await self.db.commit()
+        await self.db.refresh(session)
+        return session
+
+    async def delete(self, session: MeditationSession) -> None:
+        await self.db.delete(session)
+        await self.db.commit()

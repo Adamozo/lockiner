@@ -103,6 +103,35 @@ export function useWorkouts() {
     return data
   }
 
+  // Timer actions
+  const timerStart = async (id: number): Promise<Workout> => {
+    const data = await api<Workout>(`/api/v1/fitness/workouts/${id}/timer/start`, { method: 'POST' })
+    const index = workouts.value.findIndex(w => w.id === id)
+    if (index !== -1) workouts.value[index] = data
+    return data
+  }
+
+  const timerPause = async (id: number): Promise<Workout> => {
+    const data = await api<Workout>(`/api/v1/fitness/workouts/${id}/timer/pause`, { method: 'POST' })
+    const index = workouts.value.findIndex(w => w.id === id)
+    if (index !== -1) workouts.value[index] = data
+    return data
+  }
+
+  const timerResume = async (id: number): Promise<Workout> => {
+    const data = await api<Workout>(`/api/v1/fitness/workouts/${id}/timer/resume`, { method: 'POST' })
+    const index = workouts.value.findIndex(w => w.id === id)
+    if (index !== -1) workouts.value[index] = data
+    return data
+  }
+
+  const timerStop = async (id: number): Promise<Workout> => {
+    const data = await api<Workout>(`/api/v1/fitness/workouts/${id}/timer/stop`, { method: 'POST' })
+    const index = workouts.value.findIndex(w => w.id === id)
+    if (index !== -1) workouts.value[index] = data
+    return data
+  }
+
   // Computed: recent workouts (sorted by date)
   const recentWorkouts = computed(() => {
     return [...workouts.value]
@@ -133,5 +162,9 @@ export function useWorkouts() {
     updateWorkout,
     deleteWorkout,
     fetchStats,
+    timerStart,
+    timerPause,
+    timerResume,
+    timerStop,
   }
 }

@@ -3,7 +3,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import Optional, List
 
-from ..models import Workout, Exercise, ExerciseSet, WeightEntry
+from ..models import Workout, Exercise, ExerciseSet, WeightEntry, UserBodyProfile, BodyMeasurementEntry
 
 
 class WorkoutRepository:
@@ -195,5 +195,86 @@ class WeightEntryRepository:
         return entry
 
     async def delete(self, entry: WeightEntry) -> None:
+        await self.db.delete(entry)
+        await self.db.commit()
+
+
+class UserBodyProfileRepository:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def get_by_user_id(self, user_id: int) -> Optional[UserBodyProfile]:
+        result = await self.db.execute(
+            select(UserBodyProfile).filter(UserBodyProfile.user_id == user_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def upsert(self, user_id: int, height_cm: Optional[float]) -> UserBodyProfile:
+        profile = await self.get_by_user_id(user_id)
+        if profile is None:
+            profile = UserBodyProfile(user_id=user_id, height_cm=height_cm)
+            self.db.add(profile)
+        else:
+            profile.height_cm = height_cm
+        from ..models.base import utc_now
+        profile.updated_at = utc_now().isoformat()
+        await self.db.commit()
+        await self.db.refresh(profile)
+        return profile
+
+
+class BodyMeasurementRepository:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def get_all(
+        self,
+        user_id: int,
+        skip: int = 0,
+        limit: int = 100,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+    ) -> List[BodyMeasurementEntry]:
+        query = select(BodyMeasurementEntry).filter(BodyMeasurementEntry.user_id == user_id)
+
+        if start_date:
+            query = query.filter(BodyMeasurementEntry.date >= start_date)
+
+        if end_date:
+            query = query.filter(BodyMeasurementEntry.date <= end_date)
+
+        query = query.order_by(BodyMeasurementEntry.date.desc(), BodyMeasurementEntry.id.desc())
+        query = query.offset(skip).limit(limit)
+
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
+    async def get_by_id(self, entry_id: int) -> Optional[BodyMeasurementEntry]:
+        result = await self.db.execute(
+            select(BodyMeasurementEntry).filter(BodyMeasurementEntry.id == entry_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_latest(self, user_id: int) -> Optional[BodyMeasurementEntry]:
+        result = await self.db.execute(
+            select(BodyMeasurementEntry)
+            .filter(BodyMeasurementEntry.user_id == user_id)
+            .order_by(BodyMeasurementEntry.date.desc(), BodyMeasurementEntry.id.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+
+    async def create(self, entry: BodyMeasurementEntry) -> BodyMeasurementEntry:
+        self.db.add(entry)
+        await self.db.commit()
+        await self.db.refresh(entry)
+        return entry
+
+    async def update(self, entry: BodyMeasurementEntry) -> BodyMeasurementEntry:
+        await self.db.commit()
+        await self.db.refresh(entry)
+        return entry
+
+    async def delete(self, entry: BodyMeasurementEntry) -> None:
         await self.db.delete(entry)
         await self.db.commit()

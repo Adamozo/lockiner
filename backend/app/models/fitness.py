@@ -19,6 +19,11 @@ class Workout(Base):
     completed = Column(Boolean, default=True)
     created_at = Column(String, default=lambda: utc_now().isoformat())
     updated_at = Column(String, nullable=True)
+    timer_started_at = Column(String, nullable=True)       # ISO datetime: when timer was started
+    timer_ended_at = Column(String, nullable=True)         # ISO datetime: when timer was stopped
+    timer_paused_at = Column(String, nullable=True)        # ISO datetime: when last paused (null = not paused)
+    total_paused_seconds = Column(Integer, default=0, server_default="0")  # accumulated pause time
+    default_rest_seconds = Column(Integer, nullable=True)  # default rest between sets
 
     # Relationships
     user = relationship("User")
@@ -84,3 +89,39 @@ class WeightEntry(Base):
 
     def __repr__(self):
         return f"<WeightEntry(id={self.id}, date={self.date}, weight_kg={self.weight_kg})>"
+
+
+class UserBodyProfile(Base):
+    """User body profile with height."""
+    __tablename__ = "user_body_profiles"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    height_cm = Column(Float, nullable=True)
+    updated_at = Column(String, nullable=True)
+
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<UserBodyProfile(id={self.id}, user_id={self.user_id}, height_cm={self.height_cm})>"
+
+
+class BodyMeasurementEntry(Base):
+    """Body circumference measurements entry."""
+    __tablename__ = "body_measurement_entries"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    date = Column(String, nullable=False, index=True)  # YYYY-MM-DD
+    bicep_cm = Column(Float, nullable=True)
+    waist_cm = Column(Float, nullable=True)
+    thigh_cm = Column(Float, nullable=True)
+    calf_cm = Column(Float, nullable=True)
+    chest_cm = Column(Float, nullable=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(String, default=lambda: utc_now().isoformat())
+
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<BodyMeasurementEntry(id={self.id}, date={self.date}, user_id={self.user_id})>"

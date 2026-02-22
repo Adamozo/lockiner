@@ -174,6 +174,11 @@ from .fitness import (
     WeightEntryUpdate,
     WeightEntryResponse,
     FitnessStatsResponse,
+    UserBodyProfileResponse,
+    UserBodyProfileUpdate,
+    BodyMeasurementEntryCreate,
+    BodyMeasurementEntryUpdate,
+    BodyMeasurementEntryResponse,
 )
 
 # Notification schedule schemas
@@ -198,6 +203,10 @@ from .journal import (
     JournalReportResponse,
     ReportData,
     CategoryReportData,
+    MeditationSessionCreate,
+    MeditationSessionUpdate,
+    MeditationSessionResponse,
+    MeditationStatsResponse,
 )
 
 # Backup schemas
@@ -357,6 +366,11 @@ __all__ = [
     "WeightEntryUpdate",
     "WeightEntryResponse",
     "FitnessStatsResponse",
+    "UserBodyProfileResponse",
+    "UserBodyProfileUpdate",
+    "BodyMeasurementEntryCreate",
+    "BodyMeasurementEntryUpdate",
+    "BodyMeasurementEntryResponse",
     # Notification schedules
     "NotificationScheduleBase",
     "NotificationScheduleUpdate",
@@ -401,4 +415,8 @@ __all__ = [
     "JournalReportResponse",
     "ReportData",
     "CategoryReportData",
+    "MeditationSessionCreate",
+    "MeditationSessionUpdate",
+    "MeditationSessionResponse",
+    "MeditationStatsResponse",
 ]

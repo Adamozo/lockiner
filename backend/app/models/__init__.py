@@ -62,10 +62,10 @@ from .food import (
 from .notification import Notification, UserNotification, PushSubscription, NotificationSchedule
 
 # Fitness module models
-from .fitness import Workout, Exercise, ExerciseSet, WeightEntry
+from .fitness import Workout, Exercise, ExerciseSet, WeightEntry, UserBodyProfile, BodyMeasurementEntry
 
 # Journal module models
-from .journal import JournalEntry, JournalItem, JournalReport
+from .journal import JournalEntry, JournalItem, JournalReport, MeditationSession
 
 # Medicine module models
 from .medicine import Medicine, MedicineSchedule, MedicineLog
@@ -161,6 +161,9 @@ Index("idx_exercises_workout", Exercise.workout_id)
 Index("idx_exercise_sets_exercise", ExerciseSet.exercise_id)
 Index("idx_weight_entries_user", WeightEntry.user_id)
 Index("idx_weight_entries_date", WeightEntry.date)
+Index("idx_user_body_profiles_user", UserBodyProfile.user_id)
+Index("idx_body_measurement_entries_user", BodyMeasurementEntry.user_id)
+Index("idx_body_measurement_entries_date", BodyMeasurementEntry.date)
 
 # Journal module indexes
 Index("idx_journal_entries_user", JournalEntry.user_id)
@@ -168,6 +171,9 @@ Index("idx_journal_entries_date", JournalEntry.date)
 Index("idx_journal_items_entry", JournalItem.entry_id)
 Index("idx_journal_items_category", JournalItem.category)
 Index("idx_journal_reports_user", JournalReport.user_id)
+Index("idx_meditation_sessions_user", MeditationSession.user_id)
+Index("idx_meditation_sessions_date", MeditationSession.date)
+Index("idx_meditation_sessions_completed", MeditationSession.completed)
 
 # Medicine module indexes
 Index("idx_medicines_user", Medicine.user_id)
@@ -250,10 +256,13 @@ __all__ = [
     "Exercise",
     "ExerciseSet",
     "WeightEntry",
+    "UserBodyProfile",
+    "BodyMeasurementEntry",
     # Journal
     "JournalEntry",
     "JournalItem",
     "JournalReport",
+    "MeditationSession",
     # Medicine
     "Medicine",
     "MedicineSchedule",

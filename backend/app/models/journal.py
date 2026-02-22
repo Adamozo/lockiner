@@ -1,6 +1,6 @@
 """Journal Module Models."""
 
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from .base import Base, utc_now
@@ -67,3 +67,22 @@ class JournalReport(Base):
 
     def __repr__(self):
         return f"<JournalReport(id={self.id}, type={self.report_type}, period={self.period})>"
+
+
+class MeditationSession(Base):
+    """Meditation session tracking."""
+    __tablename__ = "meditation_sessions"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    date = Column(String, nullable=False, index=True)  # YYYY-MM-DD
+    started_at = Column(String, nullable=False)  # ISO datetime when session started
+    duration_seconds = Column(Integer, nullable=True)  # null = in progress / draft
+    notes = Column(Text, nullable=True)
+    completed = Column(Boolean, default=False)
+    created_at = Column(String, default=lambda: utc_now().isoformat())
+
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<MeditationSession(id={self.id}, date={self.date}, duration={self.duration_seconds}s)>"

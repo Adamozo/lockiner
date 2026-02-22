@@ -41,6 +41,11 @@ export interface Workout {
   completed: boolean
   created_at: string
   updated_at?: string
+  timer_started_at?: string
+  timer_ended_at?: string
+  timer_paused_at?: string
+  total_paused_seconds: number
+  default_rest_seconds?: number
 }
 
 export interface WorkoutCreate {
@@ -90,11 +95,51 @@ export interface WorkoutUpdate {
   duration_minutes?: number
   notes?: string
   completed?: boolean
+  default_rest_seconds?: number
 }
 
 export interface WeightEntryUpdate {
   date?: string
   weight_kg?: number
   body_fat_percentage?: number
+  notes?: string
+}
+
+export interface UserBodyProfile {
+  id: number
+  user_id: number
+  height_cm: number | null
+  updated_at: string | null
+}
+
+export interface BodyMeasurementEntry {
+  id: number
+  date: string
+  bicep_cm?: number
+  waist_cm?: number
+  thigh_cm?: number
+  calf_cm?: number
+  chest_cm?: number
+  notes?: string
+  created_at: string
+}
+
+export interface BodyMeasurementEntryCreate {
+  date: string
+  bicep_cm?: number
+  waist_cm?: number
+  thigh_cm?: number
+  calf_cm?: number
+  chest_cm?: number
+  notes?: string
+}
+
+export interface BodyMeasurementEntryUpdate {
+  date?: string
+  bicep_cm?: number | null
+  waist_cm?: number | null
+  thigh_cm?: number | null
+  calf_cm?: number | null
+  chest_cm?: number | null
   notes?: string
 }

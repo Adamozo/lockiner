@@ -54,6 +54,7 @@ class WorkoutBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     duration_minutes: Optional[int] = Field(None, ge=0)
     notes: Optional[str] = None
+    default_rest_seconds: Optional[int] = Field(None, ge=0)
 
 
 class WorkoutCreate(WorkoutBase):
@@ -70,6 +71,7 @@ class WorkoutUpdate(BaseModel):
     notes: Optional[str] = None
     completed: Optional[bool] = None
     exercises: Optional[List[ExerciseCreate]] = None
+    default_rest_seconds: Optional[int] = Field(None, ge=0)
 
 
 class WorkoutResponse(WorkoutBase):
@@ -79,6 +81,10 @@ class WorkoutResponse(WorkoutBase):
     exercises: List[ExerciseResponse]
     created_at: str
     updated_at: Optional[str] = None
+    timer_started_at: Optional[str] = None
+    timer_ended_at: Optional[str] = None
+    timer_paused_at: Optional[str] = None
+    total_paused_seconds: int = 0
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -124,3 +130,57 @@ class FitnessStatsResponse(BaseModel):
     total_weight_lifted_kg: float
     current_weight_kg: Optional[float] = None
     weight_change_kg: Optional[float] = None
+
+
+# --- User Body Profile ---
+
+class UserBodyProfileResponse(BaseModel):
+    """Schema for user body profile response."""
+    id: int
+    user_id: int
+    height_cm: Optional[float] = None
+    updated_at: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserBodyProfileUpdate(BaseModel):
+    """Schema for updating user body profile."""
+    height_cm: Optional[float] = Field(None, gt=0, le=300)
+
+
+# --- Body Measurement Entry ---
+
+class BodyMeasurementEntryBase(BaseModel):
+    """Base schema for body measurement entry."""
+    date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    bicep_cm: Optional[float] = Field(None, ge=0, le=300)
+    waist_cm: Optional[float] = Field(None, ge=0, le=300)
+    thigh_cm: Optional[float] = Field(None, ge=0, le=300)
+    calf_cm: Optional[float] = Field(None, ge=0, le=300)
+    chest_cm: Optional[float] = Field(None, ge=0, le=300)
+    notes: Optional[str] = None
+
+
+class BodyMeasurementEntryCreate(BodyMeasurementEntryBase):
+    """Schema for creating a body measurement entry."""
+    pass
+
+
+class BodyMeasurementEntryUpdate(BaseModel):
+    """Schema for updating a body measurement entry."""
+    date: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    bicep_cm: Optional[float] = Field(None, ge=0, le=300)
+    waist_cm: Optional[float] = Field(None, ge=0, le=300)
+    thigh_cm: Optional[float] = Field(None, ge=0, le=300)
+    calf_cm: Optional[float] = Field(None, ge=0, le=300)
+    chest_cm: Optional[float] = Field(None, ge=0, le=300)
+    notes: Optional[str] = None
+
+
+class BodyMeasurementEntryResponse(BodyMeasurementEntryBase):
+    """Schema for body measurement entry response."""
+    id: int
+    created_at: str
+
+    model_config = ConfigDict(from_attributes=True)

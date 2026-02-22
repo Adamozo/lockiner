@@ -14,6 +14,10 @@ from ..schemas.journal import (
     ReportGenerateRequest,
     JournalReportResponse,
     ReportData,
+    MeditationSessionCreate,
+    MeditationSessionUpdate,
+    MeditationSessionResponse,
+    MeditationStatsResponse,
 )
 from ..services.journal import (
     JournalService,
@@ -22,6 +26,7 @@ from ..services.journal import (
     JournalEntryConflictError,
     JournalAccessDeniedError,
     JournalReportNotFoundError,
+    MeditationSessionNotFoundError,
 )
 
 # ---------------------------------------
@@ -196,3 +201,78 @@ def _report_to_response(report) -> dict:
         "created_at": report.created_at,
         "updated_at": report.updated_at,
     }
+
+
+# ---------------------------------------
+# Meditation
+# ---------------------------------------
+
+
+@router.get("/meditation", response_model=List[MeditationSessionResponse])
+async def list_meditation_sessions(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    current_user: User = Depends(get_current_user),
+    service: JournalService = Depends(get_journal_service),
+):
+    """Get all meditation sessions for the current user."""
+    return await service.list_meditation_sessions(user_id=current_user.id, skip=skip, limit=limit)
+
+
+@router.get("/meditation/active", response_model=Optional[MeditationSessionResponse])
+async def get_active_meditation(
+    current_user: User = Depends(get_current_user),
+    service: JournalService = Depends(get_journal_service),
+):
+    """Get the current in-progress meditation session, if any."""
+    return await service.get_active_meditation(user_id=current_user.id)
+
+
+@router.get("/meditation/stats", response_model=MeditationStatsResponse)
+async def get_meditation_stats(
+    current_user: User = Depends(get_current_user),
+    service: JournalService = Depends(get_journal_service),
+):
+    """Get meditation statistics for the current user."""
+    return await service.get_meditation_stats(user_id=current_user.id)
+
+
+@router.post("/meditation", response_model=MeditationSessionResponse, status_code=status.HTTP_201_CREATED)
+async def start_meditation(
+    session_data: MeditationSessionCreate,
+    current_user: User = Depends(get_current_user),
+    service: JournalService = Depends(get_journal_service),
+):
+    """Start a new meditation session (creates a draft)."""
+    return await service.start_meditation(session_data, user_id=current_user.id)
+
+
+@router.put("/meditation/{session_id}", response_model=MeditationSessionResponse)
+async def update_meditation(
+    session_id: int,
+    session_update: MeditationSessionUpdate,
+    current_user: User = Depends(get_current_user),
+    service: JournalService = Depends(get_journal_service),
+):
+    """Update a meditation session (save duration, complete it)."""
+    try:
+        return await service.update_meditation(session_id, session_update, user_id=current_user.id)
+    except MeditationSessionNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except JournalAccessDeniedError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+
+@router.delete("/meditation/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_meditation(
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+    service: JournalService = Depends(get_journal_service),
+):
+    """Delete a meditation session."""
+    try:
+        await service.delete_meditation(session_id, user_id=current_user.id)
+    except MeditationSessionNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except JournalAccessDeniedError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))

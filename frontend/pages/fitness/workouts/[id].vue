@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ExerciseSetCreate, WorkoutUpdate } from '~/types/fitness'
+import type { ExerciseSetCreate, WorkoutUpdate, Workout } from '~/types/fitness'
 
 definePageMeta({
   layout: 'fitness',
@@ -8,7 +8,7 @@ definePageMeta({
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
-const { workouts, loading, fetchWorkout, updateWorkout, fetchWorkouts } = useWorkouts()
+const { workouts, loading, fetchWorkout, updateWorkout, fetchWorkouts, timerStart, timerPause, timerResume, timerStop } = useWorkouts()
 
 const workoutId = computed(() => Number(route.params.id))
 
@@ -32,25 +32,178 @@ const isCompleted = ref(false)
 const saveStatus = ref<'idle' | 'saving' | 'saved'>('idle')
 const loadError = ref(false)
 
-// Timer (for drafts)
-const startTime = ref(Date.now())
-const elapsed = ref('00:00')
-let timerInterval: ReturnType<typeof setInterval> | undefined
+// Workout data with timer fields
+const currentWorkout = ref<Workout | null>(null)
 
 useSeoMeta({
   title: 'Edit Workout - LockIner',
   description: 'Edit or resume your workout',
 })
 
+// ─── Timer state (derived from server data) ─────────────────────────────────
+
+const timerState = computed((): 'idle' | 'running' | 'paused' | 'done' => {
+  const w = currentWorkout.value
+  if (!w || !w.timer_started_at) return 'idle'
+  if (w.timer_ended_at) return 'done'
+  if (w.timer_paused_at) return 'paused'
+  return 'running'
+})
+
+const elapsedSeconds = ref(0)
+let tickerInterval: ReturnType<typeof setInterval> | undefined
+
+const computeElapsed = () => {
+  const w = currentWorkout.value
+  if (!w || !w.timer_started_at) { elapsedSeconds.value = 0; return }
+  const started = new Date(w.timer_started_at).getTime()
+  const paused = (w.total_paused_seconds || 0) * 1000
+  if (w.timer_ended_at) {
+    elapsedSeconds.value = Math.max(0, Math.floor((new Date(w.timer_ended_at).getTime() - started - paused) / 1000))
+  } else if (w.timer_paused_at) {
+    elapsedSeconds.value = Math.max(0, Math.floor((new Date(w.timer_paused_at).getTime() - started - paused) / 1000))
+  } else {
+    elapsedSeconds.value = Math.max(0, Math.floor((Date.now() - started - paused) / 1000))
+  }
+}
+
+const syncTicker = () => {
+  if (tickerInterval) clearInterval(tickerInterval)
+  computeElapsed()
+  if (timerState.value === 'running') {
+    tickerInterval = setInterval(computeElapsed, 1000)
+  }
+}
+
+watch(timerState, syncTicker)
+
+const formatTimer = (seconds: number): string => {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  if (h > 0) return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+}
+
+const formatTime = (iso: string) => {
+  return new Date(iso).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
+}
+
+// Timer controls
+const timerLoading = ref(false)
+
+const handleTimerStart = async () => {
+  timerLoading.value = true
+  try {
+    currentWorkout.value = await timerStart(workoutId.value)
+    syncTicker()
+  } catch {
+    toast.add({ title: 'Error', description: 'Failed to start timer', color: 'red' })
+  } finally {
+    timerLoading.value = false
+  }
+}
+
+const handleTimerPause = async () => {
+  timerLoading.value = true
+  try {
+    currentWorkout.value = await timerPause(workoutId.value)
+    syncTicker()
+  } catch {
+    toast.add({ title: 'Error', description: 'Failed to pause timer', color: 'red' })
+  } finally {
+    timerLoading.value = false
+  }
+}
+
+const handleTimerResume = async () => {
+  timerLoading.value = true
+  try {
+    currentWorkout.value = await timerResume(workoutId.value)
+    syncTicker()
+  } catch {
+    toast.add({ title: 'Error', description: 'Failed to resume timer', color: 'red' })
+  } finally {
+    timerLoading.value = false
+  }
+}
+
+const handleTimerStop = async () => {
+  timerLoading.value = true
+  try {
+    currentWorkout.value = await timerStop(workoutId.value)
+    durationMinutes.value = currentWorkout.value.duration_minutes ?? undefined
+    syncTicker()
+  } catch {
+    toast.add({ title: 'Error', description: 'Failed to stop timer', color: 'red' })
+  } finally {
+    timerLoading.value = false
+  }
+}
+
+// ─── Rest Timer ─────────────────────────────────────────────────────────────
+
+const defaultRestSeconds = ref(90)
+const restSecondsLeft = ref(0)
+let restInterval: ReturnType<typeof setInterval> | undefined
+const restActive = computed(() => restSecondsLeft.value > 0)
+
+const playBeep = () => {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+    const ctx = new AudioCtx()
+    for (let i = 0; i < 3; i++) {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.value = 880
+      osc.type = 'sine'
+      const t = ctx.currentTime + i * 0.35
+      gain.gain.setValueAtTime(0.4, t)
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28)
+      osc.start(t)
+      osc.stop(t + 0.28)
+    }
+  } catch { /* audio not supported */ }
+}
+
+const startRest = () => {
+  restSecondsLeft.value = defaultRestSeconds.value
+  if (restInterval) clearInterval(restInterval)
+  restInterval = setInterval(() => {
+    restSecondsLeft.value = Math.max(0, restSecondsLeft.value - 1)
+    if (restSecondsLeft.value === 0) {
+      clearInterval(restInterval)
+      playBeep()
+    }
+  }, 1000)
+}
+
+const cancelRest = () => {
+  if (restInterval) clearInterval(restInterval)
+  restSecondsLeft.value = 0
+}
+
+const saveDefaultRest = async () => {
+  try {
+    await updateWorkout(workoutId.value, { default_rest_seconds: defaultRestSeconds.value } as WorkoutUpdate)
+  } catch { /* silent */ }
+}
+
+// ─── Load workout ────────────────────────────────────────────────────────────
+
 onMounted(async () => {
   await fetchWorkouts()
   try {
     const workout = await fetchWorkout(workoutId.value)
+    currentWorkout.value = workout
     workoutName.value = workout.name
     workoutDate.value = workout.date
     durationMinutes.value = workout.duration_minutes
     workoutNotes.value = workout.notes || ''
     isCompleted.value = workout.completed
+    defaultRestSeconds.value = workout.default_rest_seconds || 90
     exercises.value = workout.exercises.map(e => ({
       name: e.name,
       sets: e.sets,
@@ -67,35 +220,27 @@ onMounted(async () => {
           }))
         : [{ set_number: 1, reps: e.reps, weight_kg: e.weight_kg, completed: false }],
     }))
+    syncTicker()
   } catch {
     loadError.value = true
     toast.add({ title: 'Error', description: 'Workout not found', color: 'red' })
   }
-
-  if (!isCompleted.value) {
-    timerInterval = setInterval(() => {
-      const diff = Math.floor((Date.now() - startTime.value) / 1000)
-      const mins = Math.floor(diff / 60).toString().padStart(2, '0')
-      const secs = (diff % 60).toString().padStart(2, '0')
-      elapsed.value = `${mins}:${secs}`
-    }, 1000)
-  }
 })
 
 onUnmounted(() => {
-  if (timerInterval) clearInterval(timerInterval)
+  if (tickerInterval) clearInterval(tickerInterval)
+  if (restInterval) clearInterval(restInterval)
 })
 
-// Exercise management
+// ─── Form & save ────────────────────────────────────────────────────────────
+
 const addExercise = () => {
   exercises.value.push({
     name: '',
     sets: 3,
     reps: 10,
     weight_kg: 0,
-    sets_detail: [
-      { set_number: 1, reps: 10, weight_kg: 0, completed: false },
-    ],
+    sets_detail: [{ set_number: 1, reps: 10, weight_kg: 0, completed: false }],
   })
   triggerAutoSave()
 }
@@ -110,7 +255,6 @@ const removeExercise = (index: number) => {
   triggerAutoSave()
 }
 
-// Validation
 const canComplete = computed(() => {
   if (!workoutName.value.trim()) return false
   if (exercises.value.length === 0) return false
@@ -119,7 +263,6 @@ const canComplete = computed(() => {
   )
 })
 
-// Auto-save
 let autoSaveTimeout: ReturnType<typeof setTimeout> | undefined
 
 const triggerAutoSave = () => {
@@ -165,9 +308,14 @@ const handleComplete = async () => {
     toast.add({ title: 'Incomplete', description: 'Please fill in all required fields', color: 'red' })
     return
   }
-
   loading.value = true
   try {
+    // Auto-stop running timer before completing
+    if (timerState.value === 'running' || timerState.value === 'paused') {
+      currentWorkout.value = await timerStop(workoutId.value)
+      durationMinutes.value = currentWorkout.value.duration_minutes ?? undefined
+      syncTicker()
+    }
     await updateWorkout(workoutId.value, buildPayload(true))
     toast.add({ title: 'Workout complete!', description: 'Great job!', color: 'green' })
     router.push('/fitness/workouts')
@@ -217,62 +365,186 @@ const handleSave = async () => {
           <h1 class="text-2xl font-bold text-pure-white">
             {{ isCompleted ? 'Edit Workout' : 'Resume Workout' }}
           </h1>
-          <div class="flex items-center gap-3 mt-1">
-            <span v-if="!isCompleted" class="text-sm text-pure-white/40 flex items-center gap-1">
-              <UIcon name="i-heroicons-clock" class="w-4 h-4" />
-              {{ elapsed }}
-            </span>
-            <span
-              v-if="saveStatus !== 'idle'"
-              class="text-xs px-2 py-0.5 rounded-full"
-              :class="saveStatus === 'saving' ? 'bg-warning-orange/20 text-warning-orange' : 'bg-electric-green/20 text-electric-green'"
-            >
-              {{ saveStatus === 'saving' ? 'Saving...' : 'Saved' }}
-            </span>
-          </div>
+          <span
+            v-if="saveStatus !== 'idle'"
+            class="text-xs px-2 py-0.5 rounded-full"
+            :class="saveStatus === 'saving' ? 'bg-warning-orange/20 text-warning-orange' : 'bg-electric-green/20 text-electric-green'"
+          >
+            {{ saveStatus === 'saving' ? 'Saving...' : 'Saved' }}
+          </span>
         </div>
       </header>
 
       <!-- Action buttons -->
       <div class="flex gap-3 mb-6">
         <template v-if="isCompleted">
-          <BaseButton
-            variant="secondary"
-            class="flex-1 min-w-0"
-            @click="router.push('/fitness/workouts')"
-          >
+          <BaseButton variant="secondary" class="flex-1 min-w-0" @click="router.push('/fitness/workouts')">
             Cancel
           </BaseButton>
-          <BaseButton
-            variant="primary"
-            class="flex-1 min-w-0"
-            :loading="loading"
-            @click="handleSave"
-          >
+          <BaseButton variant="primary" class="flex-1 min-w-0" :loading="loading" @click="handleSave">
             Save Changes
           </BaseButton>
         </template>
         <template v-else>
-          <BaseButton
-            variant="secondary"
-            class="flex-1 min-w-0"
-            @click="handleSaveDraft"
-          >
+          <BaseButton variant="secondary" class="flex-1 min-w-0" @click="handleSaveDraft">
             Save Draft
           </BaseButton>
-          <BaseButton
-            variant="primary"
-            class="flex-1 min-w-0"
-            :disabled="!canComplete"
-            :loading="loading"
-            @click="handleComplete"
-          >
+          <BaseButton variant="primary" class="flex-1 min-w-0" :disabled="!canComplete" :loading="loading" @click="handleComplete">
             Complete Workout
           </BaseButton>
         </template>
       </div>
 
       <div class="space-y-6">
+
+        <!-- ─── WORKOUT TIMER (draft only) ─────────────────────────── -->
+        <div
+          v-if="!isCompleted"
+          class="bg-card-black border rounded-xl p-5 relative overflow-hidden transition-colors"
+          :class="timerState === 'running' ? 'border-warning-orange/50' : timerState === 'paused' ? 'border-cyber-blue/50' : 'border-border-gray'"
+        >
+          <div
+            class="absolute top-0 left-0 w-full h-0.5"
+            :class="timerState === 'running'
+              ? 'bg-gradient-to-r from-warning-orange to-electric-green animate-pulse'
+              : timerState === 'paused'
+              ? 'bg-gradient-to-r from-cyber-blue to-electric-green'
+              : 'bg-gradient-to-r from-border-gray to-border-gray'"
+          ></div>
+
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xs font-semibold text-pure-white/50 uppercase tracking-widest">Workout Timer</h3>
+            <div class="flex items-center gap-3 text-xs text-pure-white/40">
+              <span v-if="currentWorkout?.timer_started_at">
+                Start: {{ formatTime(currentWorkout.timer_started_at) }}
+              </span>
+              <span v-if="currentWorkout?.total_paused_seconds">
+                Pauses: {{ formatTimer(currentWorkout.total_paused_seconds) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Timer display -->
+          <div class="text-center py-3 mb-4">
+            <div
+              class="font-mono font-bold tabular-nums transition-all"
+              :class="[
+                timerState === 'running' ? 'text-warning-orange text-6xl' :
+                timerState === 'paused' ? 'text-cyber-blue text-6xl' :
+                timerState === 'done' ? 'text-electric-green text-5xl' :
+                'text-pure-white/30 text-5xl'
+              ]"
+              :style="timerState === 'running' ? 'text-shadow: 0 0 25px rgba(255,140,0,0.5)' : timerState === 'paused' ? 'text-shadow: 0 0 25px rgba(0,212,255,0.4)' : ''"
+            >
+              {{ formatTimer(elapsedSeconds) }}
+            </div>
+            <p v-if="timerState === 'paused'" class="mt-1 text-xs text-cyber-blue/60 uppercase tracking-widest">Paused</p>
+            <p v-else-if="timerState === 'done'" class="mt-1 text-xs text-electric-green/60 uppercase tracking-widest">Timer stopped</p>
+            <p v-else-if="timerState === 'idle'" class="mt-1 text-xs text-pure-white/30">Press Start to begin tracking</p>
+          </div>
+
+          <!-- Controls -->
+          <div class="flex justify-center gap-3">
+            <template v-if="timerState === 'idle'">
+              <BaseButton variant="primary" icon="i-heroicons-play" :loading="timerLoading" @click="handleTimerStart">
+                Start Timer
+              </BaseButton>
+            </template>
+            <template v-else-if="timerState === 'running'">
+              <BaseButton variant="secondary" icon="i-heroicons-pause" :loading="timerLoading" @click="handleTimerPause">
+                Pause
+              </BaseButton>
+              <BaseButton variant="danger" icon="i-heroicons-stop" :loading="timerLoading" @click="handleTimerStop">
+                Stop
+              </BaseButton>
+            </template>
+            <template v-else-if="timerState === 'paused'">
+              <BaseButton variant="primary" icon="i-heroicons-play" :loading="timerLoading" @click="handleTimerResume">
+                Resume
+              </BaseButton>
+              <BaseButton variant="danger" icon="i-heroicons-stop" :loading="timerLoading" @click="handleTimerStop">
+                Stop
+              </BaseButton>
+            </template>
+            <template v-else>
+              <BaseButton variant="secondary" icon="i-heroicons-arrow-path" :loading="timerLoading" @click="handleTimerStart">
+                Restart Timer
+              </BaseButton>
+            </template>
+          </div>
+        </div>
+
+        <!-- ─── COMPLETED TIMER STATS ──────────────────────────────── -->
+        <div
+          v-else-if="currentWorkout?.timer_started_at"
+          class="bg-card-black border border-border-gray rounded-xl p-5 relative overflow-hidden"
+        >
+          <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-electric-green to-cyber-blue"></div>
+          <h3 class="text-xs font-semibold text-pure-white/50 uppercase tracking-widest mb-4">Workout Time</h3>
+          <div class="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <p class="text-xs text-pure-white/40 mb-1">Active</p>
+              <p class="text-xl font-bold font-mono text-warning-orange">{{ formatTimer(elapsedSeconds) }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-pure-white/40 mb-1">Breaks</p>
+              <p class="text-xl font-bold font-mono text-cyber-blue">{{ formatTimer(currentWorkout.total_paused_seconds || 0) }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-pure-white/40 mb-1">Total</p>
+              <p class="text-xl font-bold font-mono text-pure-white">{{ formatTimer(elapsedSeconds + (currentWorkout.total_paused_seconds || 0)) }}</p>
+            </div>
+          </div>
+          <div v-if="currentWorkout.timer_started_at && currentWorkout.timer_ended_at" class="flex justify-center gap-6 mt-3 text-xs text-pure-white/30">
+            <span>{{ formatTime(currentWorkout.timer_started_at) }} → {{ formatTime(currentWorkout.timer_ended_at) }}</span>
+          </div>
+        </div>
+
+        <!-- ─── REST TIMER (draft only) ────────────────────────────── -->
+        <div v-if="!isCompleted" class="bg-card-black border border-border-gray rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xs font-semibold text-pure-white/50 uppercase tracking-widest">Rest Timer</h3>
+            <div class="flex items-center gap-2">
+              <input
+                v-model.number="defaultRestSeconds"
+                type="number"
+                min="5"
+                max="600"
+                class="w-16 text-center px-2 py-1 text-sm border border-border-gray rounded-lg bg-background-black text-pure-white focus:border-cyber-blue focus:outline-none"
+                @change="saveDefaultRest"
+              />
+              <span class="text-xs text-pure-white/40">sec</span>
+            </div>
+          </div>
+
+          <!-- Active rest countdown -->
+          <div v-if="restActive" class="text-center">
+            <div
+              class="font-mono text-5xl font-bold text-cyber-blue tabular-nums mb-3"
+              style="text-shadow: 0 0 25px rgba(0,212,255,0.4)"
+            >
+              {{ formatTimer(restSecondsLeft) }}
+            </div>
+            <!-- Progress bar -->
+            <div class="w-full h-2 bg-border-gray rounded-full mb-4 overflow-hidden">
+              <div
+                class="h-full bg-gradient-to-r from-cyber-blue to-electric-green rounded-full transition-all duration-1000"
+                :style="{ width: `${(restSecondsLeft / defaultRestSeconds) * 100}%` }"
+              />
+            </div>
+            <BaseButton variant="secondary" size="sm" icon="i-heroicons-x-mark" @click="cancelRest">
+              Cancel Rest
+            </BaseButton>
+          </div>
+
+          <!-- Start rest button -->
+          <div v-else class="flex justify-center">
+            <BaseButton variant="secondary" icon="i-heroicons-clock" @click="startRest">
+              Start Rest ({{ defaultRestSeconds }}s)
+            </BaseButton>
+          </div>
+        </div>
+
         <!-- Workout Name -->
         <div>
           <label class="block text-sm font-medium text-pure-white/60 mb-2">Workout Name</label>
@@ -301,7 +573,7 @@ const handleSave = async () => {
               type="number"
               inputmode="numeric"
               min="1"
-              placeholder="Optional"
+              placeholder="Auto from timer"
               class="w-full min-h-12 px-4 py-3 rounded-lg border border-border-gray bg-card-black text-pure-white placeholder-pure-white/40 focus:border-warning-orange focus:ring-2 focus:ring-warning-orange/30 focus:outline-none transition-colors"
             />
           </div>
@@ -350,8 +622,8 @@ const handleSave = async () => {
             class="w-full px-4 py-3 rounded-lg border border-border-gray bg-card-black text-pure-white placeholder-pure-white/40 focus:border-warning-orange focus:ring-2 focus:ring-warning-orange/30 focus:outline-none transition-colors resize-none"
           />
         </div>
-      </div>
 
+      </div>
     </template>
   </div>
 </template>

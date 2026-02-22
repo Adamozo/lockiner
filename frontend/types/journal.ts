@@ -83,3 +83,34 @@ export interface ReportGenerateRequest {
   report_type: 'monthly' | 'yearly'
   period: string
 }
+
+// --- Meditation ---
+
+export interface MeditationSession {
+  id: number
+  date: string
+  started_at: string
+  duration_seconds: number | null
+  notes?: string
+  completed: boolean
+  created_at: string
+}
+
+export interface MeditationSessionCreate {
+  date: string
+  notes?: string
+}
+
+export interface MeditationSessionUpdate {
+  duration_seconds?: number
+  notes?: string
+  completed?: boolean
+}
+
+export interface MeditationStats {
+  total_sessions: number
+  total_minutes: number
+  avg_duration_minutes: number
+  longest_session_minutes: number
+  current_streak_days: number
+}

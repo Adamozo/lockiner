@@ -99,3 +99,40 @@ class JournalReportResponse(BaseModel):
     updated_at: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# --- Meditation ---
+
+class MeditationSessionCreate(BaseModel):
+    """Schema for starting a meditation session (creates a draft)."""
+    date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    notes: Optional[str] = None
+
+
+class MeditationSessionUpdate(BaseModel):
+    """Schema for completing or updating a meditation session."""
+    duration_seconds: Optional[int] = Field(None, ge=0)
+    notes: Optional[str] = None
+    completed: Optional[bool] = None
+
+
+class MeditationSessionResponse(BaseModel):
+    """Schema for meditation session response."""
+    id: int
+    date: str
+    started_at: str
+    duration_seconds: Optional[int] = None
+    notes: Optional[str] = None
+    completed: bool
+    created_at: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MeditationStatsResponse(BaseModel):
+    """Schema for meditation statistics."""
+    total_sessions: int
+    total_minutes: float
+    avg_duration_minutes: float
+    longest_session_minutes: float
+    current_streak_days: int

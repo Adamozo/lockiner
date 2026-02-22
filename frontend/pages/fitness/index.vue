@@ -232,8 +232,8 @@ const formatWeight = (kg: number) => {
       <!-- Weight History -->
       <div class="bg-card-black border border-border-gray rounded-xl p-6">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-semibold text-pure-white">Weight Tracking</h2>
-          <NuxtLink to="/fitness/weight" class="text-sm text-warning-orange hover:text-warning-orange/80 transition-colors">
+          <h2 class="text-xl font-semibold text-pure-white">Body Measurements</h2>
+          <NuxtLink to="/fitness/measurements" class="text-sm text-warning-orange hover:text-warning-orange/80 transition-colors">
             View all
           </NuxtLink>
         </div>
@@ -266,7 +266,7 @@ const formatWeight = (kg: number) => {
             <UIcon name="i-heroicons-scale" class="w-6 h-6 text-pure-white/40" />
           </div>
           <p class="text-pure-white/60 mb-3">No weight entries yet</p>
-          <BaseButton variant="primary" size="sm" icon="i-heroicons-plus" @click="navigateTo('/fitness/weight')">
+          <BaseButton variant="primary" size="sm" icon="i-heroicons-plus" @click="navigateTo('/fitness/measurements')">
             Log Weight
           </BaseButton>
         </div>
