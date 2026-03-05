@@ -71,8 +71,10 @@ const handleAddJourney = async () => {
   }
 }
 
+const { confirm } = useConfirm()
+
 const handleDelete = async (id: number) => {
-  if (!confirm('Delete this learning journey?')) return
+  if (!await confirm({ message: 'Delete this learning journey?', confirmText: 'Delete' })) return
 
   try {
     await deleteJourney(id)

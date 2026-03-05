@@ -88,9 +88,11 @@ const handleSave = async () => {
   }
 }
 
+const { confirm } = useConfirm()
+
 const handleDiscard = async () => {
   if (!activeSession.value) return
-  if (!confirm('Discard this meditation session?')) return
+  if (!await confirm({ message: 'Discard this meditation session?', confirmText: 'Discard', variant: 'warning' })) return
   try {
     stopTimer()
     await discardSession(activeSession.value.id)
@@ -103,7 +105,7 @@ const handleDiscard = async () => {
 }
 
 const handleDeleteCompleted = async (id: number) => {
-  if (!confirm('Delete this meditation session?')) return
+  if (!await confirm({ message: 'Delete this meditation session?', confirmText: 'Delete' })) return
   try {
     await discardSession(id)
     await fetchStats()

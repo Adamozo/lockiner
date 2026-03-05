@@ -61,8 +61,10 @@ const handleAddEntry = async () => {
   }
 }
 
+const { confirm } = useConfirm()
+
 const handleDelete = async (id: number) => {
-  if (!confirm('Delete this activity entry?')) return
+  if (!await confirm({ message: 'Delete this activity entry?', confirmText: 'Delete' })) return
 
   try {
     await deleteEntry(id)

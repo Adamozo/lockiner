@@ -81,8 +81,10 @@ const resetWeightForm = () => {
   }
 }
 
+const { confirm } = useConfirm()
+
 const handleDeleteWeight = async (id: number) => {
-  if (!confirm('Delete this weight entry?')) return
+  if (!await confirm({ message: 'Delete this weight entry?', confirmText: 'Delete' })) return
   try {
     await deleteEntry(id)
     toast.add({ title: 'Success', description: 'Entry deleted', color: 'green' })
@@ -139,7 +141,7 @@ const resetMeasurementForm = () => {
 }
 
 const handleDeleteMeasurement = async (id: number) => {
-  if (!confirm('Delete this measurement entry?')) return
+  if (!await confirm({ message: 'Delete this measurement entry?', confirmText: 'Delete' })) return
   try {
     await deleteMeasurement(id)
     toast.add({ title: 'Success', description: 'Entry deleted', color: 'green' })

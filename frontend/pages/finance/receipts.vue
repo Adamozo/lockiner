@@ -119,8 +119,10 @@ function handleViewReceipt(receipt: Receipt) {
   isDetailModalOpen.value = true
 }
 
+const { confirm } = useConfirm()
+
 async function handleDeleteReceipt(id: number) {
-  if (!confirm('Are you sure you want to delete this receipt?'))
+  if (!await confirm({ message: 'Are you sure you want to delete this receipt?', confirmText: 'Delete' }))
     return
 
   try {

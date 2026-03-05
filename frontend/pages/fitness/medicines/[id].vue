@@ -48,8 +48,10 @@ const handleSaveEdit = async (data: MedicineUpdate) => {
   }
 }
 
+const { confirm } = useConfirm()
+
 const handleDelete = async () => {
-  if (!confirm(`Delete "${medicine.value?.name}"? This cannot be undone.`)) return
+  if (!await confirm({ message: `Delete "${medicine.value?.name}"? This cannot be undone.`, confirmText: 'Delete' })) return
   try {
     await deleteMedicine(medicineId.value)
     toast.add({ title: 'Deleted', color: 'green' })
@@ -87,7 +89,7 @@ const handleSaveSchedule = async (data: MedicineScheduleCreate) => {
 }
 
 const handleDeleteSchedule = async (scheduleId: number) => {
-  if (!confirm('Delete this schedule?')) return
+  if (!await confirm({ message: 'Delete this schedule?', confirmText: 'Delete' })) return
   try {
     await deleteSchedule(scheduleId)
     medicine.value = await fetchMedicine(medicineId.value)

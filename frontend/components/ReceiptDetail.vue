@@ -63,8 +63,10 @@ const handleAddPhotoInput = async (event: Event) => {
   }
 };
 
+const { confirm } = useConfirm()
+
 const handleVerify = async () => {
-  if (!confirm("Mark this receipt as verified?")) return;
+  if (!await confirm({ message: 'Mark this receipt as verified?', confirmText: 'Verify', variant: 'primary' })) return;
 
   isVerifying.value = true;
   try {

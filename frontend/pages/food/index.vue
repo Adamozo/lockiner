@@ -140,9 +140,11 @@ const handleOpen = async (item: FoodInventoryItem) => {
   }
 }
 
+const { confirm } = useConfirm()
+
 // Handle delete
 const handleDelete = async (item: FoodInventoryItem) => {
-  if (!confirm(`Remove "${item.product.name}" from inventory?`)) return
+  if (!await confirm({ message: `Remove "${item.product.name}" from inventory?`, confirmText: 'Remove' })) return
   try {
     await deleteInventoryItem(item.id, currentHouseholdId.value)
     toast.add({ title: 'Removed from inventory', color: 'green' })

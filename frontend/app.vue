@@ -28,5 +28,6 @@ if (import.meta.client) {
     </NuxtLayout>
     <PwaInstallBanner />
     <AppToasts />
+    <CommonConfirmDialog />
   </div>
 </template>

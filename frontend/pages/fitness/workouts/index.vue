@@ -15,8 +15,10 @@ onMounted(async () => {
   await fetchWorkouts()
 })
 
+const { confirm } = useConfirm()
+
 const handleDelete = async (id: number) => {
-  if (!confirm('Are you sure you want to delete this workout?')) return
+  if (!await confirm({ message: 'Are you sure you want to delete this workout?', confirmText: 'Delete' })) return
 
   try {
     await deleteWorkout(id)
@@ -27,7 +29,7 @@ const handleDelete = async (id: number) => {
 }
 
 const handleDiscardDraft = async (id: number) => {
-  if (!confirm('Discard this workout draft?')) return
+  if (!await confirm({ message: 'Discard this workout draft?', confirmText: 'Discard', variant: 'warning' })) return
 
   try {
     await deleteWorkout(id)

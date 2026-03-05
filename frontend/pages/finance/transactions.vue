@@ -109,9 +109,11 @@ const handleEditCancel = () => {
   editingTransaction.value = null
 }
 
+const { confirm } = useConfirm()
+
 // Handle delete transaction
 const handleDeleteTransaction = async (id: number) => {
-  if (!confirm('Are you sure you want to delete this transaction?'))
+  if (!await confirm({ message: 'Are you sure you want to delete this transaction?', confirmText: 'Delete' }))
     return
 
   try {

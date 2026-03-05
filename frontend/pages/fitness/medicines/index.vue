@@ -27,8 +27,10 @@ const handleToggleDose = async (logId: number, taken: boolean) => {
   }
 }
 
+const { confirm } = useConfirm()
+
 const handleDelete = async (medicine: Medicine) => {
-  if (!confirm(`Delete "${medicine.name}"? This will remove all schedules and logs.`)) return
+  if (!await confirm({ message: `Delete "${medicine.name}"? This will remove all schedules and logs.`, confirmText: 'Delete' })) return
   try {
     await deleteMedicine(medicine.id)
     await fetchTodayDoses()

@@ -131,9 +131,11 @@ const saveEntry = async () => {
   }
 }
 
+const { confirm } = useConfirm()
+
 const handleDelete = async () => {
   if (!entryId.value) return
-  if (!confirm('Delete this journal entry?')) return
+  if (!await confirm({ message: 'Delete this journal entry?', confirmText: 'Delete' })) return
   try {
     await deleteEntry(entryId.value)
     toast.add({ title: 'Entry deleted', color: 'green' })
