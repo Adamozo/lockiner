@@ -39,13 +39,14 @@ watch(() => route.path, () => {
 const allModules: ModuleItem[] = [
   { name: 'Home', icon: 'i-heroicons-home', to: '/home', color: 'cyber-blue' },
   { name: 'Finance', icon: 'i-heroicons-banknotes', to: '/finance', color: 'electric-green' },
-  { name: 'Households', icon: 'i-heroicons-home-modern', to: '/households', color: 'cyber-blue' },
   { name: 'Fitness', icon: 'i-heroicons-fire', to: '/fitness', color: 'warning-orange' },
-  { name: 'Skills', icon: 'i-heroicons-academic-cap', to: '/skills', color: 'cyber-blue' },
+  { name: 'Households', icon: 'i-heroicons-home-modern', to: '/households', color: 'cyber-blue' },
   { name: 'Food', icon: 'i-heroicons-shopping-cart', to: '/food', color: 'electric-green' },
+  { name: 'Shopping', icon: 'i-heroicons-shopping-bag', to: '/shopping', color: 'warning-orange' },
   { name: 'Journal', icon: 'i-heroicons-book-open', to: '/journal', color: 'cyber-blue' },
   { name: 'Todo', icon: 'i-heroicons-check-circle', to: '/todo', color: 'electric-green' },
-  { name: 'Shopping', icon: 'i-heroicons-shopping-bag', to: '/shopping', color: 'warning-orange' },
+  // TODO: unhide when skills module is ready
+  // { name: 'Skills', icon: 'i-heroicons-academic-cap', to: '/skills', color: 'cyber-blue' },
 ]
 
 // Current module based on route

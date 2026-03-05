@@ -13,13 +13,14 @@ interface ModuleItem {
 const modules: ModuleItem[] = [
   { nameKey: "nav.home",        icon: "i-heroicons-home",           to: "/home",       color: "cyber-blue" },
   { nameKey: "nav.finance",     icon: "i-heroicons-banknotes",      to: "/finance",    color: "electric-green" },
-  { nameKey: "nav.households",  icon: "i-heroicons-home-modern",    to: "/households", color: "cyber-blue" },
   { nameKey: "nav.fitness",     icon: "i-heroicons-fire",           to: "/fitness",    color: "warning-orange" },
-  { nameKey: "nav.skills",      icon: "i-heroicons-academic-cap",   to: "/skills",     color: "cyber-blue" },
+  { nameKey: "nav.households",  icon: "i-heroicons-home-modern",    to: "/households", color: "cyber-blue" },
   { nameKey: "nav.food",        icon: "i-heroicons-shopping-cart",  to: "/food",       color: "electric-green" },
+  { nameKey: "nav.shopping",    icon: "i-heroicons-shopping-bag",   to: "/shopping",   color: "warning-orange" },
   { nameKey: "nav.journal",     icon: "i-heroicons-book-open",      to: "/journal",    color: "cyber-blue" },
   { nameKey: "nav.todo",        icon: "i-heroicons-check-circle",   to: "/todo",       color: "electric-green" },
-  { nameKey: "nav.shopping",    icon: "i-heroicons-shopping-bag",   to: "/shopping",   color: "warning-orange" },
+  // TODO: unhide when skills module is ready
+  // { nameKey: "nav.skills",      icon: "i-heroicons-academic-cap",   to: "/skills",     color: "cyber-blue" },
 ];
 
 const route = useRoute();

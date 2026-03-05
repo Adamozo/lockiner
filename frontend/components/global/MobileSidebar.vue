@@ -12,13 +12,14 @@ interface ModuleItem {
 const modules: ModuleItem[] = [
   { nameKey: 'nav.home',       icon: 'i-heroicons-home',           to: '/home' },
   { nameKey: 'nav.finance',    icon: 'i-heroicons-banknotes',      to: '/finance' },
-  { nameKey: 'nav.households', icon: 'i-heroicons-home-modern',    to: '/households' },
   { nameKey: 'nav.fitness',    icon: 'i-heroicons-fire',           to: '/fitness' },
-  { nameKey: 'nav.skills',     icon: 'i-heroicons-academic-cap',   to: '/skills' },
+  { nameKey: 'nav.households', icon: 'i-heroicons-home-modern',    to: '/households' },
   { nameKey: 'nav.food',       icon: 'i-heroicons-shopping-cart',  to: '/food' },
-  { nameKey: 'nav.journal',    icon: 'i-heroicons-book-open',      to: '/journal' },
   { nameKey: 'nav.shopping',   icon: 'i-heroicons-shopping-bag',   to: '/shopping' },
+  { nameKey: 'nav.journal',    icon: 'i-heroicons-book-open',      to: '/journal' },
   { nameKey: 'nav.todo',       icon: 'i-heroicons-check-circle',   to: '/todo' },
+  // TODO: unhide when skills module is ready
+  // { nameKey: 'nav.skills',     icon: 'i-heroicons-academic-cap',   to: '/skills' },
 ]
 
 const route = useRoute()

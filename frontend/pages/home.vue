@@ -54,7 +54,8 @@ const quickLinks: QuickLink[] = [
   { name: 'Fitness', icon: 'i-heroicons-fire', to: '/fitness', color: 'warning-orange', description: 'Track workouts & weight' },
   { name: 'Food', icon: 'i-heroicons-shopping-cart', to: '/food', color: 'electric-green', description: 'Food inventory & expiry' },
   { name: 'Journal', icon: 'i-heroicons-book-open', to: '/journal', color: 'cyber-blue', description: 'Daily reflection & reports' },
-  { name: 'Skills', icon: 'i-heroicons-academic-cap', to: '/skills', color: 'cyber-blue', description: 'Learning journeys' },
+  // TODO: unhide when skills module is ready
+  // { name: 'Skills', icon: 'i-heroicons-academic-cap', to: '/skills', color: 'cyber-blue', description: 'Learning journeys' },
   { name: 'Todo', icon: 'i-heroicons-check-circle', to: '/todo', color: 'electric-green', description: 'Listy zadań na każdy dzień' },
 ]
 
