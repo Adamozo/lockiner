@@ -330,5 +330,26 @@
     "cl_r5_g3_i1": "In-app notification centre",
     "cl_r5_g3_i2": "Admin broadcast notifications to all users",
     "cl_r5_g3_i3": "Unread badge on nav icon"
+  },
+  "finance": {
+    "import_statement": "Import statement",
+    "import_dialog_title": "Import bank statement",
+    "import_velobank_info": "Download the PDF statement from VeloBank app (Statements → Download PDF). The parser will automatically detect card transactions and transfers, assign categories and payment methods.",
+    "import_drop_hint": "Drop PDF file here",
+    "import_drop_or_browse": "or click to browse",
+    "import_select_file": "Select file",
+    "import_remove": "Remove",
+    "import_do_import": "Import",
+    "import_success_title": "Import complete",
+    "import_success_desc": "Imported: {imported}, failed: {failed}",
+    "import_error_title": "Import error",
+    "import_auto_detected": "What will be detected automatically",
+    "import_detected_card": "Card transactions – amount, merchant, operation date",
+    "import_detected_transfer": "Transfers – sender, title, amount",
+    "import_detected_categories": "Categories – Food, Transport, Health etc. (auto)",
+    "import_detected_method": "Payment method – card, transfer, BLIK",
+    "import_millennium_info": "Download PDF statement from Millenet (Account history → Generate PDF statement). The parser detects card payments, BLIK, transfers and ATM withdrawals.",
+    "import_bank_velobank": "VeloBank",
+    "import_bank_millennium": "Millennium"
   }
 }

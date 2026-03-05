@@ -1,6 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
+from pydantic import BaseModel
+
+
+class BulkDeleteRequest(BaseModel):
+    ids: List[int]
 
 from ..database import get_db
 from ..dependencies import get_current_user
@@ -127,6 +132,57 @@ async def update_transaction(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=str(e),
         )
+
+
+@router.post("/bulk-delete", status_code=status.HTTP_200_OK)
+async def bulk_delete_transactions(
+    body: BulkDeleteRequest,
+    household_id: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    service: TransactionService = Depends(get_transaction_service),
+):
+    deleted = 0
+    errors = []
+    for transaction_id in body.ids:
+        try:
+            await service.delete_transaction(
+                transaction_id,
+                user_id=current_user.id,
+                household_uid=household_id,
+            )
+            deleted += 1
+        except (TransactionNotFoundError, TransactionAccessDeniedError) as e:
+            errors.append(str(e))
+    return {"deleted": deleted, "errors": errors}
+
+
+@router.post("/import-pdf", status_code=status.HTTP_200_OK)
+async def import_bank_pdf(
+    file: UploadFile = File(...),
+    bank: str = Query(..., description="Bank identifier: 'velobank' | 'millennium'"),
+    household_id: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    service: TransactionService = Depends(get_transaction_service),
+):
+    if not file.filename or not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only PDF files are accepted")
+
+    pdf_bytes = await file.read()
+    if len(pdf_bytes) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File too large (max 20 MB)")
+
+    try:
+        result = await service.import_bank_pdf(
+            pdf_bytes=pdf_bytes,
+            bank=bank,
+            user_id=current_user.id,
+            household_uid=household_id,
+        )
+        return {"imported": result["imported"], "failed": result["skipped"], "errors": result["errors"]}
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Failed to parse PDF: {str(exc)}")
 
 
 @router.delete("/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)

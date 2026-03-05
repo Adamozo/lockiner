@@ -7,6 +7,8 @@ from ..schemas import TransactionCreate, TransactionUpdate
 from ..repositories.transaction import TransactionRepository
 from ..repositories.household import HouseholdRepository
 from .ownership import OwnershipService
+from .velobank_parser import parse_velobank_pdf
+from .millennium_parser import parse_millennium_pdf
 
 # ---------------------------------------
 
@@ -206,3 +208,49 @@ class TransactionService:
             raise TransactionAccessDeniedError(transaction_id)
 
         await self.repository.delete(transaction)
+
+    async def import_bank_pdf(
+        self,
+        pdf_bytes: bytes,
+        bank: str,
+        user_id: int,
+        household_uid: Optional[str] = None,
+    ) -> dict:
+        """Import transactions from a bank PDF statement."""
+        if bank == 'velobank':
+            parsed = parse_velobank_pdf(pdf_bytes)
+        elif bank == 'millennium':
+            parsed = parse_millennium_pdf(pdf_bytes)
+        else:
+            raise ValueError(f"Nieznany bank: '{bank}'. Obsługiwane: velobank, millennium.")
+
+        household_id = await self._resolve_household_id(household_uid)
+        imported = 0
+        skipped = 0
+        errors: list[str] = []
+
+        for item in parsed:
+            try:
+                transaction = Transaction(
+                    date=item['transaction_date'],
+                    amount=item['amount'],
+                    description=item.get('merchant') or item.get('description', ''),
+                    category=item.get('category', 'Inne'),
+                    payment_method=item.get('payment_method'),
+                    notes=item.get('description', '') if item.get('merchant') else None,
+                )
+                created = await self.repository.create(transaction)
+                if household_id:
+                    await self.ownership_service.assign_to_household(
+                        "transaction", created.id, household_id, added_by=user_id
+                    )
+                else:
+                    await self.ownership_service.assign_to_user(
+                        "transaction", created.id, user_id
+                    )
+                imported += 1
+            except Exception as exc:
+                skipped += 1
+                errors.append(f"Row {imported + skipped}: {str(exc)}")
+
+        return {"imported": imported, "skipped": skipped, "errors": errors}

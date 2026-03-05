@@ -330,5 +330,26 @@
     "cl_r5_g3_i1": "Centrum powiadomień w aplikacji",
     "cl_r5_g3_i2": "Powiadomienia rozsyłane przez administratora do wszystkich użytkowników",
     "cl_r5_g3_i3": "Plakietka nieprzeczytanych na ikonie nawigacji"
+  },
+  "finance": {
+    "import_statement": "Importuj wyciąg",
+    "import_dialog_title": "Import wyciągu bankowego",
+    "import_velobank_info": "Pobierz wyciąg PDF z aplikacji VeloBank (Wyciągi → Pobierz PDF). Parser automatycznie wykryje transakcje kartą i przelewy, przypisze kategorie i metody płatności.",
+    "import_drop_hint": "Upuść plik PDF tutaj",
+    "import_drop_or_browse": "lub kliknij, aby wybrać",
+    "import_select_file": "Wybierz plik",
+    "import_remove": "Usuń",
+    "import_do_import": "Importuj",
+    "import_success_title": "Import zakończony",
+    "import_success_desc": "Zaimportowano: {imported}, nieudanych: {failed}",
+    "import_error_title": "Błąd importu",
+    "import_auto_detected": "Co zostanie wykryte automatycznie",
+    "import_detected_card": "Transakcje kartą – kwota, sklep/merchant, data operacji",
+    "import_detected_transfer": "Przelewy – nadawca, tytuł, kwota",
+    "import_detected_categories": "Kategorie – Jedzenie, Transport, Zdrowie itd. (auto)",
+    "import_detected_method": "Metoda płatności – karta, przelew, BLIK",
+    "import_millennium_info": "Pobierz wyciąg PDF z Millenetu (Historia rachunku → Generuj wyciąg PDF). Parser wykryje płatności kartą, BLIK, przelewy i wypłaty z bankomatu.",
+    "import_bank_velobank": "VeloBank",
+    "import_bank_millennium": "Millennium"
   }
 }

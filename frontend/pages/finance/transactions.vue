@@ -20,6 +20,7 @@ const {
   createTransaction,
   updateTransaction,
   deleteTransaction,
+  bulkDeleteTransactions,
 } = useTransactions()
 
 const toast = useToast()
@@ -141,6 +142,30 @@ const openImportModal = () => {
   isImportModalOpen.value = true
 }
 
+// Handle bulk delete
+const handleBulkDelete = async (ids: number[]) => {
+  if (!await confirm({
+    message: `Czy na pewno chcesz usunąć ${ids.length} transakcji?`,
+    confirmText: 'Usuń',
+  }))
+    return
+
+  try {
+    const result = await bulkDeleteTransactions(ids, householdIdForApi.value)
+    toast.add({
+      title: 'Usunięto',
+      description: `Usunięto ${result.deleted} transakcji`,
+      color: 'green',
+    })
+  } catch (err) {
+    toast.add({
+      title: 'Błąd',
+      description: err instanceof Error ? err.message : 'Nie udało się usunąć transakcji',
+      color: 'red',
+    })
+  }
+}
+
 // Handle successful import
 const handleImportSuccess = async () => {
   // Refresh transactions list
@@ -208,7 +233,7 @@ const stats = computed(() => {
           variant="secondary"
           @click="openImportModal"
         >
-          Import CSV
+          {{ $t('finance.import_statement') }}
         </BaseButton>
         <BaseButton
           icon="i-heroicons-plus"
@@ -325,6 +350,7 @@ const stats = computed(() => {
         :loading="loading"
         @edit="handleEditClick"
         @delete="handleDeleteTransaction"
+        @bulk-delete="handleBulkDelete"
       />
     </main>
 

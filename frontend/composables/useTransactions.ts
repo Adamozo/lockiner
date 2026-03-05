@@ -225,6 +225,56 @@ export const useTransactions = () => {
     }
   };
 
+  const bulkDeleteTransactions = async (
+    ids: number[],
+    householdId?: string | null
+  ): Promise<{ deleted: number }> => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const queryString = buildQueryParams({}, householdId);
+      const data = await api<{ deleted: number }>(
+        `/api/v1/transactions/bulk-delete${queryString}`,
+        { method: "POST", body: { ids } }
+      );
+      await fetchTransactions({ householdId });
+      return data;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : "Failed to delete transactions";
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const importBankPDF = async (
+    file: File,
+    bank: string,
+    householdId?: string | null
+  ): Promise<{ imported: number; failed: number; errors: string[] }> => {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const queryString = buildQueryParams({ bank }, householdId);
+      const data = await api<{ imported: number; failed: number; errors: string[] }>(
+        `/api/v1/transactions/import-pdf${queryString}`,
+        { method: "POST", body: formData }
+      );
+
+      await fetchTransactions({ householdId });
+      return data;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : "Failed to import PDF";
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     transactions,
     loading,
@@ -235,5 +285,7 @@ export const useTransactions = () => {
     updateTransaction,
     deleteTransaction,
     importCSV,
+    importBankPDF,
+    bulkDeleteTransactions,
   };
 };
