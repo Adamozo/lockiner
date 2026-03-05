@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     # Frontend URL (for OAuth redirects back to the UI)
     frontend_url: str = "http://localhost:3000"
 
+    # Byczq Agent Service
+    byczq_service_url: str = ""
+    byczq_notify_secret: str = ""
+
     # Google OAuth for Drive backup
     google_client_id: str | None = None
     google_client_secret: str | None = None

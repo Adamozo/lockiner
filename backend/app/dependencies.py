@@ -25,33 +25,36 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    """Get the current authenticated user from the JWT token."""
+    """Get the current authenticated user from the JWT token or OAuth access token."""
     token = credentials.credentials
     auth_service = AuthService(db)
 
+    # Próbuj JWT najpierw
     try:
         user = await auth_service.get_current_user(token)
         return user
-
-    except InvalidTokenError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    except UserNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
+    except (InvalidTokenError, UserNotFoundError):
+        pass
     except UserInactiveError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is inactive",
         )
+
+    # Fallback: OAuth access token
+    from .services.oauth import OAuthService, OAuthError
+    oauth_service = OAuthService(db)
+    try:
+        user = await oauth_service.get_user_from_token(token)
+        return user
+    except OAuthError:
+        pass
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 async def get_current_active_user(

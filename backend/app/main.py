@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import transactions, receipts, categories, analytics, import_csv, settings, auth, households, invitations, food, fitness, admin, notifications, journal, medicine, backup, todo, shopping
+from .routers import transactions, receipts, categories, analytics, import_csv, settings, auth, households, invitations, food, fitness, admin, notifications, journal, medicine, backup, todo, shopping, oauth, assistant
 from .services.scheduler import start_scheduler, stop_scheduler
 
 # ---------------------------------------
@@ -47,6 +47,8 @@ app.include_router(medicine.router)
 app.include_router(backup.router)
 app.include_router(todo.router)
 app.include_router(shopping.router)
+app.include_router(oauth.router)
+app.include_router(assistant.router)
 
 
 # ---------------------------------------

@@ -79,6 +79,9 @@ from .todo import TodoList, TodoItem, TodoPostponeLog, TodoNotificationRule
 # Shopping module models
 from .shopping import ShoppingList, ShoppingListItem
 
+# OAuth module models
+from .oauth import OAuthClient, OAuthAuthorizationCode, OAuthAccessToken
+
 
 # ============================================================================
 # Indexes
@@ -207,6 +210,14 @@ Index("idx_shopping_list_items_list", ShoppingListItem.list_id)
 Index("idx_shopping_list_items_added_by", ShoppingListItem.added_by)
 Index("idx_shopping_list_items_status", ShoppingListItem.status)
 
+# OAuth module indexes
+Index("idx_oauth_clients_client_id", OAuthClient.client_id)
+Index("idx_oauth_codes_code", OAuthAuthorizationCode.code)
+Index("idx_oauth_codes_client", OAuthAuthorizationCode.client_id)
+Index("idx_oauth_tokens_access", OAuthAccessToken.access_token)
+Index("idx_oauth_tokens_refresh", OAuthAccessToken.refresh_token)
+Index("idx_oauth_tokens_user", OAuthAccessToken.user_id)
+
 
 # Export all models
 __all__ = [
@@ -278,4 +289,8 @@ __all__ = [
     # Shopping
     "ShoppingList",
     "ShoppingListItem",
+    # OAuth
+    "OAuthClient",
+    "OAuthAuthorizationCode",
+    "OAuthAccessToken",
 ]

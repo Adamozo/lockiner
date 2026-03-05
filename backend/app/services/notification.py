@@ -103,6 +103,14 @@ class NotificationService:
             except ImportError:
                 logger.warning("pywebpush not installed, skipping push notifications")
 
+        # Forward to Byczq Agent Service
+        from .byczq import forward_notification
+        if target == "all":
+            await forward_notification(title=title, body=body, user_id=None)
+        else:
+            for uid in target_user_ids:
+                await forward_notification(title=title, body=body, user_id=uid)
+
         return {
             "notification_id": notification.id,
             "recipients_count": recipients_count,

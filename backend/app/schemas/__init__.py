@@ -231,6 +231,12 @@ from .medicine import (
     MedicineStatsResponse,
 )
 
+# OAuth schemas
+from .oauth import OAuthAuthorizeParams, OAuthTokenRequest, OAuthTokenResponse, OAuthUserInfoResponse
+
+# Assistant schemas
+from .assistant import AssistantMessage, AssistantChatRequest, AssistantChatResponse
+
 # Two-factor authentication schemas
 from .two_factor import (
     TwoFactorSetupResponse,
