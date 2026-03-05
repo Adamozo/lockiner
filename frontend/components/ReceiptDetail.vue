@@ -10,15 +10,57 @@ const emit = defineEmits<{
   verified: [];
 }>();
 
-const { getReceiptImageUrl, verifyReceipt } = useReceipts();
+const { getReceiptImageUrl, verifyReceipt, addReceiptImage } = useReceipts();
 const toast = useToast();
 const isVerifying = ref(false);
 const isImageViewerOpen = ref(false);
+const isAddingPhoto = ref(false);
+const addPhotoInputRef = ref<HTMLInputElement | null>(null);
+const currentImageIndex = ref(0);
+
+const allImages = computed(() => {
+  const extra = props.receipt.additional_images ?? [];
+  return [props.receipt.image_path, ...extra];
+});
+
+const currentImageUrl = computed(() =>
+  getReceiptImageUrl(allImages.value[currentImageIndex.value])
+);
 
 const imageUrl = computed(() => getReceiptImageUrl(props.receipt.image_path));
 
 const openImageViewer = () => {
   isImageViewerOpen.value = true;
+};
+
+const prevImage = () => {
+  if (currentImageIndex.value > 0) currentImageIndex.value--;
+};
+
+const nextImage = () => {
+  if (currentImageIndex.value < allImages.value.length - 1) currentImageIndex.value++;
+};
+
+const handleAddPhotoInput = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+  target.value = '';
+
+  isAddingPhoto.value = true;
+  try {
+    await addReceiptImage(props.receipt.id, file);
+    currentImageIndex.value = allImages.value.length - 1;
+    toast.add({ title: 'Dodano zdjęcie', color: 'green' });
+  } catch (error) {
+    toast.add({
+      title: 'Błąd',
+      description: error instanceof Error ? error.message : 'Nie udało się dodać zdjęcia',
+      color: 'red',
+    });
+  } finally {
+    isAddingPhoto.value = false;
+  }
 };
 
 const handleVerify = async () => {
@@ -64,6 +106,7 @@ const parseItems = () => {
 
 // Watch for receipt changes
 watch(() => props.receipt.items_json, parseItems, { immediate: true });
+watch(() => props.receipt.id, () => { currentImageIndex.value = 0; });
 
 const itemsTotal = computed(() => {
   return items.value.reduce((sum, item) => sum + item.total_price, 0);
@@ -107,23 +150,79 @@ const handleItemUpdate = async (index: number, updatedItem: ReceiptItem) => {
 
 <template>
   <div class="space-y-6">
-    <!-- Image Preview with View Button -->
-    <div class="relative group">
-      <div class="relative h-64 bg-card-black border border-border-gray rounded-lg overflow-hidden">
-        <img
-          :src="imageUrl"
-          :alt="`Receipt from ${receipt.merchant || 'Unknown'}`"
-          class="w-full h-full object-contain cursor-pointer transition-opacity group-hover:opacity-75"
-          @click="openImageViewer"
-        />
-        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            class="px-6 py-3 bg-cyber-blue text-pure-white rounded-lg font-semibold shadow-lg hover:bg-cyber-blue/90 transition-all transform hover:scale-105"
+    <!-- Image Gallery -->
+    <div class="space-y-2">
+      <div class="relative group">
+        <div class="relative h-64 bg-card-black border border-border-gray rounded-lg overflow-hidden">
+          <img
+            :src="currentImageUrl"
+            :alt="`Receipt from ${receipt.merchant || 'Unknown'}`"
+            class="w-full h-full object-contain cursor-pointer transition-opacity group-hover:opacity-75"
             @click="openImageViewer"
+          />
+          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              class="px-6 py-3 bg-cyber-blue text-pure-white rounded-lg font-semibold shadow-lg hover:bg-cyber-blue/90 transition-all transform hover:scale-105"
+              @click="openImageViewer"
+            >
+              <UIcon name="i-heroicons-magnifying-glass-plus" class="w-5 h-5 inline mr-2" />
+              View Full Size
+            </button>
+          </div>
+          <!-- Prev/Next buttons -->
+          <button
+            v-if="currentImageIndex > 0"
+            class="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-background-black/70 rounded-full text-pure-white hover:bg-background-black transition-colors"
+            @click.stop="prevImage"
           >
-            <UIcon name="i-heroicons-magnifying-glass-plus" class="w-5 h-5 inline mr-2" />
-            View Full Size
+            <UIcon name="i-heroicons-chevron-left" class="w-5 h-5" />
           </button>
+          <button
+            v-if="currentImageIndex < allImages.length - 1"
+            class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-background-black/70 rounded-full text-pure-white hover:bg-background-black transition-colors"
+            @click.stop="nextImage"
+          >
+            <UIcon name="i-heroicons-chevron-right" class="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Image counter + Add Photo -->
+      <div class="flex items-center justify-between">
+        <span v-if="allImages.length > 1" class="text-xs text-pure-white/50">
+          {{ currentImageIndex + 1 }} / {{ allImages.length }}
+        </span>
+        <span v-else />
+
+        <div class="flex items-center gap-2">
+          <!-- Dot indicators -->
+          <div v-if="allImages.length > 1" class="flex gap-1">
+            <button
+              v-for="(_, i) in allImages"
+              :key="i"
+              class="w-2 h-2 rounded-full transition-colors"
+              :class="i === currentImageIndex ? 'bg-cyber-blue' : 'bg-border-gray'"
+              @click="currentImageIndex = i"
+            />
+          </div>
+
+          <!-- Add Photo button -->
+          <input
+            ref="addPhotoInputRef"
+            type="file"
+            accept="image/*"
+            class="absolute w-px h-px opacity-0 overflow-hidden"
+            @change="handleAddPhotoInput"
+          />
+          <BaseButton
+            variant="ghost"
+            size="sm"
+            icon="i-heroicons-camera-plus"
+            :loading="isAddingPhoto"
+            @click="addPhotoInputRef?.click()"
+          >
+            Dodaj zdjęcie
+          </BaseButton>
         </div>
       </div>
     </div>
@@ -260,7 +359,7 @@ const handleItemUpdate = async (index: number, updatedItem: ReceiptItem) => {
     <!-- Image Viewer Dialog -->
     <ImageViewerDialog
       v-model="isImageViewerOpen"
-      :image-url="imageUrl"
+      :image-url="currentImageUrl"
       :title="`Receipt from ${receipt.merchant || 'Unknown'}`"
     />
   </div>

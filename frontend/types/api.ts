@@ -55,6 +55,7 @@ export interface Receipt {
   verified: boolean
   category: string
   created_at: string
+  additional_images: string[]
 }
 
 /**

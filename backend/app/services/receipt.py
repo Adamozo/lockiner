@@ -2,11 +2,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
 from datetime import datetime, timezone
 from pathlib import Path
+import os
 import uuid
 import json
 import logging
 
-from ..models import Receipt, Transaction
+from ..models import Receipt, Transaction, ReceiptImage
 from ..schemas import ReceiptUpdate, ReceiptOCRResponse
 from ..repositories.receipt import ReceiptRepository
 from ..repositories.household import HouseholdRepository
@@ -433,6 +434,14 @@ class ReceiptService:
         except Exception as e:
             logger.warning(f"Failed to delete image file {image_path}: {e}")
 
+        for img in (receipt.images or []):
+            extra_path = UPLOAD_DIR / img.image_path
+            try:
+                if extra_path.exists():
+                    os.remove(extra_path)
+            except Exception as e:
+                logger.warning(f"Failed to delete additional image file {extra_path}: {e}")
+
         await self.repository.delete(receipt)
 
     async def link_receipt_to_transaction(
@@ -459,6 +468,36 @@ class ReceiptService:
         transaction.receipt_id = receipt_id
         await self.repository.save()
 
+        return receipt
+
+    async def add_receipt_image(
+        self,
+        receipt_id: int,
+        file_content: bytes,
+        original_filename: str,
+        user_id: int,
+        household_uid: Optional[str] = None,
+    ) -> Receipt:
+        """Upload an additional image for an existing receipt."""
+        receipt = await self.repository.get_by_id(receipt_id)
+        if receipt is None:
+            raise ReceiptNotFoundError(receipt_id)
+
+        household_id = await self._resolve_household_id(household_uid)
+
+        if not await self._check_access(receipt_id, user_id, household_id):
+            raise ReceiptAccessDeniedError(receipt_id)
+
+        image_path = await self.save_upload_file(file_content, original_filename)
+        sort_order = len(receipt.images) if receipt.images else 0
+
+        new_image = ReceiptImage(
+            receipt_id=receipt_id,
+            image_path=image_path,
+            sort_order=sort_order,
+        )
+        await self.repository.add_image(new_image)
+        await self.db.refresh(receipt)
         return receipt
 
     def get_image_path(self, filename: str) -> Path:

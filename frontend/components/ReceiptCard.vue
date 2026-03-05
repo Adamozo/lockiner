@@ -124,6 +124,14 @@ const getPaymentMethodInfo = (method: string | null) => {
             View Full Size
           </div>
         </div>
+        <!-- Photo count badge -->
+        <div
+          v-if="receipt.additional_images?.length"
+          class="absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-semibold bg-background-black/80 text-pure-white border border-border-gray flex items-center gap-1"
+        >
+          <UIcon name="i-heroicons-photo" class="w-3 h-3" />
+          {{ receipt.additional_images.length + 1 }}
+        </div>
         <!-- Status Badge -->
         <div
           class="absolute top-2 right-2 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md shadow-xl flex items-center gap-1.5"

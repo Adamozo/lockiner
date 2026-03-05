@@ -22,7 +22,7 @@ from .base import Base, utc_now
 
 # Core models
 from .transaction import Transaction
-from .receipt import Receipt
+from .receipt import Receipt, ReceiptImage
 from .category import Category
 from .monthly_import import MonthlyImport
 from .budget import BudgetSettings
@@ -227,6 +227,7 @@ __all__ = [
     # Core
     "Transaction",
     "Receipt",
+    "ReceiptImage",
     "Category",
     "MonthlyImport",
     "BudgetSettings",

@@ -252,6 +252,39 @@ async def delete_receipt(
         )
 
 
+@router.post("/{receipt_id}/images", response_model=ReceiptResponse, status_code=status.HTTP_201_CREATED)
+async def add_receipt_image(
+    receipt_id: int,
+    file: UploadFile = File(..., description="Additional receipt image file"),
+    household_id: Optional[str] = Form(None, description="Check household access (UUID)"),
+    current_user: User = Depends(get_current_user),
+    service: ReceiptService = Depends(get_receipt_service),
+):
+    try:
+        file_content = await service.validate_image_file(file.filename, file.read)
+
+    except (InvalidFileTypeError, EmptyFileError, FileTooLargeError, FileReadError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    try:
+        return await service.add_receipt_image(
+            receipt_id=receipt_id,
+            file_content=file_content,
+            original_filename=file.filename,
+            user_id=current_user.id,
+            household_uid=household_id,
+        )
+
+    except ReceiptNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    except ReceiptAccessDeniedError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+    except FileSaveError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
 @router.post("/{receipt_id}/link", response_model=ReceiptResponse)
 async def link_receipt_to_transaction(
     receipt_id: int,

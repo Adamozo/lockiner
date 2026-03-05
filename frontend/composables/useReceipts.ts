@@ -180,6 +180,47 @@ export const useReceipts = () => {
   };
 
   /**
+   * Add additional photo to an existing receipt
+   * @param id - Receipt ID
+   * @param file - Image file to add
+   * @param householdId - Optional household context
+   */
+  const addReceiptImage = async (
+    id: number,
+    file: File,
+    householdId?: string | null
+  ): Promise<Receipt> => {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      if (householdId) {
+        formData.append("household_id", householdId);
+      }
+
+      const data = await api<Receipt>(`/api/v1/receipts/${id}/images`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const index = receipts.value.findIndex((r) => r.id === id);
+      if (index !== -1) {
+        receipts.value[index] = data;
+      }
+
+      return data;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : "Failed to add receipt image";
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  /**
    * Update receipt category
    * @param id - Receipt ID
    * @param category - New category name
@@ -204,6 +245,7 @@ export const useReceipts = () => {
     deleteReceipt,
     verifyReceipt,
     updateReceiptCategory,
+    addReceiptImage,
     getReceiptImageUrl,
   };
 };

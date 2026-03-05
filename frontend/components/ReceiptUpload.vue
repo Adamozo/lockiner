@@ -6,7 +6,7 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const { uploadReceipt, updateReceipt } = useReceipts()
+const { uploadReceipt, updateReceipt, addReceiptImage } = useReceipts()
 const { getGeminiKeyStatus, keyConfigured } = useSettings()
 const categoriesStore = useCategoriesStore()
 const toast = useToast()
@@ -19,6 +19,10 @@ const isProcessing = ref(false)
 const uploadedReceiptId = ref<number | null>(null)
 const useCustomKey = ref(false)
 const customApiKey = ref('')
+const extraPhotos = ref<{ file: File; preview: string }[]>([])
+const pendingFiles = ref<File[]>([])  // files queued before upload (selected together with main file)
+const isAddingExtra = ref(false)
+const extraPhotoInputRef = ref<HTMLInputElement | null>(null)
 
 // OCR form data
 const ocrData = ref<OCRResponse>({
@@ -117,36 +121,39 @@ const handleDrop = (event: DragEvent) => {
 
   const files = event.dataTransfer?.files
   if (files && files.length > 0) {
-    handleFileSelect(files[0])
+    handleFilesSelect(Array.from(files))
   }
 }
 
 const handleFileInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target.files && target.files.length > 0) {
-    handleFileSelect(target.files[0])
+    handleFilesSelect(Array.from(target.files))
   }
 }
 
-const handleFileSelect = (selectedFile: File) => {
-  // Validate file type
-  if (!selectedFile.type.startsWith('image/')) {
-    toast.add({
-      title: 'Invalid File',
-      description: 'Please upload an image file (JPEG, PNG)',
-      color: 'red',
-    })
+const readPreview = (f: File): Promise<string> =>
+  new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = (e) => resolve(e.target?.result as string)
+    reader.readAsDataURL(f)
+  })
+
+const handleFilesSelect = async (files: File[]) => {
+  const images = files.filter(f => f.type.startsWith('image/'))
+  if (images.length === 0) {
+    toast.add({ title: 'Invalid File', description: 'Please upload image files (JPEG, PNG)', color: 'red' })
     return
   }
-
-  file.value = selectedFile
-
-  // Create preview
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    filePreview.value = e.target?.result as string
+  if (images.length < files.length) {
+    toast.add({ title: 'Pominięto', description: 'Niektóre pliki nie są obrazkami i zostały pominięte', color: 'orange' })
   }
-  reader.readAsDataURL(selectedFile)
+
+  file.value = images[0]
+  filePreview.value = await readPreview(images[0])
+
+  // Queue the rest as pending additional photos
+  pendingFiles.value = images.slice(1)
 }
 
 // Upload and OCR handler
@@ -202,6 +209,18 @@ const handleUpload = async () => {
       // No OCR data, initialize with empty item
       addItem()
     }
+
+    // Upload any pending additional files selected together with the main file
+    for (const pendingFile of pendingFiles.value) {
+      try {
+        await addReceiptImage(result.receipt_id, pendingFile)
+        const preview = await readPreview(pendingFile)
+        extraPhotos.value.push({ file: pendingFile, preview })
+      } catch (e) {
+        console.warn('Failed to upload additional photo:', e)
+      }
+    }
+    pendingFiles.value = []
 
     toast.add({
       title: 'Success',
@@ -279,6 +298,33 @@ const handleSave = async () => {
   }
 }
 
+// Add extra photo handler
+const handleExtraPhotoInput = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const selectedFile = target.files?.[0]
+  if (!selectedFile || !uploadedReceiptId.value) return
+  target.value = ''
+
+  isAddingExtra.value = true
+  try {
+    await addReceiptImage(uploadedReceiptId.value, selectedFile)
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      extraPhotos.value.push({ file: selectedFile, preview: e.target?.result as string })
+    }
+    reader.readAsDataURL(selectedFile)
+    toast.add({ title: 'Zdjęcie dodane', color: 'green' })
+  } catch (error) {
+    toast.add({
+      title: 'Błąd',
+      description: error instanceof Error ? error.message : 'Nie udało się dodać zdjęcia',
+      color: 'red',
+    })
+  } finally {
+    isAddingExtra.value = false
+  }
+}
+
 // Reset form
 const handleReset = () => {
   file.value = null
@@ -286,6 +332,7 @@ const handleReset = () => {
   uploadedReceiptId.value = null
   useCustomKey.value = false
   customApiKey.value = ''
+  extraPhotos.value = []
   ocrData.value = {
     merchant: '',
     date: new Date().toISOString().split('T')[0],
@@ -359,6 +406,7 @@ const handleCancel = () => {
           ref="fileInputRef"
           type="file"
           accept="image/*"
+          multiple
           class="absolute w-px h-px opacity-0 overflow-hidden"
           @change="handleFileInput"
         />
@@ -397,6 +445,9 @@ const handleCancel = () => {
           />
           <p class="text-sm font-medium text-pure-white">
             {{ file.name }}
+            <span v-if="pendingFiles.length > 0" class="ml-2 text-xs text-electric-green">
+              + {{ pendingFiles.length }} {{ pendingFiles.length === 1 ? 'kolejne zdjęcie' : 'kolejne zdjęcia' }}
+            </span>
           </p>
           <div class="flex justify-center space-x-3">
             <BaseButton variant="secondary" size="sm" @click="openFilePicker">
@@ -430,13 +481,47 @@ const handleCancel = () => {
         </div>
       </div>
 
-      <!-- Preview Image -->
-      <div v-if="filePreview" class="flex justify-center">
-        <img
-          :src="filePreview"
-          alt="Receipt"
-          class="max-h-48 rounded-lg shadow"
-        />
+      <!-- Preview Images -->
+      <div v-if="filePreview" class="space-y-2">
+        <div class="flex gap-2 flex-wrap justify-center">
+          <div class="relative">
+            <img
+              :src="filePreview"
+              alt="Receipt"
+              class="h-32 rounded-lg shadow border-2 border-cyber-blue"
+            />
+            <span class="absolute top-1 left-1 text-xs bg-cyber-blue text-background-black px-1.5 py-0.5 rounded font-semibold">1</span>
+          </div>
+          <div
+            v-for="(extra, i) in extraPhotos"
+            :key="i"
+            class="relative"
+          >
+            <img
+              :src="extra.preview"
+              alt="Extra photo"
+              class="h-32 rounded-lg shadow border border-border-gray"
+            />
+            <span class="absolute top-1 left-1 text-xs bg-background-black/80 text-pure-white px-1.5 py-0.5 rounded border border-border-gray">{{ i + 2 }}</span>
+          </div>
+          <!-- Add more button -->
+          <input
+            ref="extraPhotoInputRef"
+            type="file"
+            accept="image/*"
+            class="absolute w-px h-px opacity-0 overflow-hidden"
+            @change="handleExtraPhotoInput"
+          />
+          <button
+            class="h-32 w-24 border-2 border-dashed border-border-gray rounded-lg flex flex-col items-center justify-center gap-1 text-pure-white/60 hover:border-electric-green/50 hover:text-electric-green transition-all"
+            :disabled="isAddingExtra"
+            @click="extraPhotoInputRef?.click()"
+          >
+            <UIcon v-if="!isAddingExtra" name="i-heroicons-plus" class="w-6 h-6" />
+            <div v-else class="animate-spin rounded-full h-5 w-5 border-b-2 border-electric-green" />
+            <span class="text-xs">Dodaj</span>
+          </button>
+        </div>
       </div>
 
       <!-- Basic Info -->

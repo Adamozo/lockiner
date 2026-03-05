@@ -43,6 +43,7 @@ class ReceiptResponse(ReceiptBase):
     """Schema for receipt response."""
     id: int
     created_at: str
+    additional_images: List[str] = []
 
     model_config = ConfigDict(from_attributes=True)
 

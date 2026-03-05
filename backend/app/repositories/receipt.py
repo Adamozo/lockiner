@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional, List
 
-from ..models import Receipt, Transaction
+from ..models import Receipt, Transaction, ReceiptImage
 
 
 class ReceiptRepository:
@@ -71,6 +71,12 @@ class ReceiptRepository:
         await self.db.commit()
         await self.db.refresh(transaction)
         return transaction
+
+    async def add_image(self, image: ReceiptImage) -> ReceiptImage:
+        self.db.add(image)
+        await self.db.commit()
+        await self.db.refresh(image)
+        return image
 
     async def save(self) -> None:
         await self.db.commit()
