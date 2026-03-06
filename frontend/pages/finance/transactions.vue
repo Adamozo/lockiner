@@ -45,8 +45,13 @@ const loadData = async () => {
   }
 }
 
-// Fetch transactions on mount
-onMounted(loadData)
+// Fetch transactions and categories on mount
+onMounted(async () => {
+  await Promise.all([
+    loadData(),
+    categoriesStore.fetchCategories(),
+  ])
+})
 
 // Reload data when context changes
 watch(() => currentHouseholdId.value, loadData)

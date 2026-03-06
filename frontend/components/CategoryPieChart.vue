@@ -19,13 +19,20 @@ const props = defineProps<{
 
 const categoriesStore = useCategoriesStore()
 
+// Distinct color palette for categories without a stored color
+const COLOR_PALETTE = [
+  '#00FF87', '#00B4D8', '#F97316', '#A855F7', '#EF4444',
+  '#EAB308', '#EC4899', '#14B8A6', '#6366F1', '#8B5CF6',
+  '#F59E0B', '#06B6D4', '#F43F5E', '#10B981', '#3B82F6',
+]
+
 // Generate chart data
 const chartData = computed<ChartData<'doughnut'>>(() => {
   const labels = props.data.map(item => item.category)
   const values = props.data.map(item => item.total)
-  const colors = props.data.map(item => {
+  const colors = props.data.map((item, index) => {
     const category = categoriesStore.getCategoryByName(item.category)
-    return category?.color || '#C7CEEA'
+    return category?.color || COLOR_PALETTE[index % COLOR_PALETTE.length]
   })
 
   return {

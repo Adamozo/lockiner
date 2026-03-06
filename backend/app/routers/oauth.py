@@ -7,7 +7,10 @@ from typing import Optional
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..models import User
-from ..schemas.oauth import OAuthTokenRequest, OAuthTokenResponse, OAuthUserInfoResponse
+from ..schemas.oauth import (
+    OAuthTokenRequest, OAuthTokenResponse, OAuthUserInfoResponse,
+    OAuthDeviceRequest, OAuthDeviceResponse, OAuthDeviceApproveRequest,
+)
 from ..services.oauth import OAuthService, OAuthError
 from ..services.auth import AuthService, InvalidTokenError, UserNotFoundError, UserInactiveError
 
@@ -105,12 +108,55 @@ async def token(
                 refresh_token=data.refresh_token,
                 client_id=data.client_id,
             )
+        elif data.grant_type == "urn:ietf:params:oauth:grant-type:device_code":
+            if not data.device_code:
+                raise HTTPException(status_code=400, detail="device_code required")
+            result = await service.poll_device_token(
+                device_code=data.device_code,
+                client_id=data.client_id,
+            )
         else:
             raise HTTPException(status_code=400, detail="Unsupported grant_type")
     except OAuthError as e:
-        raise HTTPException(status_code=400, detail=e.description)
+        raise HTTPException(status_code=400, detail=e.error)
 
     return OAuthTokenResponse(**result)
+
+
+@router.post("/device", response_model=OAuthDeviceResponse)
+async def device_authorize(
+    data: OAuthDeviceRequest,
+    service: OAuthService = Depends(get_oauth_service),
+):
+    """Krok 1 Device Flow: urządzenie prosi o device_code i user_code."""
+    try:
+        result = await service.create_device_code(client_id=data.client_id)
+    except OAuthError as e:
+        raise HTTPException(status_code=400, detail=e.description)
+    return OAuthDeviceResponse(**result)
+
+
+@router.post("/device/approve", status_code=204)
+async def device_approve(
+    data: OAuthDeviceApproveRequest,
+    current_user: User = Depends(get_current_user_cookie_or_bearer),
+    service: OAuthService = Depends(get_oauth_service),
+):
+    """Krok 2 Device Flow: zalogowany użytkownik zatwierdza user_code."""
+    try:
+        await service.approve_device_code(user_code=data.user_code, user_id=current_user.id)
+    except OAuthError as e:
+        raise HTTPException(status_code=400, detail=e.description)
+
+
+@router.post("/device/deny", status_code=204)
+async def device_deny(
+    data: OAuthDeviceApproveRequest,
+    current_user: User = Depends(get_current_user_cookie_or_bearer),
+    service: OAuthService = Depends(get_oauth_service),
+):
+    """Opcjonalnie: użytkownik odrzuca żądanie."""
+    await service.deny_device_code(user_code=data.user_code)
 
 
 @router.post("/revoke", status_code=204)

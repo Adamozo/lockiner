@@ -17,7 +17,24 @@ class OAuthTokenRequest(BaseModel):
     code_verifier: Optional[str] = None
     redirect_uri: Optional[str] = None
     refresh_token: Optional[str] = None
+    device_code: Optional[str] = None
     client_id: str
+
+
+class OAuthDeviceRequest(BaseModel):
+    client_id: str
+
+
+class OAuthDeviceResponse(BaseModel):
+    device_code: str
+    user_code: str
+    verification_uri: str
+    expires_in: int
+    interval: int
+
+
+class OAuthDeviceApproveRequest(BaseModel):
+    user_code: str
 
 
 class OAuthTokenResponse(BaseModel):

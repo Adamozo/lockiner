@@ -267,6 +267,86 @@ export interface FoodConsumptionLogCreate {
 }
 
 // ============================================================================
+// Recipes
+// ============================================================================
+
+export interface RecipeIngredient {
+  id: number
+  name: string
+  quantity: number | null
+  unit: string | null
+  food_product_id: number | null
+}
+
+export interface RecipeIngredientCreate {
+  name: string
+  quantity?: number | null
+  unit?: string | null
+  food_product_id?: number | null
+}
+
+export interface FoodRecipe {
+  id: number
+  user_id: number
+  name: string
+  description: string | null
+  prep_time_minutes: number | null
+  servings: number | null
+  instructions: string[]
+  tags: string[]
+  rating: number | null
+  source: 'manual' | 'saved_from_ai'
+  created_at: string
+  updated_at: string | null
+  ingredients: RecipeIngredient[]
+}
+
+export interface FoodRecipeCreate {
+  name: string
+  description?: string | null
+  prep_time_minutes?: number | null
+  servings?: number | null
+  instructions?: string[]
+  tags?: string[]
+  ingredients: RecipeIngredientCreate[]
+  source?: string
+}
+
+export interface FoodRecipeUpdate {
+  name?: string
+  description?: string | null
+  prep_time_minutes?: number | null
+  servings?: number | null
+  instructions?: string[]
+  tags?: string[]
+  ingredients?: RecipeIngredientCreate[]
+}
+
+export interface RecipeGenerateRequest {
+  product_ids?: number[] | null
+  preferences?: string | null
+  max_recipes?: number
+}
+
+export interface RecipeMatchIngredient {
+  name: string
+  quantity: number | null
+  unit: string | null
+  food_product_id: number | null
+  in_inventory: boolean
+  inventory_quantity: number | null
+  expiring_soon: boolean
+}
+
+export interface RecipeMatchResult {
+  recipe: FoodRecipe
+  match_percentage: number
+  missing_ingredients: RecipeMatchIngredient[]
+  available_ingredients: RecipeMatchIngredient[]
+  expiring_soon_count: number
+}
+
+// ============================================================================
 // Filter Parameters
 // ============================================================================
 

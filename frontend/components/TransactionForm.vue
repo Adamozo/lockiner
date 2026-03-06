@@ -42,6 +42,7 @@ const paymentMethods = [
   { value: 'card', label: 'Card', icon: 'i-heroicons-credit-card' },
   { value: 'cash', label: 'Cash', icon: 'i-heroicons-banknotes' },
   { value: 'blik', label: 'BLIK', icon: 'i-heroicons-device-phone-mobile' },
+  { value: 'transfer', label: 'Transfer', icon: 'i-heroicons-arrow-right-circle' },
   { value: 'other', label: 'Other', icon: 'i-heroicons-ellipsis-horizontal-circle' },
 ]
 

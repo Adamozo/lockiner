@@ -56,6 +56,8 @@ from .food import (
     FoodExpiryReminder,
     FoodReminderSettings,
     FoodConsumptionLog,
+    FoodRecipe,
+    FoodRecipeIngredient,
 )
 
 # Notification models
@@ -80,7 +82,7 @@ from .todo import TodoList, TodoItem, TodoPostponeLog, TodoNotificationRule
 from .shopping import ShoppingList, ShoppingListItem
 
 # OAuth module models
-from .oauth import OAuthClient, OAuthAuthorizationCode, OAuthAccessToken
+from .oauth import OAuthClient, OAuthAuthorizationCode, OAuthAccessToken, OAuthDeviceCode
 
 
 # ============================================================================
@@ -217,6 +219,8 @@ Index("idx_oauth_codes_client", OAuthAuthorizationCode.client_id)
 Index("idx_oauth_tokens_access", OAuthAccessToken.access_token)
 Index("idx_oauth_tokens_refresh", OAuthAccessToken.refresh_token)
 Index("idx_oauth_tokens_user", OAuthAccessToken.user_id)
+Index("idx_oauth_device_codes_device", OAuthDeviceCode.device_code)
+Index("idx_oauth_device_codes_user_code", OAuthDeviceCode.user_code)
 
 
 # Export all models
@@ -258,6 +262,8 @@ __all__ = [
     "FoodExpiryReminder",
     "FoodReminderSettings",
     "FoodConsumptionLog",
+    "FoodRecipe",
+    "FoodRecipeIngredient",
     # Notification
     "Notification",
     "UserNotification",
@@ -294,4 +300,5 @@ __all__ = [
     "OAuthClient",
     "OAuthAuthorizationCode",
     "OAuthAccessToken",
+    "OAuthDeviceCode",
 ]

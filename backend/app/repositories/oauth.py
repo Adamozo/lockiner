@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from ..models import OAuthClient, OAuthAuthorizationCode, OAuthAccessToken
+from ..models import OAuthClient, OAuthAuthorizationCode, OAuthAccessToken, OAuthDeviceCode
 
 
 class OAuthRepository:
@@ -98,4 +98,45 @@ class OAuthRepository:
 
     async def revoke_token(self, token_obj: OAuthAccessToken) -> None:
         token_obj.revoked = True
+        await self.db.commit()
+
+    async def create_device_code(
+        self,
+        device_code: str,
+        user_code: str,
+        client_id: int,
+        expires_in_seconds: int = 600,
+    ) -> OAuthDeviceCode:
+        expires_at = (datetime.now(timezone.utc) + timedelta(seconds=expires_in_seconds)).isoformat()
+        obj = OAuthDeviceCode(
+            device_code=device_code,
+            user_code=user_code,
+            client_id=client_id,
+            status="pending",
+            expires_at=expires_at,
+        )
+        self.db.add(obj)
+        await self.db.commit()
+        await self.db.refresh(obj)
+        return obj
+
+    async def get_device_code_by_device(self, device_code: str) -> OAuthDeviceCode | None:
+        result = await self.db.execute(
+            select(OAuthDeviceCode).where(OAuthDeviceCode.device_code == device_code)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_device_code_by_user_code(self, user_code: str) -> OAuthDeviceCode | None:
+        result = await self.db.execute(
+            select(OAuthDeviceCode).where(OAuthDeviceCode.user_code == user_code)
+        )
+        return result.scalar_one_or_none()
+
+    async def approve_device_code(self, device_code_obj: OAuthDeviceCode, user_id: int) -> None:
+        device_code_obj.status = "approved"
+        device_code_obj.user_id = user_id
+        await self.db.commit()
+
+    async def deny_device_code(self, device_code_obj: OAuthDeviceCode) -> None:
+        device_code_obj.status = "denied"
         await self.db.commit()

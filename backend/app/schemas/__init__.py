@@ -237,6 +237,19 @@ from .oauth import OAuthAuthorizeParams, OAuthTokenRequest, OAuthTokenResponse, 
 # Assistant schemas
 from .assistant import AssistantMessage, AssistantChatRequest, AssistantChatResponse
 
+# Food recipes schemas
+from .food_recipes import (
+    RecipeIngredientCreate,
+    RecipeIngredientResponse,
+    FoodRecipeCreate,
+    FoodRecipeUpdate,
+    FoodRecipeRating,
+    FoodRecipeResponse,
+    RecipeGenerateRequest,
+    RecipeMatchIngredient,
+    RecipeMatchResult,
+)
+
 # Two-factor authentication schemas
 from .two_factor import (
     TwoFactorSetupResponse,

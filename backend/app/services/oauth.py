@@ -157,3 +157,86 @@ class OAuthService:
         token_obj = await self.repo.get_by_access_token(access_token)
         if token_obj:
             await self.repo.revoke_token(token_obj)
+
+    def _generate_user_code(self) -> str:
+        """Generates a human-friendly code like ABCD-1234."""
+        import random
+        import string
+        letters = ''.join(random.choices(string.ascii_uppercase, k=4))
+        digits = ''.join(random.choices(string.digits, k=4))
+        return f"{letters}-{digits}"
+
+    async def create_device_code(self, client_id: str) -> dict:
+        client = await self.get_client_or_raise(client_id)
+        device_code = secrets.token_urlsafe(48)
+        user_code = self._generate_user_code()
+        expires_in = 600
+        await self.repo.create_device_code(
+            device_code=device_code,
+            user_code=user_code,
+            client_id=client.id,
+            expires_in_seconds=expires_in,
+        )
+        return {
+            "device_code": device_code,
+            "user_code": user_code,
+            "verification_uri": "https://lockiner.com/device",
+            "expires_in": expires_in,
+            "interval": 5,
+        }
+
+    async def approve_device_code(self, user_code: str, user_id: int) -> None:
+        obj = await self.repo.get_device_code_by_user_code(user_code.upper())
+        if not obj:
+            raise OAuthError("not_found", "Invalid user code")
+        if obj.status != "pending":
+            raise OAuthError("already_processed", "Code already used")
+        expires_at = datetime.fromisoformat(obj.expires_at)
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) > expires_at:
+            raise OAuthError("expired_token", "Code has expired")
+        await self.repo.approve_device_code(obj, user_id)
+
+    async def deny_device_code(self, user_code: str) -> None:
+        obj = await self.repo.get_device_code_by_user_code(user_code.upper())
+        if obj and obj.status == "pending":
+            await self.repo.deny_device_code(obj)
+
+    async def poll_device_token(self, device_code: str, client_id: str) -> dict:
+        """Called by device while polling. Returns token or raises OAuthError."""
+        client = await self.get_client_or_raise(client_id)
+        obj = await self.repo.get_device_code_by_device(device_code)
+        if not obj or obj.client_id != client.id:
+            raise OAuthError("invalid_grant", "Invalid device_code")
+
+        expires_at = datetime.fromisoformat(obj.expires_at)
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) > expires_at:
+            raise OAuthError("expired_token", "Device code expired")
+
+        if obj.status == "pending":
+            raise OAuthError("authorization_pending", "User has not yet approved")
+        if obj.status == "denied":
+            raise OAuthError("access_denied", "User denied the request")
+
+        # approved — issue tokens
+        access_token = secrets.token_urlsafe(48)
+        refresh_token = secrets.token_urlsafe(48)
+        await self.repo.create_access_token(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            client_id=client.id,
+            user_id=obj.user_id,
+        )
+        # mark device code as used (reuse denied)
+        obj.status = "used"
+        await self.db.commit()
+
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+            "expires_in": 3600,
+        }

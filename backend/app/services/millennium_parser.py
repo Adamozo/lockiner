@@ -85,19 +85,19 @@ _META_LINE_RE = re.compile(
 # ---------------------------------------------------------------------------
 
 _CATEGORY_RULES: list[tuple[str, str]] = [
-    (r'lidl|biedronka|auchan|kaufland|żabka|zabka|carrefour|netto|stokrotka|spar', 'Jedzenie'),
-    (r'mcdonald|burger|kfc|pizza|kebab|sushi|restaur|bistro|cafe|restaumatic', 'Jedzenie'),
-    (r'stacja paliw|paliw|orlen|bp |shell|circle k|lotos', 'Transport'),
+    (r'lidl|biedronka|auchan|kaufland|żabka|zabka|carrefour|netto|stokrotka|spar', 'Spożywcze'),
+    (r'mcdonald|burger|kfc|pizza|kebab|sushi|restaur|bistro|cafe|restaumatic', 'Restauracje'),
+    (r'stacja paliw|paliw|orlen|bp |shell|circle k|lotos', 'Paliwo'),
     (r'pkp|pkm|mpk|bilet|ztm|uber|bolt|taxi', 'Transport'),
     (r'apteka|farmacja|pharma|doz |dbam', 'Zdrowie'),
-    (r'netflix|spotify|youtube|hbo|disney|canal\+|apple tv|tidal', 'Rozrywka'),
-    (r'zalando|empik|reserved|h&m|zara|pepco|dealz|sinsay', 'Zakupy'),
+    (r'netflix|spotify|youtube|hbo|disney|canal\+|apple tv|tidal', 'Subskrypcje'),
+    (r'zalando|empik|reserved|h&m|zara|pepco|dealz|sinsay', 'Ubrania'),
     (r'orange|play |t-mobile|tmobile|plus\s', 'Rachunki'),
     (r'tauron|pge |energa|enea|gaz |prąd|energia', 'Rachunki'),
     (r'ovh|hosting|internet|autopay', 'Rachunki'),
-    (r'wspólnota|czynsz|administracja|nota\s+księ', 'Czynsz'),
-    (r'prowizja|opłata|składka|pakiet\s+bardzo', 'Opłaty bankowe'),
-    (r'wypłata|bankomat|atm', 'Gotówka'),
+    (r'wspólnota|czynsz|administracja|nota\s+księ', 'Dom'),
+    (r'prowizja|opłata|składka|pakiet\s+bardzo', 'Rachunki'),
+    (r'wypłata|bankomat|atm', 'Inne'),
     (r'przel\.natych\.przych\.|przychodzący|uznanie|wpłata', 'Przychody'),
 ]
 

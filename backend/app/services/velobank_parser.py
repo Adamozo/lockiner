@@ -47,18 +47,18 @@ _FOOTER_START_RE = re.compile(
 # ---------------------------------------------------------------------------
 
 _CATEGORY_RULES: list[tuple[str, str]] = [
-    (r'biedronka|biedr\s*onka|jmp\s+s\.a\.|lidl|auchan|kaufland|tesco|carrefour|netto|spar|stokrotka', 'Jedzenie'),
-    (r'żabka|zabka|fresh market|delikatesy|sevi kebab|kebab|mcdonalds?|burger|kfc|pizza|sushi|restaur|bistro|cafe|precle?|lepione', 'Jedzenie'),
-    (r'stacja paliw|paliw|bp |orlen|shell|circle k|lotos', 'Transport'),
+    (r'biedronka|biedr\s*onka|jmp\s+s\.a\.|lidl|auchan|kaufland|tesco|carrefour|netto|spar|stokrotka', 'Spożywcze'),
+    (r'żabka|zabka|fresh market|delikatesy|sevi kebab|kebab|mcdonalds?|burger|kfc|pizza|sushi|restaur|bistro|cafe|precle?|lepione', 'Restauracje'),
+    (r'stacja paliw|paliw|bp |orlen|shell|circle k|lotos', 'Paliwo'),
     (r'pkp|pkm|mpk|bilet|ztm|peka|koleje|uber|bolt|taxi', 'Transport'),
     (r'apteka|farmacja|pharma|doz |dbam o zdrowie|gemini', 'Zdrowie'),
-    (r'netflix|spotify|youtube|hbo|disney|canal\+|apple tv|tidal', 'Rozrywka'),
+    (r'netflix|spotify|youtube|hbo|disney|canal\+|apple tv|tidal', 'Subskrypcje'),
     (r'cinema|kino|teatr|muzeum', 'Rozrywka'),
     (r'empik|mediamarkt|rtv euro|komputronik|neonet', 'Elektronika'),
-    (r'h&m|zara|reserved|house |mohito|pepco|dealz|sinsay|cropp', 'Odzież'),
+    (r'h&m|zara|reserved|house |mohito|pepco|dealz|sinsay|cropp', 'Ubrania'),
     (r'allegro|amazon|olx|ebay', 'Zakupy Online'),
     (r'zooplus|zoo\s|pet shop|pupil|zoolog', 'Zwierzęta'),
-    (r'nfm\s|galeria|pl\s+ph\s|pl\s+sbx', 'Zakupy'),
+    (r'nfm\s|galeria|pl\s+ph\s|pl\s+sbx', 'Inne'),
     (r'przelew przychodzący|wpłata|uznanie', 'Przychody'),
 ]
 

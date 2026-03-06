@@ -226,6 +226,50 @@ class FoodReminderSettings(Base):
         return f"<FoodReminderSettings(id={self.id}, user_id={self.user_id}, enabled={self.enabled})>"
 
 
+class FoodRecipe(Base):
+    """User's recipe collection."""
+    __tablename__ = "food_recipes"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    prep_time_minutes = Column(Integer, nullable=True)
+    servings = Column(Integer, nullable=True)
+    instructions = Column(Text, nullable=True)  # JSON list of steps
+    tags = Column(String, nullable=True)  # comma-separated
+    rating = Column(Integer, nullable=True)  # 1-5
+    source = Column(String, nullable=False, default="manual")  # manual | saved_from_ai
+    created_at = Column(String, default=lambda: utc_now().isoformat())
+    updated_at = Column(String, nullable=True)
+
+    # Relationships
+    user = relationship("User")
+    ingredients = relationship("FoodRecipeIngredient", back_populates="recipe", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<FoodRecipe(id={self.id}, name={self.name}, user_id={self.user_id})>"
+
+
+class FoodRecipeIngredient(Base):
+    """Ingredient in a recipe, optionally linked to a FoodProduct."""
+    __tablename__ = "food_recipe_ingredients"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    recipe_id = Column(Integer, ForeignKey("food_recipes.id", ondelete="CASCADE"), nullable=False)
+    food_product_id = Column(Integer, ForeignKey("food_products.id", ondelete="SET NULL"), nullable=True)
+    name = Column(String, nullable=False)  # always present (AI doesn't know product IDs)
+    quantity = Column(Float, nullable=True)
+    unit = Column(String, nullable=True)
+
+    # Relationships
+    recipe = relationship("FoodRecipe", back_populates="ingredients")
+    food_product = relationship("FoodProduct")
+
+    def __repr__(self):
+        return f"<FoodRecipeIngredient(id={self.id}, name={self.name}, recipe_id={self.recipe_id})>"
+
+
 class FoodConsumptionLog(Base):
     """Log of consumed food items (for fitness/nutrition tracking)."""
     __tablename__ = "food_consumption_log"

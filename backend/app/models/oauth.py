@@ -50,3 +50,19 @@ class OAuthAccessToken(Base):
 
     client = relationship("OAuthClient", back_populates="access_tokens")
     user = relationship("User")
+
+
+class OAuthDeviceCode(Base):
+    __tablename__ = "oauth_device_codes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    device_code = Column(String(256), unique=True, nullable=False, index=True)
+    user_code = Column(String(20), unique=True, nullable=False, index=True)
+    client_id = Column(Integer, ForeignKey("oauth_clients.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    status = Column(String(20), nullable=False, default="pending")  # pending/approved/denied
+    expires_at = Column(String, nullable=False)
+    created_at = Column(String, default=lambda: utc_now().isoformat())
+
+    client = relationship("OAuthClient")
+    user = relationship("User")

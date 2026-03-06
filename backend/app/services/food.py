@@ -275,7 +275,8 @@ class FoodService:
             is_verified=False,
             created_by_user_id=user_id,
         )
-        return await self.product_repo.create(product)
+        created = await self.product_repo.create(product)
+        return await self.product_repo.get_by_id(created.id)
 
     async def update_product(
         self,
@@ -529,7 +530,7 @@ class FoodService:
         # Update pending import status
         await self._update_pending_import_status(import_id)
 
-        return inventory_item
+        return await self.inventory_repo.get_by_id(inventory_item.id)
 
     async def reject_pending_import_item(
         self,
@@ -666,7 +667,7 @@ class FoodService:
         if data.expiry_date:
             await self._create_expiry_reminder(item, user_id)
 
-        return item
+        return await self.inventory_repo.get_by_id(item.id)
 
     async def update_inventory_item(
         self,
