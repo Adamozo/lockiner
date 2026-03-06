@@ -1,14 +1,43 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Cookie
 from fastapi.responses import RedirectResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
 
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..models import User
 from ..schemas.oauth import OAuthTokenRequest, OAuthTokenResponse, OAuthUserInfoResponse
 from ..services.oauth import OAuthService, OAuthError
+from ..services.auth import AuthService, InvalidTokenError, UserNotFoundError, UserInactiveError
 
 router = APIRouter(prefix="/oauth", tags=["oauth"])
+
+_bearer = HTTPBearer(auto_error=False)
+
+
+async def get_current_user_cookie_or_bearer(
+    db: AsyncSession = Depends(get_db),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer),
+    scrooge_access_token: Optional[str] = Cookie(default=None),
+) -> User:
+    """Akceptuje token z nagłówka Bearer LUB z ciasteczka scrooge_access_token."""
+    token = None
+    if credentials:
+        token = credentials.credentials
+    elif scrooge_access_token:
+        token = scrooge_access_token
+
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+
+    auth_service = AuthService(db)
+    try:
+        return await auth_service.get_current_user(token)
+    except UserInactiveError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive")
+    except (InvalidTokenError, UserNotFoundError):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
 
 
 async def get_oauth_service(db: AsyncSession = Depends(get_db)) -> OAuthService:
@@ -23,7 +52,7 @@ async def authorize(
     response_type: str = "code",
     code_challenge_method: str = "S256",
     state: str | None = None,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_cookie_or_bearer),
     service: OAuthService = Depends(get_oauth_service),
 ):
     """
