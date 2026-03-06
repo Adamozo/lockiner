@@ -1,8 +1,11 @@
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException, status, Depends
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
-from ..dependencies import get_current_user
+from ..dependencies import get_current_user, require_admin
 from ..models import User
 from ..schemas import (
     APIProviderConfigCreate,
@@ -227,3 +230,54 @@ async def delete_notification_schedule(
             detail="Custom reminder not found",
         )
     return None
+
+
+# ========================================================================
+# Byczq / Asystent Integration
+# ========================================================================
+
+from ..services.settings import SettingsService  # noqa: E402
+
+
+class ByczqConfigUpdate(BaseModel):
+    service_url: str
+    notify_secret: Optional[str] = None
+
+
+@router.get("/byczq")
+async def get_byczq_config(
+    _: User = Depends(require_admin),
+):
+    """Get Byczq integration configuration (admin only)."""
+    return SettingsService().get_byczq_config()
+
+
+@router.put("/byczq")
+async def update_byczq_config(
+    data: ByczqConfigUpdate,
+    _: User = Depends(require_admin),
+):
+    """Update Byczq integration configuration (admin only)."""
+    return SettingsService().save_byczq_config(
+        service_url=data.service_url,
+        notify_secret=data.notify_secret,
+    )
+
+
+@router.post("/byczq/test", status_code=status.HTTP_200_OK)
+async def test_byczq_connection(
+    _: User = Depends(require_admin),
+):
+    """Test connection to Byczq service (admin only)."""
+    import httpx
+    url = SettingsService().get_byczq_service_url()
+    if not url:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Byczq URL not configured")
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{url}/health", timeout=5.0)
+        if resp.status_code == 200:
+            return {"status": "ok", "url": url}
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Byczq returned {resp.status_code}")
+    except httpx.RequestError:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Cannot reach Byczq service")

@@ -19,21 +19,32 @@ from ..config import get_settings
 logger = logging.getLogger(__name__)
 
 
+def _get_byczq_url_and_secret() -> tuple[str, str]:
+    """Pobiera URL i secret z DB (priorytet) lub env."""
+    from .settings import SettingsService
+    svc = SettingsService()
+    url = svc.get_byczq_service_url()
+    secret = svc.get_byczq_notify_secret()
+    if not secret:
+        secret = get_settings().byczq_notify_secret
+    return url, secret
+
+
 async def forward_notification(title: str, body: str, user_id: int | None = None) -> None:
-    settings = get_settings()
-    if not settings.byczq_service_url or not settings.byczq_notify_secret:
+    url, secret = _get_byczq_url_and_secret()
+    if not url or not secret:
         return
 
-    payload = {"title": title, "body": body}
+    payload: dict = {"title": title, "body": body}
     if user_id is not None:
         payload["user_id"] = str(user_id)
 
     try:
         async with httpx.AsyncClient() as client:
             await client.post(
-                f"{settings.byczq_service_url}/notify",
+                f"{url}/notify",
                 json=payload,
-                headers={"X-Notify-Secret": settings.byczq_notify_secret},
+                headers={"X-Notify-Secret": secret},
                 timeout=3.0,
             )
     except Exception as e:

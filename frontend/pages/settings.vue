@@ -359,6 +359,14 @@ onMounted(() => {
 
         <!-- ── INTEGRATIONS ───────────────────────────────────────────── -->
         <div v-show="activeTab === 'integrations'" class="space-y-6">
+
+          <!-- Byczq -->
+          <div>
+            <h3 class="text-base font-semibold text-pure-white mb-1">Byczq / Asystent głosowy</h3>
+            <p class="text-sm text-pure-white/60 mb-4">Połączenie z lokalnym agentem Byczq — powiadomienia i dostęp do danych.</p>
+            <SettingsByczqSection />
+          </div>
+
           <div>
             <h3 class="text-base font-semibold text-pure-white mb-1">{{ $t('settings.ocr_api_config') }}</h3>
             <p class="text-sm text-pure-white/60 mb-4">{{ $t('settings.ocr_api_desc') }}</p>

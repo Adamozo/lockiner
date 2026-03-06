@@ -259,6 +259,43 @@ class SettingsService:
 
             self._save_settings(settings)
 
+    def get_byczq_config(self) -> dict:
+        """Pobiera konfigurację Byczq (URL + zamaskowany secret)."""
+        settings = self._load_settings()
+        byczq = settings.get("byczq", {})
+        secret = byczq.get("notify_secret", "")
+        masked = (secret[:4] + "..." + secret[-4:]) if len(secret) > 8 else ("***" if secret else "")
+        return {
+            "service_url": byczq.get("service_url", ""),
+            "notify_secret_masked": masked,
+            "configured": bool(byczq.get("service_url")),
+        }
+
+    def save_byczq_config(self, service_url: str, notify_secret: str | None = None) -> dict:
+        """Zapisuje konfigurację Byczq. Secret pomijany jeśli None (brak zmiany)."""
+        data = self._load_settings()
+        byczq = data.get("byczq", {})
+        byczq["service_url"] = service_url.rstrip("/")
+        if notify_secret is not None:
+            byczq["notify_secret"] = notify_secret
+        data["byczq"] = byczq
+        self._save_settings(data)
+        return self.get_byczq_config()
+
+    def get_byczq_notify_secret(self) -> str:
+        """Zwraca plaintext secret do weryfikacji powiadomień do Byczq."""
+        settings = self._load_settings()
+        return settings.get("byczq", {}).get("notify_secret", "")
+
+    def get_byczq_service_url(self) -> str:
+        """Zwraca URL serwisu Byczq (DB ma priorytet nad env)."""
+        settings = self._load_settings()
+        url = settings.get("byczq", {}).get("service_url", "")
+        if not url:
+            from ..config import get_settings
+            url = get_settings().byczq_service_url
+        return url
+
     def get_gemini_key_status(self) -> dict:
         """Check if Gemini API key is configured (backward compatibility)."""
         settings = self._load_settings()
