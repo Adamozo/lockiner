@@ -45,6 +45,12 @@ class Settings(BaseSettings):
     google_client_secret: str | None = None
     google_redirect_uri: str = "http://localhost:8000/api/v1/backup/google-drive/callback"
 
+    # Open Food Facts infrastructure
+    mongodb_url: str = "mongodb://mongodb:27017"
+    mongodb_db: str = "lockiner_food"
+    meili_url: str = "http://meilisearch:7700"
+    meili_master_key: str = ""
+
     @computed_field
     @property
     def vapid_private_key_raw(self) -> str:

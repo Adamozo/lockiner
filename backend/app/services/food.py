@@ -18,6 +18,7 @@ from ..models import (
     FoodExpiryReminder,
     FoodReminderSettings,
     FoodConsumptionLog,
+    FoodDailyGoal,
 )
 from ..schemas import (
     FoodProductCreate,
@@ -28,6 +29,8 @@ from ..schemas import (
     FoodPendingImportItemAccept,
     FoodReminderSettingsUpdate,
     FoodConsumptionLogCreate,
+    DirectConsumptionRequest,
+    FoodDailyGoalUpdate,
 )
 from ..repositories.food import (
     FoodCategoryRepository,
@@ -39,6 +42,7 @@ from ..repositories.food import (
     FoodExpiryReminderRepository,
     FoodReminderSettingsRepository,
     FoodConsumptionLogRepository,
+    FoodDailyGoalRepository,
 )
 from ..repositories.household import HouseholdRepository
 
@@ -146,6 +150,30 @@ def calculate_expiry_date(days: int) -> str:
     return (datetime.utcnow() + timedelta(days=days)).strftime("%Y-%m-%d")
 
 
+def _calc_nutrition(product, quantity: float, unit: str) -> dict:
+    """Calculate nutrition values for an actual consumed quantity.
+
+    Product nutrition is stored per 100g/100ml.
+    For weight/volume units we scale by quantity/100.
+    For kg/l units we multiply by 10 (1 kg = 1000g, factor = 1000/100 = 10).
+    For piece units (szt, pcs, etc.) we multiply by quantity directly.
+    """
+    if unit in ("kg", "l"):
+        factor = quantity * 10.0
+    elif unit in ("g", "ml"):
+        factor = quantity / 100.0
+    else:
+        # piece-based (szt, etc.) — treat product nutrition as per 1 piece
+        factor = quantity
+
+    return {
+        "calories": round((product.calories or 0) * factor, 1) if product.calories is not None else None,
+        "protein": round((product.protein or 0) * factor, 1) if product.protein is not None else None,
+        "carbohydrates": round((product.carbohydrates or 0) * factor, 1) if product.carbohydrates is not None else None,
+        "fat": round((product.fat or 0) * factor, 1) if product.fat is not None else None,
+    }
+
+
 # ============================================================================
 # Food Service
 # ============================================================================
@@ -164,6 +192,7 @@ class FoodService:
         self.reminder_repo = FoodExpiryReminderRepository(db)
         self.settings_repo = FoodReminderSettingsRepository(db)
         self.consumption_repo = FoodConsumptionLogRepository(db)
+        self.goal_repo = FoodDailyGoalRepository(db)
         self.household_repo = HouseholdRepository(db)
 
     # -------------------------------------------------------------------------
@@ -741,16 +770,18 @@ class FoodService:
 
         # Log consumption
         product = await self.product_repo.get_by_id(item.product_id)
+        nutrition = _calc_nutrition(product, consume_quantity, item.unit) if product else {}
         log = FoodConsumptionLog(
             user_id=user_id,
             product_id=item.product_id,
             inventory_item_id=item_id,
+            product_name=product.name if product else None,
             quantity=consume_quantity,
             unit=item.unit,
-            calories=product.calories if product else None,
-            protein=product.protein if product else None,
-            carbohydrates=product.carbohydrates if product else None,
-            fat=product.fat if product else None,
+            calories=nutrition.get("calories"),
+            protein=nutrition.get("protein"),
+            carbohydrates=nutrition.get("carbohydrates"),
+            fat=nutrition.get("fat"),
             consumed_at=datetime.utcnow().isoformat(),
             meal_type=meal_type,
             notes=notes,
@@ -911,3 +942,243 @@ class FoodService:
             skip=skip,
             limit=limit,
         )
+
+    async def delete_consumption_log(self, log_id: int, user_id: int) -> None:
+        """Delete a consumption log entry."""
+        log = await self.consumption_repo.get_by_id(log_id)
+        if not log:
+            raise FoodInventoryNotFoundError(log_id)
+        if log.user_id != user_id:
+            raise FoodAccessDeniedError("consumption_log", log_id)
+        await self.consumption_repo.delete(log)
+
+    # -------------------------------------------------------------------------
+    # Barcode Scan / Global Search
+    # -------------------------------------------------------------------------
+
+    async def scan_barcode(self, user_id: int, code: str, household_uid: Optional[str] = None) -> dict:
+        """Scan a barcode and return product + available inventory items."""
+        from ..repositories.off_product import OFFProductRepository
+
+        household_id = await self._resolve_household_id(household_uid)
+
+        # 1. Try local DB first
+        product = await self.product_repo.get_by_barcode(code)
+        if product:
+            inventory_items = await self.inventory_repo.get_available_by_product(
+                user_id=user_id,
+                product_id=product.id,
+                household_id=household_id,
+            )
+            return {
+                "source": "local",
+                "product": product,
+                "inventory_items": inventory_items,
+            }
+
+        # 2. Try OFF
+        off_repo = OFFProductRepository()
+        off_product = await off_repo.get_by_barcode(code)
+        if off_product:
+            return {
+                "source": "off",
+                "product": None,
+                "off_product": off_product,
+                "inventory_items": [],
+            }
+
+        return None
+
+    async def search_products_global(
+        self,
+        user_id: int,
+        query: str,
+        lang: Optional[str] = None,
+        household_uid: Optional[str] = None,
+    ) -> List[dict]:
+        """Search local products + OFF, annotate with inventory availability."""
+        from ..repositories.off_product import OFFProductRepository
+
+        household_id = await self._resolve_household_id(household_uid)
+        results = []
+
+        # Local products
+        local_products = await self.product_repo.search(query, limit=10)
+        for product in local_products:
+            inv_items = await self.inventory_repo.get_available_by_product(
+                user_id=user_id,
+                product_id=product.id,
+                household_id=household_id,
+            )
+            results.append({
+                "source": "local",
+                "product": product,
+                "inventory_items": inv_items,
+                "in_stock": len(inv_items) > 0,
+            })
+
+        # OFF search (only if fewer than 5 local results)
+        if len(local_products) < 5:
+            off_repo = OFFProductRepository()
+            off_results = await off_repo.search_by_name(query, lang=lang, limit=10)
+            for off_p in off_results:
+                results.append({
+                    "source": "off",
+                    "product": None,
+                    "off_product": off_p,
+                    "inventory_items": [],
+                    "in_stock": False,
+                })
+
+        return results
+
+    # -------------------------------------------------------------------------
+    # Direct Consumption (without inventory)
+    # -------------------------------------------------------------------------
+
+    async def log_consumption_direct(
+        self,
+        user_id: int,
+        request: "DirectConsumptionRequest",
+    ) -> FoodConsumptionLog:
+        """Log food consumption directly (not from inventory)."""
+        from ..repositories.off_product import OFFProductRepository
+
+        nutrition = {"calories": None, "protein": None, "carbohydrates": None, "fat": None}
+        product_name = request.product_name
+        product_id = request.product_id
+
+        if request.calories_override is not None:
+            # User specified calories directly
+            nutrition["calories"] = request.calories_override
+        elif request.product_id:
+            product = await self.product_repo.get_by_id(request.product_id)
+            if product:
+                nutrition = _calc_nutrition(product, request.quantity, request.unit)
+                if not product_name:
+                    product_name = product.name
+        elif request.off_product_code:
+            off_repo = OFFProductRepository()
+            off_p = await off_repo.get_by_barcode(request.off_product_code)
+            if off_p:
+                # Extract nutrition from OFF product — top-level fields (set by import script)
+                # fallback to nutriments dict for older data
+                nutriments = off_p.get("nutriments", {})
+                off_calories = (
+                    off_p.get("calories")
+                    or nutriments.get("energy-kcal_100g")
+                    or nutriments.get("energy_100g")
+                )
+                if not product_name:
+                    product_name = off_p.get("product_name") or off_p.get("product_name_pl") or off_p.get("product_name_en")
+
+                class _FakeProduct:
+                    calories = off_calories
+                    protein = off_p.get("protein") or nutriments.get("proteins_100g")
+                    carbohydrates = off_p.get("carbohydrates") or nutriments.get("carbohydrates_100g")
+                    fat = off_p.get("fat") or nutriments.get("fat_100g")
+
+                if off_calories is not None:
+                    nutrition = _calc_nutrition(_FakeProduct(), request.quantity, request.unit)
+
+        log = FoodConsumptionLog(
+            user_id=user_id,
+            product_id=product_id,
+            off_product_code=request.off_product_code,
+            product_name=product_name,
+            quantity=request.quantity,
+            unit=request.unit,
+            calories=nutrition.get("calories"),
+            protein=nutrition.get("protein"),
+            carbohydrates=nutrition.get("carbohydrates"),
+            fat=nutrition.get("fat"),
+            consumed_at=datetime.utcnow().isoformat(),
+            meal_type=request.meal_type,
+            notes=request.notes,
+        )
+        return await self.consumption_repo.create(log)
+
+    # -------------------------------------------------------------------------
+    # Daily Summary
+    # -------------------------------------------------------------------------
+
+    async def get_daily_summary(self, user_id: int, date: str) -> dict:
+        """Get daily nutrition summary for a specific date."""
+        logs = await self.consumption_repo.get_by_date(user_id, date)
+        goal = await self.goal_repo.get_by_user(user_id)
+
+        total = {"calories": 0.0, "protein": 0.0, "carbohydrates": 0.0, "fat": 0.0}
+        by_meal: dict = {}
+
+        for log in logs:
+            total["calories"] += log.calories or 0
+            total["protein"] += log.protein or 0
+            total["carbohydrates"] += log.carbohydrates or 0
+            total["fat"] += log.fat or 0
+
+            meal = log.meal_type or "other"
+            if meal not in by_meal:
+                by_meal[meal] = {"meal_type": meal, "logs": [], "total_calories": 0.0}
+            entry_name = log.product_name or (log.product.name if log.product else "Produkt")
+            by_meal[meal]["logs"].append({
+                "id": log.id,
+                "product_name": entry_name,
+                "quantity": log.quantity,
+                "unit": log.unit,
+                "calories": log.calories,
+                "consumed_at": log.consumed_at,
+            })
+            by_meal[meal]["total_calories"] += log.calories or 0
+
+        goal_calories = goal.calories if goal else 2000
+        goal_progress_pct = round(total["calories"] / goal_calories * 100, 1) if goal_calories else 0
+
+        return {
+            "date": date,
+            "total": {k: round(v, 1) for k, v in total.items()},
+            "by_meal": list(by_meal.values()),
+            "goal": {
+                "calories": goal.calories if goal else 2000,
+                "protein": goal.protein if goal else None,
+                "carbohydrates": goal.carbohydrates if goal else None,
+                "fat": goal.fat if goal else None,
+            },
+            "goal_progress_pct": goal_progress_pct,
+        }
+
+    async def get_weekly_summary(self, user_id: int) -> List[dict]:
+        """Get daily calorie totals for the past 7 days."""
+        from datetime import date as date_cls
+        results = []
+        today = datetime.utcnow().date()
+        goal = await self.goal_repo.get_by_user(user_id)
+        goal_calories = goal.calories if goal else 2000
+
+        for i in range(6, -1, -1):
+            day = today - timedelta(days=i)
+            day_str = day.isoformat()
+            logs = await self.consumption_repo.get_by_date(user_id, day_str)
+            total_calories = sum(log.calories or 0 for log in logs)
+            results.append({
+                "date": day_str,
+                "calories": round(total_calories, 1),
+                "goal_calories": goal_calories,
+            })
+        return results
+
+    # -------------------------------------------------------------------------
+    # Daily Goals
+    # -------------------------------------------------------------------------
+
+    async def get_daily_goal(self, user_id: int) -> FoodDailyGoal:
+        """Get user's daily nutrition goal (creates default if not exists)."""
+        goal = await self.goal_repo.get_by_user(user_id)
+        if not goal:
+            goal = await self.goal_repo.upsert(user_id, {"calories": 2000})
+        return goal
+
+    async def update_daily_goal(self, user_id: int, data: "FoodDailyGoalUpdate") -> FoodDailyGoal:
+        """Update user's daily nutrition goal."""
+        update_data = data.model_dump(exclude_unset=True)
+        update_data["updated_at"] = datetime.utcnow().isoformat()
+        return await self.goal_repo.upsert(user_id, update_data)

@@ -275,6 +275,8 @@ class FoodConsumptionLogResponse(BaseModel):
     user_id: int
     product_id: Optional[int] = None
     product: Optional[FoodProductResponse] = None
+    product_name: Optional[str] = None
+    off_product_code: Optional[str] = None
     inventory_item_id: Optional[int] = None
     quantity: float
     unit: str
@@ -288,6 +290,121 @@ class FoodConsumptionLogResponse(BaseModel):
     created_at: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# New schemas for nutrition tracking
+class InventoryItemForProduct(BaseModel):
+    """Inventory item info for LogProductModal."""
+    id: int
+    location: str
+    quantity: float
+    unit: str
+    expiry_date: Optional[str] = None
+    status: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class OFFProductInfo(BaseModel):
+    """Simplified OFF product info."""
+    code: str
+    name: Optional[str] = None
+    calories_100g: Optional[float] = None
+    protein_100g: Optional[float] = None
+    carbohydrates_100g: Optional[float] = None
+    fat_100g: Optional[float] = None
+    image_url: Optional[str] = None
+
+
+class ProductWithInventoryResponse(BaseModel):
+    """Product found by scan/search with available inventory items."""
+    source: str  # "local" or "off"
+    product: Optional[FoodProductResponse] = None
+    off_product: Optional[OFFProductInfo] = None
+    inventory_items: List[InventoryItemForProduct] = []
+    in_stock: bool = False
+
+
+class DirectConsumptionRequest(BaseModel):
+    """Request to log food directly (not from inventory)."""
+    product_id: Optional[int] = None
+    off_product_code: Optional[str] = None
+    product_name: Optional[str] = None
+    quantity: float = Field(default=100, gt=0)
+    unit: str = Field(default="g")
+    meal_type: Optional[str] = None  # breakfast, lunch, dinner, snack
+    calories_override: Optional[float] = Field(None, ge=0)
+    notes: Optional[str] = None
+
+
+class MacroSummary(BaseModel):
+    """Total macro summary."""
+    calories: float = 0
+    protein: float = 0
+    carbohydrates: float = 0
+    fat: float = 0
+
+
+class MealLogEntry(BaseModel):
+    """Single log entry in a meal."""
+    id: int
+    product_name: str
+    quantity: float
+    unit: str
+    calories: Optional[float] = None
+    consumed_at: str
+
+
+class MealSummary(BaseModel):
+    """Summary for a single meal type."""
+    meal_type: str
+    logs: List[MealLogEntry] = []
+    total_calories: float = 0
+
+
+class GoalSummary(BaseModel):
+    """Daily nutrition goal values."""
+    calories: Optional[float] = None
+    protein: Optional[float] = None
+    carbohydrates: Optional[float] = None
+    fat: Optional[float] = None
+
+
+class DailyNutritionSummary(BaseModel):
+    """Full daily nutrition summary."""
+    date: str
+    total: MacroSummary
+    by_meal: List[dict] = []
+    goal: Optional[GoalSummary] = None
+    goal_progress_pct: float = 0
+
+
+class WeeklyNutritionDay(BaseModel):
+    """Single day in weekly nutrition trend."""
+    date: str
+    calories: float
+    goal_calories: float
+
+
+class FoodDailyGoalResponse(BaseModel):
+    """Response schema for daily nutrition goal."""
+    id: int
+    user_id: int
+    calories: Optional[float] = None
+    protein: Optional[float] = None
+    carbohydrates: Optional[float] = None
+    fat: Optional[float] = None
+    updated_at: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FoodDailyGoalUpdate(BaseModel):
+    """Request schema for updating daily nutrition goal."""
+    calories: Optional[float] = Field(None, ge=0)
+    protein: Optional[float] = Field(None, ge=0)
+    carbohydrates: Optional[float] = Field(None, ge=0)
+    fat: Optional[float] = Field(None, ge=0)
 
 
 # Search and filter helpers

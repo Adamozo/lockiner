@@ -1,12 +1,13 @@
 """Admin panel router - requires admin role."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
 from ..database import get_db
 from ..dependencies import require_admin
 from ..models import User
+from ..repositories.off_product import OFFProductRepository
 from ..schemas.admin import (
     VoucherAdminResponse,
     VoucherGenerateRequest,
@@ -171,3 +172,41 @@ async def set_user_role(
         )
     except UserNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+# ============================================================================
+# Open Food Facts — wyszukiwanie produktów (tylko admin)
+# ============================================================================
+
+@router.get("/off/barcode/{barcode}")
+async def off_get_by_barcode(
+    barcode: str,
+    admin: User = Depends(require_admin),
+):
+    """Zwraca pełny dokument OFF dla danego kodu EAN."""
+    repo = OFFProductRepository()
+    product = await repo.get_by_barcode(barcode)
+    if not product:
+        raise HTTPException(status_code=404, detail=f"Produkt '{barcode}' nie znaleziony w Open Food Facts")
+    return product
+
+
+@router.get("/off/search")
+async def off_search(
+    q: str = Query(..., min_length=2, description="Nazwa produktu lub marka"),
+    lang: str | None = Query(None, description="Kod języka, np. 'pl', 'en'"),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    admin: User = Depends(require_admin),
+):
+    """
+    Wyszukuje produkty w Open Food Facts po nazwie.
+    Zwraca kompletne dokumenty JSON z pełnymi danymi odżywczymi.
+    """
+    repo = OFFProductRepository()
+    results = await repo.search_by_name(q, lang=lang, limit=limit, offset=offset)
+    return {
+        "query": q,
+        "count": len(results),
+        "results": results,
+    }

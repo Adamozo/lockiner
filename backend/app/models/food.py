@@ -277,7 +277,9 @@ class FoodConsumptionLog(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     product_id = Column(Integer, ForeignKey("food_products.id", ondelete="SET NULL"), nullable=True)
+    off_product_code = Column(String, nullable=True)  # OFF barcode for direct logs without local product
     inventory_item_id = Column(Integer, ForeignKey("food_inventory.id", ondelete="SET NULL"), nullable=True)
+    product_name = Column(String, nullable=True)  # snapshot for display even if product deleted
     quantity = Column(Float, default=1)
     unit = Column(String, default="szt")
 
@@ -299,3 +301,22 @@ class FoodConsumptionLog(Base):
 
     def __repr__(self):
         return f"<FoodConsumptionLog(id={self.id}, user_id={self.user_id}, consumed_at={self.consumed_at})>"
+
+
+class FoodDailyGoal(Base):
+    """User's daily nutrition goals."""
+    __tablename__ = "food_daily_goals"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    calories = Column(Float, default=2000)
+    protein = Column(Float, nullable=True)
+    carbohydrates = Column(Float, nullable=True)
+    fat = Column(Float, nullable=True)
+    updated_at = Column(String, nullable=True)
+
+    # Relationships
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<FoodDailyGoal(id={self.id}, user_id={self.user_id}, calories={self.calories})>"

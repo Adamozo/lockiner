@@ -26,6 +26,11 @@ from ..schemas import (
     FoodReminderSettingsResponse,
     FoodReminderSettingsUpdate,
     FoodConsumptionLogResponse,
+    DirectConsumptionRequest,
+    DailyNutritionSummary,
+    FoodDailyGoalResponse,
+    FoodDailyGoalUpdate,
+    WeeklyNutritionDay,
 )
 from ..services.food import (
     FoodService,
@@ -120,6 +125,127 @@ async def get_product_by_barcode(
             detail=f"Product with barcode {barcode} not found",
         )
     return product
+
+
+@router.get("/products/scan/{ean}")
+async def scan_barcode(
+    ean: str,
+    household_id: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    service: FoodService = Depends(get_food_service),
+):
+    """Scan a barcode and return product + inventory availability."""
+    result = await service.scan_barcode(current_user.id, ean, household_uid=household_id)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+    # Serialize result
+    product_data = None
+    if result.get("product"):
+        p = result["product"]
+        product_data = {
+            "id": p.id,
+            "name": p.name,
+            "barcode": p.barcode,
+            "calories": p.calories,
+            "protein": p.protein,
+            "carbohydrates": p.carbohydrates,
+            "fat": p.fat,
+            "default_unit": p.default_unit,
+        }
+
+    off_data = None
+    if result.get("off_product"):
+        op = result["off_product"]
+        n = op.get("nutriments", {})
+        cal = op.get("calories") or n.get("energy-kcal_100g") or n.get("energy_100g")
+        off_data = {
+            "code": op.get("code", ean),
+            "name": op.get("product_name") or op.get("product_name_pl") or op.get("product_name_en"),
+            "brands": op.get("brands"),
+            "quantity": op.get("quantity"),
+            "nutriscore_grade": op.get("nutriscore_grade"),
+            "calories_100g": cal,
+            "protein_100g": op.get("protein") or n.get("proteins_100g"),
+            "carbohydrates_100g": op.get("carbohydrates") or n.get("carbohydrates_100g"),
+            "fat_100g": op.get("fat") or n.get("fat_100g"),
+            "image_url": op.get("image_url_full") or op.get("image_url"),
+        }
+
+    inv_items = [
+        {"id": i.id, "location": i.location, "quantity": i.quantity, "unit": i.unit, "expiry_date": i.expiry_date, "status": i.status}
+        for i in result.get("inventory_items", [])
+    ]
+
+    return {
+        "source": result["source"],
+        "product": product_data,
+        "off_product": off_data,
+        "inventory_items": inv_items,
+        "in_stock": len(inv_items) > 0,
+    }
+
+
+@router.get("/products/search-global")
+async def search_products_global(
+    q: str = Query(..., min_length=1),
+    lang: Optional[str] = Query(None),
+    household_id: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    service: FoodService = Depends(get_food_service),
+):
+    """Search products in local DB + OFF catalog."""
+    results = await service.search_products_global(
+        user_id=current_user.id,
+        query=q,
+        lang=lang,
+        household_uid=household_id,
+    )
+    # Serialize
+    serialized = []
+    for r in results:
+        product_data = None
+        if r.get("product"):
+            p = r["product"]
+            product_data = {
+                "id": p.id,
+                "name": p.name,
+                "barcode": p.barcode,
+                "calories": p.calories,
+                "protein": p.protein,
+                "carbohydrates": p.carbohydrates,
+                "fat": p.fat,
+                "default_unit": p.default_unit,
+            }
+        off_data = None
+        if r.get("off_product"):
+            op = r["off_product"]
+            n = op.get("nutriments", {})
+            cal = op.get("calories") or n.get("energy-kcal_100g") or n.get("energy_100g")
+            off_data = {
+                "code": op.get("code"),
+                "name": op.get("product_name") or op.get("product_name_pl") or op.get("product_name_en"),
+                "brands": op.get("brands"),
+                "quantity": op.get("quantity"),
+                "nutriscore_grade": op.get("nutriscore_grade"),
+                "calories_100g": cal,
+                "protein_100g": op.get("protein") or n.get("proteins_100g"),
+                "carbohydrates_100g": op.get("carbohydrates") or n.get("carbohydrates_100g"),
+                "fat_100g": op.get("fat") or n.get("fat_100g"),
+                "image_url": op.get("image_url_full") or op.get("image_url"),
+            }
+        inv_items = [
+            {"id": i.id, "location": i.location, "quantity": i.quantity, "unit": i.unit, "expiry_date": i.expiry_date, "status": i.status}
+            for i in r.get("inventory_items", [])
+        ]
+        serialized.append({
+            "source": r["source"],
+            "product": product_data,
+            "off_product": off_data,
+            "inventory_items": inv_items,
+            "in_stock": r.get("in_stock", False),
+        })
+    return serialized
 
 
 @router.get("/products/{product_id}", response_model=FoodProductResponse)
@@ -586,3 +712,73 @@ async def list_consumption_logs(
         skip=skip,
         limit=limit,
     )
+
+
+@router.post("/consumption/direct", response_model=FoodConsumptionLogResponse)
+async def log_consumption_direct(
+    data: DirectConsumptionRequest,
+    current_user: User = Depends(get_current_user),
+    service: FoodService = Depends(get_food_service),
+):
+    """Log food consumption directly without using inventory."""
+    return await service.log_consumption_direct(current_user.id, data)
+
+
+@router.delete("/consumption/{log_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_consumption_log(
+    log_id: int,
+    current_user: User = Depends(get_current_user),
+    service: FoodService = Depends(get_food_service),
+):
+    """Delete a consumption log entry."""
+    try:
+        await service.delete_consumption_log(log_id, current_user.id)
+    except FoodInventoryNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except FoodAccessDeniedError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+
+@router.get("/consumption/daily-summary")
+async def get_daily_summary(
+    date: Optional[str] = Query(None, description="Date YYYY-MM-DD, defaults to today"),
+    current_user: User = Depends(get_current_user),
+    service: FoodService = Depends(get_food_service),
+):
+    """Get daily nutrition summary."""
+    from datetime import datetime
+    if not date:
+        date = datetime.utcnow().strftime("%Y-%m-%d")
+    return await service.get_daily_summary(current_user.id, date)
+
+
+@router.get("/consumption/weekly-summary")
+async def get_weekly_summary(
+    current_user: User = Depends(get_current_user),
+    service: FoodService = Depends(get_food_service),
+):
+    """Get 7-day calorie trend."""
+    return await service.get_weekly_summary(current_user.id)
+
+
+# ============================================================================
+# Daily Goals
+# ============================================================================
+
+@router.get("/goals", response_model=FoodDailyGoalResponse)
+async def get_daily_goal(
+    current_user: User = Depends(get_current_user),
+    service: FoodService = Depends(get_food_service),
+):
+    """Get user's daily nutrition goal."""
+    return await service.get_daily_goal(current_user.id)
+
+
+@router.put("/goals", response_model=FoodDailyGoalResponse)
+async def update_daily_goal(
+    data: FoodDailyGoalUpdate,
+    current_user: User = Depends(get_current_user),
+    service: FoodService = Depends(get_food_service),
+):
+    """Update user's daily nutrition goal."""
+    return await service.update_daily_goal(current_user.id, data)

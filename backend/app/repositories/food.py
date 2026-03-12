@@ -18,6 +18,7 @@ from ..models import (
     FoodExpiryReminder,
     FoodReminderSettings,
     FoodConsumptionLog,
+    FoodDailyGoal,
 )
 
 
@@ -423,6 +424,32 @@ class FoodInventoryRepository:
         await self.db.delete(item)
         await self.db.commit()
 
+    async def get_available_by_product(
+        self,
+        user_id: int,
+        product_id: int,
+        household_id: Optional[int] = None,
+    ) -> List[FoodInventory]:
+        """Get available inventory items for a product, sorted FIFO (expiry_date ASC, NULLs last)."""
+        query = select(FoodInventory).options(
+            selectinload(FoodInventory.product).selectinload(FoodProduct.food_category)
+        ).filter(
+            FoodInventory.product_id == product_id,
+            FoodInventory.status.in_(["available", "opened"]),
+        )
+
+        if household_id:
+            query = query.filter(FoodInventory.household_id == household_id)
+        else:
+            query = query.filter(
+                FoodInventory.user_id == user_id,
+                FoodInventory.household_id.is_(None),
+            )
+
+        query = query.order_by(FoodInventory.expiry_date.asc().nulls_last())
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
 
 class FoodExpiryReminderRepository:
     """Repository for expiry reminders."""
@@ -558,6 +585,31 @@ class FoodConsumptionLogRepository:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
+    async def get_by_id(self, log_id: int) -> Optional[FoodConsumptionLog]:
+        """Get a consumption log entry by ID."""
+        result = await self.db.execute(
+            select(FoodConsumptionLog)
+            .options(selectinload(FoodConsumptionLog.product))
+            .filter(FoodConsumptionLog.id == log_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_date(
+        self,
+        user_id: int,
+        date_str: str,
+    ) -> List[FoodConsumptionLog]:
+        """Get consumption logs for a specific date (YYYY-MM-DD)."""
+        query = select(FoodConsumptionLog).options(
+            selectinload(FoodConsumptionLog.product)
+        ).filter(
+            FoodConsumptionLog.user_id == user_id,
+            FoodConsumptionLog.consumed_at >= date_str,
+            FoodConsumptionLog.consumed_at < date_str + "T99",
+        ).order_by(FoodConsumptionLog.consumed_at.asc())
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
     async def create(self, log: FoodConsumptionLog) -> FoodConsumptionLog:
         """Create a consumption log entry."""
         self.db.add(log)
@@ -569,3 +621,31 @@ class FoodConsumptionLogRepository:
         """Delete a consumption log entry."""
         await self.db.delete(log)
         await self.db.commit()
+
+
+class FoodDailyGoalRepository:
+    """Repository for daily nutrition goals."""
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def get_by_user(self, user_id: int) -> Optional[FoodDailyGoal]:
+        """Get daily goal for a user."""
+        result = await self.db.execute(
+            select(FoodDailyGoal).filter(FoodDailyGoal.user_id == user_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def upsert(self, user_id: int, data: dict) -> FoodDailyGoal:
+        """Create or update daily goal for a user."""
+        goal = await self.get_by_user(user_id)
+        if not goal:
+            goal = FoodDailyGoal(user_id=user_id)
+            self.db.add(goal)
+
+        for field, value in data.items():
+            setattr(goal, field, value)
+
+        await self.db.commit()
+        await self.db.refresh(goal)
+        return goal

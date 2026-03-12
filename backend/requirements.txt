@@ -52,3 +52,6 @@ google-api-python-client>=2.116.0
 
 # Testing
 pytest==7.4.0
+# Open Food Facts infrastructure
+motor==3.6.0
+meilisearch==0.31.0

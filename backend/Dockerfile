@@ -26,6 +26,7 @@ COPY alembic.ini .
 
 # Copy application code
 COPY ./app /app/app
+COPY ./scripts /app/scripts
 
 # Create directories for data persistence
 RUN mkdir -p /data /uploads

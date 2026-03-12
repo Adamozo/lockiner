@@ -58,6 +58,7 @@ from .food import (
     FoodConsumptionLog,
     FoodRecipe,
     FoodRecipeIngredient,
+    FoodDailyGoal,
 )
 
 # Notification models
@@ -264,6 +265,7 @@ __all__ = [
     "FoodConsumptionLog",
     "FoodRecipe",
     "FoodRecipeIngredient",
+    "FoodDailyGoal",
     # Notification
     "Notification",
     "UserNotification",

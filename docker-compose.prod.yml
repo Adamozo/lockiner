@@ -87,6 +87,41 @@ services:
       start_period: 30s
     restart: always
 
+  # MongoDB — katalog Open Food Facts
+  mongodb:
+    image: mongo:7
+    container_name: lockiner-mongodb
+    restart: always
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - lockiner-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # Meilisearch — wyszukiwanie produktów
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    container_name: lockiner-meilisearch
+    restart: always
+    environment:
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+      - MEILI_ENV=production
+    volumes:
+      - meilisearch_data:/meili_data
+    networks:
+      - lockiner-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
 networks:
   lockiner-network:
     driver: bridge
@@ -95,4 +130,8 @@ volumes:
   postgres_data:
     driver: local
   backend_uploads:
+    driver: local
+  mongodb_data:
+    driver: local
+  meilisearch_data:
     driver: local
