@@ -3,7 +3,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import Optional, List
 
-from ..models import Workout, Exercise, ExerciseSet, WeightEntry, UserBodyProfile, BodyMeasurementEntry
+from ..models import Workout, Exercise, ExerciseSet, WeightEntry, UserBodyProfile, BodyMeasurementEntry, WorkoutTemplate, WorkoutTemplateExercise
 
 
 class WorkoutRepository:
@@ -277,4 +277,49 @@ class BodyMeasurementRepository:
 
     async def delete(self, entry: BodyMeasurementEntry) -> None:
         await self.db.delete(entry)
+        await self.db.commit()
+
+
+class WorkoutTemplateRepository:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def get_all(self, user_id: int) -> List[WorkoutTemplate]:
+        result = await self.db.execute(
+            select(WorkoutTemplate)
+            .options(selectinload(WorkoutTemplate.exercises))
+            .filter(WorkoutTemplate.user_id == user_id)
+            .order_by(WorkoutTemplate.created_at.desc())
+        )
+        return list(result.scalars().all())
+
+    async def get_by_id(self, template_id: int) -> Optional[WorkoutTemplate]:
+        result = await self.db.execute(
+            select(WorkoutTemplate)
+            .options(selectinload(WorkoutTemplate.exercises))
+            .filter(WorkoutTemplate.id == template_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def create(self, template: WorkoutTemplate) -> WorkoutTemplate:
+        self.db.add(template)
+        await self.db.commit()
+        await self.db.refresh(template)
+        return await self.get_by_id(template.id)
+
+    async def update(self, template: WorkoutTemplate) -> WorkoutTemplate:
+        await self.db.commit()
+        await self.db.refresh(template)
+        return await self.get_by_id(template.id)
+
+    async def delete(self, template: WorkoutTemplate) -> None:
+        await self.db.delete(template)
+        await self.db.commit()
+
+    async def delete_exercises(self, template_id: int) -> None:
+        result = await self.db.execute(
+            select(WorkoutTemplateExercise).filter(WorkoutTemplateExercise.template_id == template_id)
+        )
+        for exercise in result.scalars().all():
+            await self.db.delete(exercise)
         await self.db.commit()

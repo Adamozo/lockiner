@@ -57,14 +57,24 @@ const formatDate = (dateStr: string) => {
         <h1 class="text-2xl sm:text-3xl font-bold text-pure-white">Workouts</h1>
         <p class="mt-1 sm:mt-2 text-sm sm:text-base text-pure-white/60">Log and track your gym sessions</p>
       </div>
-      <BaseButton
-        icon="i-heroicons-plus"
-        size="sm"
-        variant="primary"
-        @click="navigateTo('/fitness/workouts/new')"
-      >
-        Log Workout
-      </BaseButton>
+      <div class="flex items-center gap-2">
+        <BaseButton
+          icon="i-heroicons-document-duplicate"
+          size="sm"
+          variant="secondary"
+          @click="navigateTo('/fitness/workouts/templates')"
+        >
+          Templates
+        </BaseButton>
+        <BaseButton
+          icon="i-heroicons-plus"
+          size="sm"
+          variant="primary"
+          @click="navigateTo('/fitness/workouts/new')"
+        >
+          Log Workout
+        </BaseButton>
+      </div>
     </header>
 
     <!-- Loading state -->

@@ -65,7 +65,7 @@ from .food import (
 from .notification import Notification, UserNotification, PushSubscription, NotificationSchedule
 
 # Fitness module models
-from .fitness import Workout, Exercise, ExerciseSet, WeightEntry, UserBodyProfile, BodyMeasurementEntry
+from .fitness import Workout, Exercise, ExerciseSet, WeightEntry, UserBodyProfile, BodyMeasurementEntry, WorkoutTemplate, WorkoutTemplateExercise
 
 # Journal module models
 from .journal import JournalEntry, JournalItem, JournalReport, MeditationSession
@@ -170,6 +170,8 @@ Index("idx_weight_entries_date", WeightEntry.date)
 Index("idx_user_body_profiles_user", UserBodyProfile.user_id)
 Index("idx_body_measurement_entries_user", BodyMeasurementEntry.user_id)
 Index("idx_body_measurement_entries_date", BodyMeasurementEntry.date)
+Index("idx_workout_templates_user", WorkoutTemplate.user_id)
+Index("idx_workout_template_exercises_template", WorkoutTemplateExercise.template_id)
 
 # Journal module indexes
 Index("idx_journal_entries_user", JournalEntry.user_id)
@@ -278,6 +280,8 @@ __all__ = [
     "WeightEntry",
     "UserBodyProfile",
     "BodyMeasurementEntry",
+    "WorkoutTemplate",
+    "WorkoutTemplateExercise",
     # Journal
     "JournalEntry",
     "JournalItem",

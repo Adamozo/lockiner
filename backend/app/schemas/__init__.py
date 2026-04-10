@@ -192,6 +192,11 @@ from .fitness import (
     BodyMeasurementEntryCreate,
     BodyMeasurementEntryUpdate,
     BodyMeasurementEntryResponse,
+    WorkoutTemplateExerciseCreate,
+    WorkoutTemplateExerciseResponse,
+    WorkoutTemplateCreate,
+    WorkoutTemplateUpdate,
+    WorkoutTemplateResponse,
 )
 
 # Notification schedule schemas
@@ -416,6 +421,11 @@ __all__ = [
     "BodyMeasurementEntryCreate",
     "BodyMeasurementEntryUpdate",
     "BodyMeasurementEntryResponse",
+    "WorkoutTemplateExerciseCreate",
+    "WorkoutTemplateExerciseResponse",
+    "WorkoutTemplateCreate",
+    "WorkoutTemplateUpdate",
+    "WorkoutTemplateResponse",
     # Notification schedules
     "NotificationScheduleBase",
     "NotificationScheduleUpdate",

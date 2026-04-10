@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
 from datetime import datetime, timezone, timedelta
 
-from ..models import Workout, Exercise, ExerciseSet, WeightEntry, UserBodyProfile, BodyMeasurementEntry, utc_now
+from ..models import Workout, Exercise, ExerciseSet, WeightEntry, UserBodyProfile, BodyMeasurementEntry, WorkoutTemplate, WorkoutTemplateExercise, utc_now
 from ..schemas import (
     WorkoutCreate,
     WorkoutUpdate,
@@ -12,6 +12,8 @@ from ..schemas import (
     UserBodyProfileUpdate,
     BodyMeasurementEntryCreate,
     BodyMeasurementEntryUpdate,
+    WorkoutTemplateCreate,
+    WorkoutTemplateUpdate,
 )
 from ..repositories.fitness import (
     WorkoutRepository,
@@ -19,6 +21,7 @@ from ..repositories.fitness import (
     WeightEntryRepository,
     UserBodyProfileRepository,
     BodyMeasurementRepository,
+    WorkoutTemplateRepository,
 )
 
 # ---------------------------------------
@@ -54,6 +57,12 @@ class WorkoutTimerError(Exception):
         super().__init__(message)
 
 
+class WorkoutTemplateNotFoundError(Exception):
+    def __init__(self, template_id: int):
+        self.template_id = template_id
+        super().__init__(f"Workout template {template_id} not found")
+
+
 # ---------------------------------------
 
 
@@ -64,6 +73,7 @@ class FitnessService:
         self.weight_repository = WeightEntryRepository(db)
         self.body_profile_repository = UserBodyProfileRepository(db)
         self.body_measurement_repository = BodyMeasurementRepository(db)
+        self.template_repository = WorkoutTemplateRepository(db)
         self.db = db
 
     # --- Workouts ---
@@ -409,6 +419,79 @@ class FitnessService:
         workout.total_paused_seconds = (workout.total_paused_seconds or 0) + paused_duration
         workout.timer_paused_at = None
         return await self.workout_repository.update(workout)
+
+    # --- Workout Templates ---
+
+    async def list_templates(self, user_id: int) -> List[WorkoutTemplate]:
+        return await self.template_repository.get_all(user_id=user_id)
+
+    async def get_template(self, template_id: int, user_id: int) -> WorkoutTemplate:
+        template = await self.template_repository.get_by_id(template_id)
+        if template is None:
+            raise WorkoutTemplateNotFoundError(template_id)
+        if template.user_id != user_id:
+            raise FitnessAccessDeniedError("workout_template", template_id)
+        return template
+
+    async def create_template(self, data: WorkoutTemplateCreate, user_id: int) -> WorkoutTemplate:
+        template = WorkoutTemplate(
+            user_id=user_id,
+            name=data.name,
+            workout_type=data.workout_type,
+            notes=data.notes,
+        )
+        for ex in data.exercises:
+            template.exercises.append(
+                WorkoutTemplateExercise(
+                    name=ex.name,
+                    order_index=ex.order_index,
+                    sets=ex.sets,
+                    reps=ex.reps,
+                    weight_kg=ex.weight_kg,
+                    rest_seconds=ex.rest_seconds,
+                    notes=ex.notes,
+                )
+            )
+        return await self.template_repository.create(template)
+
+    async def update_template(self, template_id: int, data: WorkoutTemplateUpdate, user_id: int) -> WorkoutTemplate:
+        template = await self.template_repository.get_by_id(template_id)
+        if template is None:
+            raise WorkoutTemplateNotFoundError(template_id)
+        if template.user_id != user_id:
+            raise FitnessAccessDeniedError("workout_template", template_id)
+
+        update_data = data.model_dump(exclude_unset=True, exclude={"exercises"})
+        for field, value in update_data.items():
+            setattr(template, field, value)
+        template.updated_at = utc_now().isoformat()
+
+        if data.exercises is not None:
+            await self.template_repository.delete_exercises(template_id)
+            template.exercises = []
+            for ex in data.exercises:
+                template.exercises.append(
+                    WorkoutTemplateExercise(
+                        template_id=template_id,
+                        name=ex.name,
+                        order_index=ex.order_index,
+                        sets=ex.sets,
+                        reps=ex.reps,
+                        weight_kg=ex.weight_kg,
+                        rest_seconds=ex.rest_seconds,
+                        notes=ex.notes,
+                    )
+                )
+
+        return await self.template_repository.update(template)
+
+    async def delete_template(self, template_id: int, user_id: int) -> None:
+        template = await self.template_repository.get_by_id(template_id)
+        if template is None:
+            raise WorkoutTemplateNotFoundError(template_id)
+        if template.user_id != user_id:
+            raise FitnessAccessDeniedError("workout_template", template_id)
+        await self.template_repository.delete(template)
 
     async def stop_workout_timer(self, workout_id: int, user_id: int) -> Workout:
         workout = await self._get_timer_workout(workout_id, user_id)

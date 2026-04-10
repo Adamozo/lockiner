@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ExerciseSetCreate, WorkoutCreate, WorkoutUpdate } from '~/types/fitness'
+import type { ExerciseSetCreate, WorkoutCreate, WorkoutUpdate, WorkoutTemplate } from '~/types/fitness'
 
 definePageMeta({
   layout: 'fitness',
@@ -32,24 +32,10 @@ const workoutNotes = ref('')
 const exercises = ref<ExerciseFormData[]>([])
 const draftId = ref<number | null>(null)
 const saveStatus = ref<'idle' | 'saving' | 'saved'>('idle')
-
-// Timer
-const startTime = ref(Date.now())
-const elapsed = ref('00:00')
-let timerInterval: ReturnType<typeof setInterval> | undefined
+const showTemplateModal = ref(false)
 
 onMounted(async () => {
   await fetchWorkouts()
-  timerInterval = setInterval(() => {
-    const diff = Math.floor((Date.now() - startTime.value) / 1000)
-    const mins = Math.floor(diff / 60).toString().padStart(2, '0')
-    const secs = (diff % 60).toString().padStart(2, '0')
-    elapsed.value = `${mins}:${secs}`
-  }, 1000)
-})
-
-onUnmounted(() => {
-  if (timerInterval) clearInterval(timerInterval)
 })
 
 // Workout templates
@@ -87,35 +73,14 @@ const addExercise = () => {
       { set_number: 1, reps: 10, weight_kg: 0, completed: false },
     ],
   })
-  triggerAutoSave()
 }
 
 const updateExercise = (index: number, exercise: ExerciseFormData) => {
   exercises.value[index] = exercise
-  triggerAutoSave()
 }
 
 const removeExercise = (index: number) => {
   exercises.value.splice(index, 1)
-  triggerAutoSave()
-}
-
-// Validation
-const nameError = ref(false)
-const canComplete = computed(() => {
-  if (!workoutName.value.trim()) return false
-  if (exercises.value.length === 0) return false
-  return exercises.value.every(e =>
-    e.name.trim() && e.sets_detail.length > 0 && e.sets_detail.every(s => s.reps >= 1)
-  )
-})
-
-// Auto-save (draft)
-let autoSaveTimeout: ReturnType<typeof setTimeout> | undefined
-
-const triggerAutoSave = () => {
-  if (autoSaveTimeout) clearTimeout(autoSaveTimeout)
-  autoSaveTimeout = setTimeout(() => saveDraft(), 3000)
 }
 
 const buildWorkoutPayload = (completed: boolean): WorkoutCreate => ({
@@ -143,10 +108,11 @@ const saveDraft = async () => {
       const payload: WorkoutUpdate = buildWorkoutPayload(false)
       await updateWorkout(draftId.value, payload)
       saveStatus.value = 'saved'
+      toast.add({ title: 'Draft saved', description: 'You can resume this workout later', color: 'green' })
     } else {
       const result = await createWorkout(buildWorkoutPayload(false))
       draftId.value = result.id
-      // Redirect to the edit page which has timer and rest timer functionality
+      toast.add({ title: 'Draft saved', description: 'You can resume this workout later', color: 'green' })
       router.push(`/fitness/workouts/${result.id}`)
     }
   } catch {
@@ -156,31 +122,33 @@ const saveDraft = async () => {
 
 const handleSaveDraft = async () => {
   await saveDraft()
-  toast.add({ title: 'Draft saved', description: 'You can resume this workout later', color: 'green' })
 }
 
-const handleComplete = async () => {
-  nameError.value = !workoutName.value.trim()
-  if (!canComplete.value) {
-    toast.add({ title: 'Incomplete', description: 'Please fill in all required fields', color: 'red' })
-    return
+const applyTemplate = (template: WorkoutTemplate) => {
+  selectedTemplate.value = template.workout_type
+  if (template.workout_type === 'Custom') {
+    isCustomName.value = true
+  } else {
+    isCustomName.value = false
   }
+  workoutName.value = template.name
 
-  loading.value = true
-  try {
-    if (draftId.value) {
-      await updateWorkout(draftId.value, { ...buildWorkoutPayload(true) })
-    } else {
-      await createWorkout(buildWorkoutPayload(true))
-    }
-    toast.add({ title: 'Workout complete!', description: 'Great job!', color: 'green' })
-    router.push('/fitness/workouts')
-  } catch {
-    toast.add({ title: 'Error', description: 'Failed to save workout', color: 'red' })
-  } finally {
-    loading.value = false
-  }
+  exercises.value = template.exercises.map(e => ({
+    name: e.name,
+    sets: e.sets,
+    reps: e.reps,
+    weight_kg: e.weight_kg,
+    rest_seconds: e.rest_seconds,
+    notes: e.notes,
+    sets_detail: Array.from({ length: e.sets }, (_, i) => ({
+      set_number: i + 1,
+      reps: e.reps,
+      weight_kg: e.weight_kg,
+      completed: false,
+    })),
+  }))
 }
+
 </script>
 
 <template>
@@ -197,10 +165,6 @@ const handleComplete = async () => {
       <div class="flex-1">
         <h1 class="text-2xl font-bold text-pure-white">New Workout</h1>
         <div class="flex items-center gap-3 mt-1">
-          <span class="text-sm text-pure-white/40 flex items-center gap-1">
-            <UIcon name="i-heroicons-clock" class="w-4 h-4" />
-            {{ elapsed }}
-          </span>
           <span
             v-if="saveStatus !== 'idle'"
             class="text-xs px-2 py-0.5 rounded-full"
@@ -217,20 +181,26 @@ const handleComplete = async () => {
       <BaseButton
         variant="secondary"
         class="flex-1 min-w-0"
-        @click="handleSaveDraft"
+        icon="i-heroicons-document-duplicate"
+        @click="showTemplateModal = true"
       >
-        Save Draft
+        Use Template
       </BaseButton>
       <BaseButton
         variant="primary"
         class="flex-1 min-w-0"
-        :disabled="!canComplete"
         :loading="loading"
-        @click="handleComplete"
+        @click="handleSaveDraft"
       >
-        Complete Workout
+        Save Draft
       </BaseButton>
     </div>
+
+    <!-- Template select modal -->
+    <WorkoutTemplateSelectModal
+      v-model="showTemplateModal"
+      @select="applyTemplate"
+    />
 
     <div class="space-y-6">
       <!-- Timer info banner (before first save) -->

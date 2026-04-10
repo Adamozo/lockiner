@@ -143,10 +143,32 @@ const handleTimerStop = async () => {
 
 // ─── Rest Timer ─────────────────────────────────────────────────────────────
 
-const defaultRestSeconds = ref(90)
+const defaultRestSeconds = ref(180)
 const restSecondsLeft = ref(0)
 let restInterval: ReturnType<typeof setInterval> | undefined
 const restActive = computed(() => restSecondsLeft.value > 0)
+
+const restMinDisplay = computed(() => Math.floor(defaultRestSeconds.value / 60).toString().padStart(2, '0'))
+const restSecDisplay = computed(() => (defaultRestSeconds.value % 60).toString().padStart(2, '0'))
+
+const adjustRest = (delta: number) => {
+  defaultRestSeconds.value = Math.max(30, Math.min(3600, defaultRestSeconds.value + delta))
+  saveDefaultRest()
+}
+
+const customRestMin = ref(3)
+const customRestSec = ref(0)
+
+watch(defaultRestSeconds, (v) => {
+  customRestMin.value = Math.floor(v / 60)
+  customRestSec.value = v % 60
+}, { immediate: true })
+
+const applyCustomRest = () => {
+  const total = (customRestMin.value || 0) * 60 + (customRestSec.value || 0)
+  defaultRestSeconds.value = Math.max(30, Math.min(3600, total))
+  saveDefaultRest()
+}
 
 const playBeep = () => {
   try {
@@ -203,7 +225,7 @@ onMounted(async () => {
     durationMinutes.value = workout.duration_minutes
     workoutNotes.value = workout.notes || ''
     isCompleted.value = workout.completed
-    defaultRestSeconds.value = workout.default_rest_seconds || 90
+    defaultRestSeconds.value = workout.default_rest_seconds || 180
     exercises.value = workout.exercises.map(e => ({
       name: e.name,
       sets: e.sets,
@@ -293,14 +315,15 @@ const saveDraft = async () => {
   try {
     await updateWorkout(workoutId.value, buildPayload(false))
     saveStatus.value = 'saved'
+    toast.add({ title: 'Draft saved', description: 'You can resume this workout later', color: 'green' })
   } catch {
     saveStatus.value = 'idle'
   }
 }
 
 const handleSaveDraft = async () => {
+  if (autoSaveTimeout) clearTimeout(autoSaveTimeout)
   await saveDraft()
-  toast.add({ title: 'Draft saved', description: 'You can resume this workout later', color: 'green' })
 }
 
 const handleComplete = async () => {
@@ -502,20 +525,7 @@ const handleSave = async () => {
 
         <!-- ─── REST TIMER (draft only) ────────────────────────────── -->
         <div v-if="!isCompleted" class="bg-card-black border border-border-gray rounded-xl p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xs font-semibold text-pure-white/50 uppercase tracking-widest">Rest Timer</h3>
-            <div class="flex items-center gap-2">
-              <input
-                v-model.number="defaultRestSeconds"
-                type="number"
-                min="5"
-                max="600"
-                class="w-16 text-center px-2 py-1 text-sm border border-border-gray rounded-lg bg-background-black text-pure-white focus:border-cyber-blue focus:outline-none"
-                @change="saveDefaultRest"
-              />
-              <span class="text-xs text-pure-white/40">sec</span>
-            </div>
-          </div>
+          <h3 class="text-xs font-semibold text-pure-white/50 uppercase tracking-widest mb-4">Rest Timer</h3>
 
           <!-- Active rest countdown -->
           <div v-if="restActive" class="text-center">
@@ -537,11 +547,88 @@ const handleSave = async () => {
             </BaseButton>
           </div>
 
-          <!-- Start rest button -->
-          <div v-else class="flex justify-center">
-            <BaseButton variant="secondary" icon="i-heroicons-clock" @click="startRest">
-              Start Rest ({{ defaultRestSeconds }}s)
-            </BaseButton>
+          <!-- Rest duration controls + start button -->
+          <div v-else>
+            <!-- +/- stepper with editable inputs -->
+            <div class="flex items-center justify-center gap-4 mb-2">
+              <!-- -30s -->
+              <button
+                type="button"
+                class="w-10 h-10 rounded-lg border border-border-gray text-pure-white/60 hover:text-pure-white hover:border-pure-white/40 transition-colors flex items-center justify-center text-xl font-bold"
+                @click="adjustRest(-30)"
+              >−</button>
+
+              <div class="flex items-center gap-1">
+                <!-- Minutes column -->
+                <div class="flex flex-col items-center gap-1">
+                  <button
+                    type="button"
+                    class="w-12 h-7 rounded border border-border-gray text-pure-white/60 hover:text-pure-white hover:border-pure-white/40 transition-colors flex items-center justify-center"
+                    @click="customRestMin = Math.min(59, (customRestMin || 0) + 1); applyCustomRest()"
+                  >
+                    <UIcon name="i-heroicons-chevron-up" class="w-4 h-4" />
+                  </button>
+                  <input
+                    v-model.number="customRestMin"
+                    type="number"
+                    min="0"
+                    max="59"
+                    class="w-12 text-center font-mono text-3xl font-bold text-pure-white bg-transparent border-b border-border-gray focus:border-cyber-blue focus:outline-none tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    @change="applyCustomRest"
+                  />
+                  <button
+                    type="button"
+                    class="w-12 h-7 rounded border border-border-gray text-pure-white/60 hover:text-pure-white hover:border-pure-white/40 transition-colors flex items-center justify-center"
+                    @click="customRestMin = Math.max(0, (customRestMin || 0) - 1); applyCustomRest()"
+                  >
+                    <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
+                  </button>
+                </div>
+
+                <span class="font-mono text-3xl font-bold text-pure-white/60 self-center pb-1">:</span>
+
+                <!-- Seconds column -->
+                <div class="flex flex-col items-center gap-1">
+                  <button
+                    type="button"
+                    class="w-12 h-7 rounded border border-border-gray text-pure-white/60 hover:text-pure-white hover:border-pure-white/40 transition-colors flex items-center justify-center"
+                    @click="customRestSec = Math.min(59, (customRestSec || 0) + 5); applyCustomRest()"
+                  >
+                    <UIcon name="i-heroicons-chevron-up" class="w-4 h-4" />
+                  </button>
+                  <input
+                    v-model.number="customRestSec"
+                    type="number"
+                    min="0"
+                    max="59"
+                    class="w-12 text-center font-mono text-3xl font-bold text-pure-white bg-transparent border-b border-border-gray focus:border-cyber-blue focus:outline-none tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    @change="applyCustomRest"
+                  />
+                  <button
+                    type="button"
+                    class="w-12 h-7 rounded border border-border-gray text-pure-white/60 hover:text-pure-white hover:border-pure-white/40 transition-colors flex items-center justify-center"
+                    @click="customRestSec = Math.max(0, (customRestSec || 0) - 5); applyCustomRest()"
+                  >
+                    <UIcon name="i-heroicons-chevron-down" class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- +30s -->
+              <button
+                type="button"
+                class="w-10 h-10 rounded-lg border border-border-gray text-pure-white/60 hover:text-pure-white hover:border-pure-white/40 transition-colors flex items-center justify-center text-xl font-bold"
+                @click="adjustRest(30)"
+              >+</button>
+            </div>
+            <p class="text-xs text-center text-pure-white/30 mb-4">co 30 sekund</p>
+
+            <!-- Start rest button -->
+            <div class="flex justify-center">
+              <BaseButton variant="secondary" icon="i-heroicons-clock" @click="startRest">
+                Start Rest ({{ restMinDisplay }}:{{ restSecDisplay }})
+              </BaseButton>
+            </div>
           </div>
         </div>
 

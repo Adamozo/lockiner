@@ -143,3 +143,53 @@ export interface BodyMeasurementEntryUpdate {
   chest_cm?: number | null
   notes?: string
 }
+
+// --- Workout Templates ---
+
+export type WorkoutType = 'Push Day' | 'Pull Day' | 'Leg Day' | 'Upper Body' | 'Full Body' | 'Custom'
+
+export interface WorkoutTemplateExercise {
+  id: number
+  name: string
+  order_index: number
+  sets: number
+  reps: number
+  weight_kg: number
+  rest_seconds?: number
+  notes?: string
+}
+
+export interface WorkoutTemplateExerciseCreate {
+  name: string
+  order_index: number
+  sets: number
+  reps: number
+  weight_kg: number
+  rest_seconds?: number
+  notes?: string
+}
+
+export interface WorkoutTemplate {
+  id: number
+  user_id: number
+  name: string
+  workout_type: WorkoutType
+  notes?: string
+  created_at: string
+  updated_at?: string
+  exercises: WorkoutTemplateExercise[]
+}
+
+export interface WorkoutTemplateCreate {
+  name: string
+  workout_type: WorkoutType
+  notes?: string
+  exercises: WorkoutTemplateExerciseCreate[]
+}
+
+export interface WorkoutTemplateUpdate {
+  name?: string
+  workout_type?: WorkoutType
+  notes?: string
+  exercises?: WorkoutTemplateExerciseCreate[]
+}

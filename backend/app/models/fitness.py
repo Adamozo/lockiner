@@ -106,6 +106,50 @@ class UserBodyProfile(Base):
         return f"<UserBodyProfile(id={self.id}, user_id={self.user_id}, height_cm={self.height_cm})>"
 
 
+class WorkoutTemplate(Base):
+    """Reusable workout template with predefined exercises."""
+    __tablename__ = "workout_templates"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, nullable=False)
+    workout_type = Column(String, nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(String, default=lambda: utc_now().isoformat())
+    updated_at = Column(String, nullable=True)
+
+    user = relationship("User")
+    exercises = relationship(
+        "WorkoutTemplateExercise",
+        back_populates="template",
+        cascade="all, delete-orphan",
+        order_by="WorkoutTemplateExercise.order_index",
+    )
+
+    def __repr__(self):
+        return f"<WorkoutTemplate(id={self.id}, name={self.name})>"
+
+
+class WorkoutTemplateExercise(Base):
+    """Exercise definition within a workout template."""
+    __tablename__ = "workout_template_exercises"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    template_id = Column(Integer, ForeignKey("workout_templates.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, nullable=False)
+    order_index = Column(Integer, nullable=False, default=0)
+    sets = Column(Integer, nullable=False)
+    reps = Column(Integer, nullable=False)
+    weight_kg = Column(Float, nullable=False)
+    rest_seconds = Column(Integer, nullable=True)
+    notes = Column(Text, nullable=True)
+
+    template = relationship("WorkoutTemplate", back_populates="exercises")
+
+    def __repr__(self):
+        return f"<WorkoutTemplateExercise(id={self.id}, name={self.name})>"
+
+
 class BodyMeasurementEntry(Base):
     """Body circumference measurements entry."""
     __tablename__ = "body_measurement_entries"

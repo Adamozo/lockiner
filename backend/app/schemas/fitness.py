@@ -1,7 +1,7 @@
 """Fitness module schemas for request/response validation."""
 
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, Literal
 
 
 # --- Exercise Set ---
@@ -182,5 +182,57 @@ class BodyMeasurementEntryResponse(BodyMeasurementEntryBase):
     """Schema for body measurement entry response."""
     id: int
     created_at: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# --- Workout Templates ---
+
+WorkoutType = Literal["Push Day", "Pull Day", "Leg Day", "Upper Body", "Full Body", "Custom"]
+
+
+class WorkoutTemplateExerciseBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    order_index: int = Field(..., ge=0)
+    sets: int = Field(..., ge=1)
+    reps: int = Field(..., ge=1)
+    weight_kg: float = Field(..., ge=0)
+    rest_seconds: Optional[int] = Field(None, ge=0)
+    notes: Optional[str] = None
+
+
+class WorkoutTemplateExerciseCreate(WorkoutTemplateExerciseBase):
+    pass
+
+
+class WorkoutTemplateExerciseResponse(WorkoutTemplateExerciseBase):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class WorkoutTemplateCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    workout_type: WorkoutType
+    notes: Optional[str] = None
+    exercises: List[WorkoutTemplateExerciseCreate] = []
+
+
+class WorkoutTemplateUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    workout_type: Optional[WorkoutType] = None
+    notes: Optional[str] = None
+    exercises: Optional[List[WorkoutTemplateExerciseCreate]] = None
+
+
+class WorkoutTemplateResponse(BaseModel):
+    id: int
+    user_id: int
+    name: str
+    workout_type: str
+    notes: Optional[str] = None
+    created_at: str
+    updated_at: Optional[str] = None
+    exercises: List[WorkoutTemplateExerciseResponse] = []
 
     model_config = ConfigDict(from_attributes=True)

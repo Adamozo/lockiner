@@ -18,6 +18,9 @@ from ..schemas import (
     BodyMeasurementEntryCreate,
     BodyMeasurementEntryUpdate,
     BodyMeasurementEntryResponse,
+    WorkoutTemplateCreate,
+    WorkoutTemplateUpdate,
+    WorkoutTemplateResponse,
 )
 from ..services.fitness import (
     FitnessService,
@@ -26,6 +29,7 @@ from ..services.fitness import (
     BodyMeasurementNotFoundError,
     FitnessAccessDeniedError,
     WorkoutTimerError,
+    WorkoutTemplateNotFoundError,
 )
 
 # ---------------------------------------
@@ -437,3 +441,73 @@ async def stop_workout_timer(
         return await service.stop_workout_timer(workout_id, user_id=current_user.id)
     except Exception as e:
         _handle_timer_errors(e)
+
+
+# ---------------------------------------
+# Workout Templates
+# ---------------------------------------
+
+
+@router.get("/workout-templates", response_model=List[WorkoutTemplateResponse])
+async def list_workout_templates(
+    current_user: User = Depends(get_current_user),
+    service: FitnessService = Depends(get_fitness_service),
+):
+    """Get all workout templates for the current user."""
+    return await service.list_templates(user_id=current_user.id)
+
+
+@router.post("/workout-templates", response_model=WorkoutTemplateResponse, status_code=status.HTTP_201_CREATED)
+async def create_workout_template(
+    template: WorkoutTemplateCreate,
+    current_user: User = Depends(get_current_user),
+    service: FitnessService = Depends(get_fitness_service),
+):
+    """Create a new workout template."""
+    return await service.create_template(template, user_id=current_user.id)
+
+
+@router.get("/workout-templates/{template_id}", response_model=WorkoutTemplateResponse)
+async def get_workout_template(
+    template_id: int,
+    current_user: User = Depends(get_current_user),
+    service: FitnessService = Depends(get_fitness_service),
+):
+    """Get a specific workout template by ID."""
+    try:
+        return await service.get_template(template_id, user_id=current_user.id)
+    except WorkoutTemplateNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except FitnessAccessDeniedError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+
+@router.put("/workout-templates/{template_id}", response_model=WorkoutTemplateResponse)
+async def update_workout_template(
+    template_id: int,
+    template_update: WorkoutTemplateUpdate,
+    current_user: User = Depends(get_current_user),
+    service: FitnessService = Depends(get_fitness_service),
+):
+    """Update a workout template."""
+    try:
+        return await service.update_template(template_id, template_update, user_id=current_user.id)
+    except WorkoutTemplateNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except FitnessAccessDeniedError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+
+
+@router.delete("/workout-templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_workout_template(
+    template_id: int,
+    current_user: User = Depends(get_current_user),
+    service: FitnessService = Depends(get_fitness_service),
+):
+    """Delete a workout template."""
+    try:
+        await service.delete_template(template_id, user_id=current_user.id)
+    except WorkoutTemplateNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except FitnessAccessDeniedError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
