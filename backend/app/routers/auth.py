@@ -10,6 +10,7 @@ from ..schemas import (
     TokenResponse,
     RefreshTokenRequest,
     PasswordChangeRequest,
+    ResetPasswordWithDekRequest,
     LoginResponse,
     TwoFactorSetupResponse,
     TwoFactorVerifySetupRequest,
@@ -29,6 +30,7 @@ from ..services.auth import (
     UserNotFoundError,
     InvalidVoucherError,
 )
+
 from ..services.two_factor import (
     TwoFactorService,
     TwoFactorAlreadyEnabledError,
@@ -187,12 +189,14 @@ async def change_password(
     current_user: User = Depends(get_current_user),
     service: AuthService = Depends(get_auth_service),
 ):
-    """Change current user's password."""
+    """Change current user's password and re-encrypted DEK."""
     try:
         await service.change_password(
             current_user.id,
             data.current_password,
             data.new_password,
+            encrypted_dek=data.encrypted_dek,
+            dek_salt=data.dek_salt,
         )
         return None
 
@@ -200,6 +204,34 @@ async def change_password(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current password is incorrect",
+        )
+
+
+@router.post("/reset-password-with-dek", status_code=status.HTTP_204_NO_CONTENT)
+async def reset_password_with_dek(
+    data: ResetPasswordWithDekRequest,
+    service: AuthService = Depends(get_auth_service),
+):
+    """Reset password using recovery key (DEK re-encrypted client-side). No auth required."""
+    try:
+        await service.reset_password_with_dek(
+            data.email,
+            data.new_password,
+            data.encrypted_dek,
+            data.dek_salt,
+        )
+        return None
+
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User not found",
+        )
+
+    except UserInactiveError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is inactive",
         )
 
 
@@ -285,7 +317,7 @@ async def get_two_factor_status(
     return TwoFactorStatusResponse(**result)
 
 
-@router.post("/2fa/verify", response_model=TokenResponse)
+@router.post("/2fa/verify", response_model=LoginResponse)
 async def verify_two_factor_login(
     data: TwoFactorVerifyLoginRequest,
     service: AuthService = Depends(get_auth_service),

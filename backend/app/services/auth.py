@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import User, Voucher
-from ..schemas import UserCreate, TokenResponse
+from ..schemas import UserCreate, TokenResponse, LoginResponse
 from ..repositories.user import UserRepository
 from ..repositories.voucher import VoucherRepository
 from ..config import get_settings
@@ -143,6 +143,8 @@ class AuthService:
             password_hash=hash_password(data.password),
             name=data.name,
             language=data.language,
+            encrypted_dek=data.encrypted_dek,
+            dek_salt=data.dek_salt,
         )
 
         # Create the user first
@@ -184,9 +186,11 @@ class AuthService:
             "token_type": "bearer",
             "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             "requires_2fa": False,
+            "encrypted_dek": user.encrypted_dek,
+            "dek_salt": user.dek_salt,
         }
 
-    async def verify_two_factor_login(self, two_factor_token: str, code: str) -> TokenResponse:
+    async def verify_two_factor_login(self, two_factor_token: str, code: str) -> LoginResponse:
         """Complete 2FA login by verifying the TOTP/recovery code."""
         try:
             payload = decode_token(two_factor_token)
@@ -213,10 +217,12 @@ class AuthService:
             access_token = create_access_token(token_data)
             refresh_token = create_refresh_token(token_data)
 
-            return TokenResponse(
+            return LoginResponse(
                 access_token=access_token,
                 refresh_token=refresh_token,
                 expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+                encrypted_dek=user.encrypted_dek,
+                dek_salt=user.dek_salt,
             )
 
         except (JWTError, ValueError) as e:
@@ -274,8 +280,15 @@ class AuthService:
         except (JWTError, ValueError) as e:
             raise InvalidTokenError(str(e))
 
-    async def change_password(self, user_id: int, current_password: str, new_password: str) -> None:
-        """Change user's password."""
+    async def change_password(
+        self,
+        user_id: int,
+        current_password: str,
+        new_password: str,
+        encrypted_dek: Optional[str] = None,
+        dek_salt: Optional[str] = None,
+    ) -> None:
+        """Change user's password and optionally update re-encrypted DEK."""
         user = await self.repository.get_by_id(user_id)
 
         if user is None:
@@ -285,6 +298,32 @@ class AuthService:
             raise InvalidCredentialsError()
 
         user.password_hash = hash_password(new_password)
+        if encrypted_dek is not None:
+            user.encrypted_dek = encrypted_dek
+        if dek_salt is not None:
+            user.dek_salt = dek_salt
+        await self.repository.update(user)
+
+    async def reset_password_with_dek(
+        self,
+        email: str,
+        new_password: str,
+        encrypted_dek: str,
+        dek_salt: str,
+    ) -> None:
+        """Reset password using recovery key flow (DEK re-encrypted client-side)."""
+        email_hash = hash_email(email)
+        user = await self.repository.get_by_email_hash(email_hash)
+
+        if user is None:
+            raise UserNotFoundError()
+
+        if not user.is_active:
+            raise UserInactiveError()
+
+        user.password_hash = hash_password(new_password)
+        user.encrypted_dek = encrypted_dek
+        user.dek_salt = dek_salt
         await self.repository.update(user)
 
     async def get_user_by_id(self, user_id: int) -> User:

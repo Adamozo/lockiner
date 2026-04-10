@@ -23,6 +23,35 @@ const update = (field: keyof SetData, value: number | boolean) => {
 const toggleCompleted = () => {
   update('completed', !props.modelValue.completed)
 }
+
+// Local string state for reps — allows the user to clear the field and type a
+// fresh number without the input snapping back to a non-zero value mid-edit.
+const repsStr = ref(props.modelValue.reps.toString())
+
+watch(() => props.modelValue.reps, (val) => {
+  // Sync from parent only when the current string isn't already representing
+  // that same value (avoids clobbering an in-progress edit).
+  if (parseInt(repsStr.value) !== val) {
+    repsStr.value = val.toString()
+  }
+})
+
+const onRepsInput = (e: Event) => {
+  const raw = (e.target as HTMLInputElement).value
+  repsStr.value = raw
+  const parsed = parseInt(raw)
+  if (!isNaN(parsed) && parsed >= 1) {
+    update('reps', parsed)
+  }
+}
+
+const onRepsBlur = () => {
+  const parsed = parseInt(repsStr.value)
+  if (isNaN(parsed) || parsed < 1) {
+    // Snap back to last valid value on blur
+    repsStr.value = props.modelValue.reps.toString()
+  }
+}
 </script>
 
 <template>
@@ -54,13 +83,14 @@ const toggleCompleted = () => {
     <div class="flex-1 min-w-0">
       <label class="text-[10px] uppercase tracking-wider text-pure-white/40 block mb-0.5">reps</label>
       <input
-        :value="modelValue.reps"
+        :value="repsStr"
         type="number"
         inputmode="numeric"
         min="1"
         placeholder="0"
         class="w-full min-h-12 px-3 py-2 rounded-lg border border-border-gray bg-card-black text-pure-white text-center text-lg font-semibold focus:border-warning-orange focus:ring-2 focus:ring-warning-orange/30 focus:outline-none transition-colors"
-        @input="update('reps', parseInt(($event.target as HTMLInputElement).value) || 1)"
+        @input="onRepsInput"
+        @blur="onRepsBlur"
       />
     </div>
 

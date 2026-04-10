@@ -15,6 +15,8 @@ class UserCreate(UserBase):
     password: str = Field(..., min_length=8, description="Password (min 8 characters)")
     voucher_code: str = Field(..., description="Registration voucher code (required)")
     language: str = "en"
+    encrypted_dek: Optional[str] = None
+    dek_salt: Optional[str] = None
 
 
 class UserUpdate(BaseModel):
@@ -32,6 +34,8 @@ class UserResponse(BaseModel):
     is_active: bool
     totp_enabled: bool = False
     language: str = "en"
+    encrypted_dek: Optional[str] = None
+    dek_salt: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -59,3 +63,13 @@ class PasswordChangeRequest(BaseModel):
     """Schema for password change request."""
     current_password: str
     new_password: str = Field(..., min_length=8)
+    encrypted_dek: Optional[str] = None
+    dek_salt: Optional[str] = None
+
+
+class ResetPasswordWithDekRequest(BaseModel):
+    """Schema for password reset using recovery key (re-encrypts DEK client-side)."""
+    email: str
+    new_password: str = Field(..., min_length=8)
+    encrypted_dek: str
+    dek_salt: str

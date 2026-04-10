@@ -55,3 +55,5 @@ class LoginResponse(BaseModel):
     expires_in: Optional[int] = None
     requires_2fa: bool = False
     two_factor_token: Optional[str] = None
+    encrypted_dek: Optional[str] = None
+    dek_salt: Optional[str] = None

@@ -1,0 +1,792 @@
+// ScroogeMcDuck — Database Schema
+// Generated from Alembic migrations 001–023
+// Paste at: https://dbdiagram.io
+
+// ============================================================
+// AUTH & USERS
+// ============================================================
+
+Table users {
+  id integer [pk, increment]
+  email_hash varchar [unique, not null]
+  password_hash varchar [not null]
+  nick varchar(20) [not null, note: 'pseudonim użytkownika, min 8 max 20 znaków']
+  role varchar(20) [default: 'user']
+  is_active boolean [default: true]
+  totp_secret_encrypted text
+  totp_enabled boolean [default: false]
+  recovery_codes_hash text //TODO zastanowić się co z tym
+  language varchar [default: 'en']
+  created_at varchar
+  updated_at varchar
+}
+
+Table vouchers {
+  id integer [pk, increment]
+  code varchar [unique, not null] //TODO tutaj trzbea sie zastanowaic jak to zrobic bo trzeba mieć jakoś kody któr można rozdać ale do samego użycia kodu wystarczy hash. Możlwie że proces generowani tych kodów trzeba będzie dprawcować tak żeby można było trzymać sam hash kodu oraz dodak kolument wersja żeby wiedzyeć jaka wersja funkcji hashujacej została tutaj użyta
+  status varchar(20) [default: 'available']
+  used_by_user_id integer [ref: > users.id]
+  used_at varchar
+  created_at varchar
+}
+
+Table user_api_keys {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  provider varchar(50) [not null]
+  encrypted_key text [not null]
+  is_active boolean [default: false]
+  created_at varchar
+  updated_at varchar
+}
+
+// ============================================================
+// OAUTH
+// ============================================================
+
+Table oauth_clients { //TODO trzba dodać do rzeczy do przekminia jak chce roziwązać dodawanie integracji oauth przez UI
+  id integer [pk, increment] 
+  client_id varchar(100) [unique, not null]
+  client_name varchar(100) [not null]
+  redirect_uris text [not null]
+  is_active boolean
+  created_at varchar
+}
+
+Table oauth_access_tokens {
+  id integer [pk, increment]
+  access_token varchar(256) [unique, not null] //TODO czy to może tak być czy ptorzebny hash albo szyfrownie
+  refresh_token varchar(256) [unique] //TODO czy to może tak być czy ptorzebny hash albo szyfrownie
+  client_id integer [not null, ref: > oauth_clients.id]
+  user_id integer [not null, ref: > users.id]
+  expires_at varchar [not null]
+  refresh_token_expires_at varchar
+  revoked boolean
+  created_at varchar
+}
+
+Table oauth_authorization_codes {
+  id integer [pk, increment]
+  code varchar(128) [unique, not null] //TODO czy to może tak być czy ptorzebny hash albo szyfrownie
+  client_id integer [not null, ref: > oauth_clients.id]
+  user_id integer [not null, ref: > users.id]
+  code_challenge varchar(128) [not null] //TODO czy to może tak być czy ptorzebny hash albo szyfrownie
+  code_challenge_method varchar(10) [not null] //TODO czy to może tak być czy ptorzebny hash albo szyfrownie
+  redirect_uri varchar(500) [not null]
+  expires_at varchar [not null]
+  used boolean
+  created_at varchar
+}
+
+Table oauth_device_codes {
+  id integer [pk, increment]
+  device_code varchar(256) [unique, not null] //TODO czy to może tak być czy ptorzebny hash albo szyfrownie
+  user_code varchar(20) [unique, not null] //TODO czy to może tak być czy ptorzebny hash albo szyfrownie
+  client_id integer [not null, ref: > oauth_clients.id]
+  user_id integer [ref: > users.id]
+  status varchar(20) [default: 'pending']
+  expires_at varchar [not null]
+  created_at varchar
+}
+
+// ============================================================
+// HOUSEHOLDS
+// ============================================================
+
+Table households {
+  id integer [pk, increment]
+  uid varchar [unique, not null]
+  name varchar [not null] //TODO do sprawdzenia ale tutaj chyba jakieś client side entryption
+  description text //TODO do sprawdzenia ale tutaj chyba jakieś client side entryption
+  icon varchar
+  created_at varchar
+  updated_at varchar
+}
+
+Table household_members {
+  id integer [pk, increment]
+  household_id integer [not null, ref: > households.id]
+  user_id integer [not null, ref: > users.id]
+  role varchar [default: 'member']
+  status varchar [default: 'active']
+  joined_at varchar
+}
+
+Table household_invitations {
+  id integer [pk, increment]
+  household_id integer [not null, ref: > households.id]
+  token varchar [unique, not null]
+  created_by integer [not null, ref: > users.id]
+  expires_at varchar
+  max_uses integer
+  uses_count integer [default: 0]
+  is_active boolean [default: true]
+  created_at varchar
+}
+
+// ============================================================
+// FINANCES — CATEGORIES
+// ============================================================
+
+Table categories { //TODO jak trzymane są te kategorie? czy każdy user ma swoje kategrie z budżetem czy trzymane jest to globalnie??? czy jak jeden user ustai budżet to jest on zmienany też u innych użytkowników?
+  id integer [pk, increment]
+  name varchar [unique, not null]
+  budget_limit float
+  icon varchar
+  color varchar
+}
+
+Table user_categories {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  category_id integer [not null, ref: > categories.id]
+  created_at varchar
+}
+
+Table household_categories {
+  id integer [pk, increment]
+  household_id integer [not null, ref: > households.id]
+  category_id integer [not null, ref: > categories.id]
+  created_at varchar
+}
+
+// ============================================================
+// FINANCES — TRANSACTIONS
+// ============================================================
+
+Table transactions {
+  id integer [pk, increment]
+  date varchar [not null]
+  amount float [not null]
+  description text //TODO tutaj chyba client side entryption
+  category varchar [default: 'Inne'] //TODO tutaj chyba client side entryption
+  payment_method varchar
+  receipt_id integer [ref: > receipts.id]
+  notes text //TODO tutaj chyba client side entryption
+  created_at varchar
+}
+
+Table user_transactions {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  transaction_id integer [not null, ref: > transactions.id]
+  created_at varchar
+}
+
+Table household_transactions {
+  id integer [pk, increment]
+  household_id integer [not null, ref: > households.id]
+  transaction_id integer [not null, ref: > transactions.id]
+  added_by_user_id integer [ref: > users.id]
+  created_at varchar
+}
+
+Table monthly_imports { //TODO co sie dzieje z zaimportowanymi plikami? czy są gdzies dalej trzymane? jak tak czy są w zasyfrowanym zipie??? nie powinny być trzymane tak po porstu na serwerze żeby zajmować więcej miejsca niż trzeba i żeby każdy mógł je sobie podejrzeć. Może nei warto ich trzymać wcale tylko zapisywać iforamcje jak nazywał sie plik który został wykrozystany do importu?
+  id integer [pk, increment]
+  month varchar [not null]
+  filename varchar
+  transactions_count integer
+  imported_at varchar
+}
+
+// ============================================================
+// FINANCES — BUDGET
+// ============================================================
+
+Table budget_settings {
+  id integer [pk, increment]
+  overall_monthly_limit float
+  alert_threshold_warning float [default: 80.0]
+  alert_threshold_danger float [default: 100.0]
+  enable_alerts boolean [default: true]
+  created_at varchar
+  updated_at varchar
+}
+
+Table user_budget_settings {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  budget_settings_id integer [not null, ref: > budget_settings.id]
+  created_at varchar
+}
+
+Table household_budget_settings {
+  id integer [pk, increment]
+  household_id integer [not null, ref: > households.id]
+  budget_settings_id integer [not null, ref: > budget_settings.id]
+  created_at varchar
+}
+
+// ============================================================
+// RECEIPTS
+// ============================================================
+
+Table receipts {
+  id integer [pk, increment]
+  image_path varchar [not null] //TODO co się dzieje ze zdjęciami pargaonów po imporcie? w jaki sposób są trzymane? czy ktoś może je po prostu podejrzeć? może warto dodać opcje że zdjećia paragonów będą trzymane zaszyfrowane ale tedy nie można podejrzeć zdjecia paragonu an forncie i przentowany jest po prosu placeholder?
+  scan_date varchar [not null]
+  merchant varchar //TODO to musi być albo zahashowane albo client side encyrption
+  total float
+  payment_method varchar
+  items_json text
+  raw_ocr_response text
+  verified boolean [default: false]
+  category varchar [ref: > categories.name]
+  created_at varchar
+}
+
+Table receipt_images {
+  id integer [pk, increment]
+  receipt_id integer [not null, ref: > receipts.id]
+  image_path varchar [not null] //TODO ten sam porblem co we wcześniejszych todo dtyczący tego kto może podglądać zawratość zdjecia
+  sort_order integer [default: 0]
+  created_at varchar
+}
+
+Table user_receipts {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  receipt_id integer [not null, ref: > receipts.id]
+  created_at varchar
+}
+
+Table household_receipts {
+  id integer [pk, increment]
+  household_id integer [not null, ref: > households.id]
+  receipt_id integer [not null, ref: > receipts.id]
+  added_by_user_id integer [ref: > users.id]
+  created_at varchar
+}
+
+// ============================================================
+// FOOD — CATALOG
+// ============================================================
+
+Table food_categories {
+  id integer [pk, increment]
+  name varchar [unique, not null]
+  icon varchar
+  color varchar
+  default_expiry_days integer
+  storage_tips text
+}
+
+Table food_products {
+  id integer [pk, increment]
+  name varchar [not null]
+  name_normalized varchar [not null]
+  barcode varchar
+  barcode_type varchar
+  food_category_id integer [ref: > food_categories.id]
+  calories float
+  protein float
+  carbohydrates float
+  fat float
+  fiber float
+  sugar float
+  sodium float
+  default_unit varchar [default: 'szt']
+  is_verified boolean [default: false]
+  created_by_user_id integer [ref: > users.id]
+  created_at varchar
+  updated_at varchar
+}
+
+Table food_product_aliases {
+  id integer [pk, increment]
+  product_id integer [not null, ref: > food_products.id]
+  alias varchar [not null]
+  alias_normalized varchar [not null]
+  source varchar [default: 'manual']
+  created_by_user_id integer [ref: > users.id]
+  created_at varchar
+}
+
+// ============================================================
+// FOOD — INVENTORY & IMPORT
+// ============================================================
+
+Table food_pending_imports {
+  id integer [pk, increment]
+  receipt_id integer [not null, ref: > receipts.id]
+  user_id integer [not null, ref: > users.id]
+  household_id integer [ref: > households.id]
+  status varchar [default: 'pending']
+  created_at varchar
+  processed_at varchar
+}
+
+Table food_pending_import_items {
+  id integer [pk, increment]
+  pending_import_id integer [not null, ref: > food_pending_imports.id]
+  original_name varchar [not null]
+  original_name_normalized varchar [not null]
+  quantity float [default: 1]
+  unit_price float
+  total_price float
+  matched_product_id integer [ref: > food_products.id]
+  match_method varchar
+  match_confidence float
+  ai_suggested_name varchar
+  ai_suggested_category_id integer [ref: > food_categories.id]
+  ai_suggested_expiry_days integer
+  suggested_expiry_date varchar
+  status varchar [default: 'pending']
+  final_product_id integer [ref: > food_products.id]
+  final_expiry_date varchar
+  final_quantity float
+  final_unit varchar
+  created_new_product boolean [default: false]
+  processed_at varchar
+}
+
+Table food_inventory {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  household_id integer [ref: > households.id]
+  product_id integer [not null, ref: > food_products.id]
+  quantity float [default: 1]
+  unit varchar [default: 'szt']
+  purchase_date varchar
+  expiry_date varchar
+  opened_date varchar
+  receipt_id integer [ref: > receipts.id]
+  pending_import_item_id integer [ref: > food_pending_import_items.id]
+  added_manually boolean [default: false]
+  status varchar [default: 'available']
+  location varchar [default: 'pantry']
+  notes text
+  created_at varchar
+  updated_at varchar
+}
+
+Table food_expiry_reminders {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  inventory_item_id integer [not null, ref: > food_inventory.id]
+  remind_at varchar [not null]
+  days_before_expiry integer [not null]
+  status varchar [default: 'pending']
+  sent_at varchar
+  created_at varchar
+}
+
+Table food_reminder_settings {
+  id integer [pk, increment]
+  user_id integer [unique, not null, ref: > users.id]
+  enabled boolean [default: true]
+  default_days_before integer [default: 3]
+  dairy_days_before integer [default: 2]
+  meat_days_before integer [default: 1]
+  vegetables_days_before integer [default: 2]
+  fruits_days_before integer [default: 2]
+  bread_days_before integer [default: 1]
+  frozen_days_before integer [default: 7]
+  created_at varchar
+  updated_at varchar
+}
+
+// ============================================================
+// FOOD — CONSUMPTION & GOALS
+// ============================================================
+
+Table food_consumption_log {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  product_id integer [ref: > food_products.id]
+  inventory_item_id integer [ref: > food_inventory.id]
+  quantity float [default: 1]
+  unit varchar [default: 'szt']
+  calories float
+  protein float
+  carbohydrates float
+  fat float
+  consumed_at varchar [not null]
+  meal_type varchar
+  notes text
+  off_product_code varchar
+  product_name varchar
+  created_at varchar
+}
+
+Table food_daily_goals {
+  id integer [pk, increment]
+  user_id integer [unique, not null, ref: > users.id]
+  calories float [default: 2000]
+  protein float
+  carbohydrates float
+  fat float
+  updated_at varchar
+}
+
+// ============================================================
+// FOOD — RECIPES
+// ============================================================
+
+Table food_recipes {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  name varchar [not null]
+  description text
+  prep_time_minutes integer
+  servings integer
+  instructions text
+  tags varchar
+  rating integer
+  source varchar [default: 'manual']
+  created_at varchar
+  updated_at varchar
+}
+
+Table food_recipe_ingredients {
+  id integer [pk, increment]
+  recipe_id integer [not null, ref: > food_recipes.id]
+  food_product_id integer [ref: > food_products.id]
+  name varchar [not null]
+  quantity float
+  unit varchar
+}
+
+// ============================================================
+// FITNESS
+// ============================================================
+
+Table workouts {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  date varchar [not null]
+  name varchar [not null]
+  duration_minutes integer
+  notes text
+  completed boolean [default: true]
+  timer_started_at varchar
+  timer_ended_at varchar
+  timer_paused_at varchar
+  total_paused_seconds integer [default: 0]
+  default_rest_seconds integer
+  created_at varchar
+  updated_at varchar
+}
+
+Table exercises {
+  id integer [pk, increment]
+  workout_id integer [not null, ref: > workouts.id]
+  name varchar [not null]
+  sets integer [not null]
+  reps integer [not null]
+  weight_kg float [not null]
+  rest_seconds integer
+  notes text
+}
+
+Table exercise_sets {
+  id integer [pk, increment]
+  exercise_id integer [not null, ref: > exercises.id]
+  set_number integer [not null]
+  reps integer [not null]
+  weight_kg float [not null]
+  completed boolean [default: false]
+}
+
+Table weight_entries {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  date varchar [not null]
+  weight_kg float [not null]
+  body_fat_percentage float
+  notes text
+  created_at varchar
+}
+
+Table user_body_profiles {
+  id integer [pk, increment]
+  user_id integer [unique, not null, ref: > users.id]
+  height_cm float
+  updated_at varchar
+}
+
+Table body_measurement_entries {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  date varchar [not null]
+  bicep_cm float
+  waist_cm float
+  thigh_cm float
+  calf_cm float
+  chest_cm float
+  notes text
+  created_at varchar
+}
+
+Table meditation_sessions {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  date varchar [not null]
+  started_at varchar [not null]
+  duration_seconds integer
+  notes text
+  completed boolean [default: false]
+  created_at varchar
+}
+
+// ============================================================
+// JOURNAL
+// ============================================================
+
+Table journal_entries {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  date varchar [not null]
+  mood_score integer
+  notes text //TODO to trzeba szyfrować 
+  created_at varchar [not null]
+  updated_at varchar
+}
+
+Table journal_items { //TODO tutaj trzeba przenalizować co trzeba szyforwać i jak to można zrobić
+  id integer [pk, increment]
+  entry_id integer [not null, ref: > journal_entries.id]
+  category varchar [not null]
+  position integer [not null]
+  content text [not null]
+}
+
+Table journal_reports { //TODO tutaj trzeba przenalizować co trzeba szyforwać i jak to można zrobić
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  report_type varchar [not null]
+  period varchar [not null]
+  data text [not null]
+  entry_count integer [default: 0]
+  created_at varchar [not null]
+  updated_at varchar
+}
+
+// ============================================================
+// MEDICINES
+// ============================================================
+
+Table medicines {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  name varchar [not null] //TODO koniecznie trzeba szyfrować 
+  description text //TODO koniecznie trzeba szyfrować
+  dosage varchar
+  unit varchar
+  color varchar
+  icon varchar
+  active boolean [default: true]
+  created_at varchar [not null]
+  updated_at varchar
+}
+
+Table medicine_schedules {
+  id integer [pk, increment]
+  medicine_id integer [not null, ref: > medicines.id]
+  frequency_type varchar [not null]
+  frequency_value integer
+  time_of_day varchar [not null]
+  days_of_week varchar
+  day_of_month integer
+  notifications_enabled boolean [default: true]
+  active boolean [default: true]
+  created_at varchar [not null]
+  updated_at varchar
+}
+
+Table medicine_logs {
+  id integer [pk, increment]
+  medicine_id integer [not null, ref: > medicines.id]
+  schedule_id integer [not null, ref: > medicine_schedules.id]
+  scheduled_date varchar [not null]
+  scheduled_time varchar [not null]
+  taken boolean [default: false]
+  taken_at varchar
+  created_at varchar [not null]
+}
+
+// ============================================================
+// TODO
+// ============================================================
+
+Table todo_lists {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  title varchar [not null] //TODO koniecznie trzeba szyfrować
+  date varchar [not null]
+  created_in_advance_days integer [default: 0]
+  created_at varchar [not null]
+  updated_at varchar
+}
+
+Table todo_items {
+  id integer [pk, increment]
+  list_id integer [not null, ref: > todo_lists.id]
+  user_id integer [not null, ref: > users.id]
+  title varchar [not null] //TODO koniecznie trzeba szyfrować
+  description text //TODO koniecznie trzeba szyfrować
+  completed boolean [default: false]
+  completed_at varchar
+  estimated_minutes integer
+  priority varchar [default: 'medium']
+  position integer [default: 0]
+  postponed_count integer [default: 0]
+  original_list_id integer [ref: > todo_lists.id]
+  item_reminder_enabled boolean [default: false]
+  item_reminder_time varchar
+  created_at varchar [not null]
+  updated_at varchar
+}
+
+Table todo_postpone_logs {
+  id integer [pk, increment]
+  todo_item_id integer [not null, ref: > todo_items.id]
+  user_id integer [not null, ref: > users.id]
+  from_list_id integer [ref: > todo_lists.id]
+  to_list_id integer [ref: > todo_lists.id]
+  excuse varchar [default: 'other']
+  postponed_at varchar [not null]
+}
+
+Table todo_notification_rules {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  label varchar //TODO koniecznie trzeba szyfrować
+  trigger_type varchar [not null]
+  fixed_time varchar
+  minutes_before_end integer
+  interval_minutes integer
+  window_start varchar
+  window_end varchar
+  notify_only_if_incomplete boolean [default: true]
+  enabled boolean [default: true]
+  last_sent_at varchar
+  created_at varchar [not null]
+}
+
+// ============================================================
+// SHOPPING
+// ============================================================
+
+Table shopping_lists {
+  id integer [pk, increment]
+  owner_id integer [not null, ref: > users.id]
+  household_id integer [ref: > households.id]
+  visibility varchar [default: 'private']
+  name varchar [not null] //TODO koniecznie trzeba szyfrować
+  store_name varchar //TODO koniecznie trzeba szyfrować
+  planned_date varchar
+  status varchar [default: 'active']
+  notes text
+  created_at varchar [not null]
+  updated_at varchar
+}
+
+Table shopping_list_items {
+  id integer [pk, increment]
+  list_id integer [not null, ref: > shopping_lists.id]
+  added_by integer [not null, ref: > users.id]
+  food_product_id integer [ref: > food_products.id]
+  name varchar [not null] //TODO koniecznie trzeba szyfrować
+  quantity float
+  unit varchar
+  category varchar //TODO tutaj się trzeba zastnowić czy trzeba szyfrować czy może neie ejst to możliwe
+  status varchar [default: 'pending']
+  is_recurring boolean [default: false]
+  notes varchar //TODO koniecznie trzeba szyfrować
+  position integer [default: 0]
+  created_at varchar [not null]
+  updated_at varchar
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+Table notifications { //TODO tutaj się trzeba zastnowić na ile można to szyfrować i czy będą tutaj jakieś problemy w związku z wysyłąnie? czy jedno powiadomienie może iśc do wielu osobó i co wtedy itd
+  id integer [pk, increment]
+  title varchar [not null]
+  body text [not null]
+  notification_type varchar(50) [default: 'general']
+  created_by_user_id integer [ref: > users.id]
+  created_at varchar
+}
+
+Table user_notifications {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  notification_id integer [not null, ref: > notifications.id]
+  status varchar(20) [default: 'unread']
+  read_at varchar
+  created_at varchar
+}
+
+Table push_subscriptions {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  endpoint text [not null]
+  p256dh_key varchar [not null]
+  auth_key varchar [not null]
+  created_at varchar
+}
+
+Table notification_schedules {
+  id integer [pk, increment]
+  user_id integer [not null, ref: > users.id]
+  reminder_type varchar(50) [not null]
+  enabled boolean [default: false]
+  frequency varchar(20) [default: 'daily']
+  hour integer [default: 9]
+  minute integer [default: 0]
+  day_of_week integer
+  day_of_month integer
+  custom_name varchar(100)
+  custom_icon varchar(100)
+  custom_title varchar(200)
+  custom_body varchar(500)
+  created_at varchar [not null]
+  updated_at varchar
+}
+
+// ============================================================
+// BACKUP
+// ============================================================
+
+Table backup_settings { //TODO backupowane dane powinny być zaszyfrowane i hasło do backupu na pewno nie może być trzyma w bazie plain tekstem, może jakieś inne czeczy też trzeba porpawić
+  id integer [pk, increment]
+  user_id integer [unique, not null, ref: > users.id]
+  encrypted_password text
+  auto_backup_enabled boolean [default: false]
+  frequency varchar(20) [default: 'weekly']
+  hour integer [default: 3]
+  minute integer [default: 0]
+  day_of_week integer
+  day_of_month integer
+  google_drive_connected boolean [default: false]
+  google_drive_folder_id varchar
+  last_backup_at varchar
+  last_backup_filename varchar
+  last_backup_size_bytes integer
+  created_at varchar [not null]
+  updated_at varchar
+}
+
+Table household_backup_settings { //TODO backupowane dane powinny być zaszyfrowane i hasło do backupu na pewno nie może być trzyma w bazie plain tekstem, może jakieś inne czeczy też trzeba porpawić
+  id integer [pk, increment]
+  household_id integer [unique, not null, ref: > households.id]
+  configured_by_user_id integer [ref: > users.id]
+  encrypted_password text
+  auto_backup_enabled boolean [default: false]
+  frequency varchar(20) [default: 'weekly']
+  hour integer [default: 3]
+  minute integer [default: 0]
+  day_of_week integer
+  day_of_month integer
+  google_drive_connected boolean [default: false]
+  google_drive_folder_id varchar
+  last_backup_at varchar
+  last_backup_filename varchar
+  last_backup_size_bytes integer
+  created_at varchar [not null]
+  updated_at varchar
+}

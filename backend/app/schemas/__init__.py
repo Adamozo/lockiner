@@ -100,6 +100,7 @@ from .user import (
     TokenResponse,
     RefreshTokenRequest,
     PasswordChangeRequest,
+    ResetPasswordWithDekRequest,
 )
 
 # Household schemas
@@ -338,6 +339,7 @@ __all__ = [
     "TokenResponse",
     "RefreshTokenRequest",
     "PasswordChangeRequest",
+    "ResetPasswordWithDekRequest",
     # Household
     "HouseholdBase",
     "HouseholdCreate",

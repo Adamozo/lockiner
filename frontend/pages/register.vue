@@ -17,6 +17,8 @@ const authStore = useAuthStore();
 const router = useRouter();
 const toast = useToast();
 
+const recoveryKey = ref<string | null>(null);
+
 // Form state
 const form = ref({
   name: "",
@@ -112,22 +114,16 @@ const handleSubmit = async () => {
   errors.value.general = "";
 
   try {
-    // Register the user
-    await authStore.register({
+    // Register the user — DEK is generated inside the store action
+    const { recoveryKey: key } = await authStore.register({
       name: form.value.name.trim(),
       email: form.value.email,
       password: form.value.password,
       voucher_code: form.value.voucherCode.trim(),
     });
 
-    toast.add({
-      title: t('auth.register_success_title'),
-      description: t('auth.register_success_desc'),
-      color: "green",
-    });
-
-    // Redirect to login
-    await router.push("/login");
+    // Show recovery key screen instead of redirecting immediately
+    recoveryKey.value = key;
   } catch (e: unknown) {
     const err = e as { data?: { detail?: string }; statusCode?: number };
 
@@ -150,7 +146,15 @@ const handleSubmit = async () => {
 </script>
 
 <template>
+  <!-- Recovery key screen shown after successful registration -->
+  <AuthRecoveryKeyScreen
+    v-if="recoveryKey"
+    :recovery-key="recoveryKey"
+    @proceed="router.push('/login')"
+  />
+
   <div
+    v-else
     class="bg-card-black border border-border-gray rounded-lg shadow-xl overflow-hidden"
   >
     <!-- Header -->

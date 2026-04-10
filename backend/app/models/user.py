@@ -37,6 +37,8 @@ class User(Base):
     totp_enabled = Column(Boolean, default=False)
     recovery_codes_hash = Column(Text, nullable=True)
     language = Column(String(10), nullable=False, default="en")
+    encrypted_dek = Column(Text, nullable=True)
+    dek_salt = Column(String, nullable=True)
 
     household_memberships = relationship("HouseholdMember", back_populates="user")
     api_keys = relationship("UserAPIKey", back_populates="user", cascade="all, delete-orphan")

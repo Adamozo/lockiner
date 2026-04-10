@@ -364,6 +364,8 @@ export interface UserCreate {
   name: string
   voucher_code: string
   language?: string
+  encrypted_dek?: string
+  dek_salt?: string
 }
 
 /**
@@ -416,6 +418,8 @@ export interface RefreshTokenRequest {
 export interface PasswordChangeRequest {
   current_password: string
   new_password: string
+  encrypted_dek?: string
+  dek_salt?: string
 }
 
 // ============================================
@@ -432,6 +436,8 @@ export interface LoginResponse {
   expires_in?: number
   requires_2fa: boolean
   two_factor_token?: string
+  encrypted_dek?: string
+  dek_salt?: string
 }
 
 /**

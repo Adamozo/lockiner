@@ -38,6 +38,9 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref<string | null>(null)
   const requiresTwoFactor = ref(false)
   const pendingTwoFactorToken = ref<string | null>(null)
+  // Temporarily holds the plaintext password during the 2FA login flow so we
+  // can derive the KEK and decrypt the DEK after 2FA verification completes.
+  const pendingPassword = ref<string | null>(null)
 
   // Getters
   const accessToken = computed(() => accessTokenCookie.value)
@@ -83,27 +86,48 @@ export const useAuthStore = defineStore('auth', () => {
     refreshTokenCookie.value = refresh
   }
 
-  // Clear tokens from cookies
+  // Clear tokens from cookies and DEK from sessionStorage
   const clearTokens = () => {
     accessTokenCookie.value = null
     refreshTokenCookie.value = null
     user.value = null
+    const { clearDekFromSession } = useDek()
+    clearDekFromSession()
   }
 
   // Actions
-  const register = async (userData: UserCreate): Promise<User> => {
+
+  /**
+   * Register a new user.
+   * Generates a DEK client-side, encrypts it with a KEK derived from the
+   * password, and returns the hex recovery key to be shown to the user once.
+   */
+  const register = async (userData: Omit<UserCreate, 'encrypted_dek' | 'dek_salt'>): Promise<{ user: User; recoveryKey: string }> => {
     loading.value = true
     error.value = null
 
     try {
+      const { generateDek, generateSalt, deriveKek, encryptDek, exportDekAsHex } = useDek()
+
+      const dek = await generateDek()
+      const salt = generateSalt()
+      const kek = await deriveKek(userData.password, salt)
+      const encryptedDek = await encryptDek(dek, kek)
+      const recoveryKey = await exportDekAsHex(dek)
+
       const languageCookie = useCookie<string>(LANGUAGE_COOKIE_KEY, { default: () => 'en' })
       const response = await $fetch<User>(getApiUrl('/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: { ...userData, language: userData.language ?? languageCookie.value ?? 'en' },
+        body: {
+          ...userData,
+          language: userData.language ?? languageCookie.value ?? 'en',
+          encrypted_dek: encryptedDek,
+          dek_salt: salt,
+        },
       })
 
-      return response
+      return { user: response, recoveryKey }
     } catch (e: unknown) {
       const err = e as { data?: { detail?: string } }
       error.value = err.data?.detail || 'Registration failed'
@@ -118,6 +142,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     requiresTwoFactor.value = false
     pendingTwoFactorToken.value = null
+    pendingPassword.value = null
 
     try {
       const response = await $fetch<LoginResponse>(getApiUrl('/auth/login'), {
@@ -129,20 +154,33 @@ export const useAuthStore = defineStore('auth', () => {
       if (response.requires_2fa && response.two_factor_token) {
         requiresTwoFactor.value = true
         pendingTwoFactorToken.value = response.two_factor_token
+        // Hold password temporarily so verifyTwoFactor can decrypt the DEK
+        pendingPassword.value = credentials.password
         return
       }
 
       if (response.access_token && response.refresh_token) {
         saveTokens(response.access_token, response.refresh_token)
+
+        // Decrypt and store DEK if present
+        if (response.encrypted_dek && response.dek_salt && import.meta.client) {
+          try {
+            const { deriveKek, decryptDek, storeDekInSession } = useDek()
+            const kek = await deriveKek(credentials.password, response.dek_salt)
+            const dek = await decryptDek(response.encrypted_dek, kek)
+            await storeDekInSession(dek)
+          } catch {
+            // DEK decryption failure is non-fatal — user can still use the app
+          }
+        }
+
         const fetchedUser = await fetchCurrentUser()
         if (fetchedUser) {
           const languageCookie = useCookie<string>(LANGUAGE_COOKIE_KEY, { default: () => 'en' })
           const cookieLang = languageCookie.value
           if (cookieLang && fetchedUser.language !== cookieLang) {
-            // Cookie takes precedence — sync to DB
             await updateProfile({ language: cookieLang })
           } else if (!cookieLang && fetchedUser.language) {
-            // No cookie — apply language from DB
             languageCookie.value = fetchedUser.language
           }
         }
@@ -166,7 +204,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      const tokens = await $fetch<TokenResponse>(getApiUrl('/auth/2fa/verify'), {
+      const response = await $fetch<LoginResponse>(getApiUrl('/auth/2fa/verify'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: {
@@ -175,9 +213,23 @@ export const useAuthStore = defineStore('auth', () => {
         },
       })
 
-      saveTokens(tokens.access_token, tokens.refresh_token)
+      saveTokens(response.access_token!, response.refresh_token!)
+
+      // Decrypt and store DEK using the temporarily-held password
+      if (response.encrypted_dek && response.dek_salt && pendingPassword.value && import.meta.client) {
+        try {
+          const { deriveKek, decryptDek, storeDekInSession } = useDek()
+          const kek = await deriveKek(pendingPassword.value, response.dek_salt)
+          const dek = await decryptDek(response.encrypted_dek, kek)
+          await storeDekInSession(dek)
+        } catch {
+          // Non-fatal
+        }
+      }
+
       requiresTwoFactor.value = false
       pendingTwoFactorToken.value = null
+      pendingPassword.value = null
 
       await fetchCurrentUser()
     } catch (e: unknown) {
@@ -192,6 +244,7 @@ export const useAuthStore = defineStore('auth', () => {
   const clearTwoFactor = () => {
     requiresTwoFactor.value = false
     pendingTwoFactorToken.value = null
+    pendingPassword.value = null
     error.value = null
   }
 
@@ -282,14 +335,32 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const changePassword = async (data: PasswordChangeRequest): Promise<void> => {
+  const changePassword = async (data: Pick<PasswordChangeRequest, 'current_password' | 'new_password'>): Promise<void> => {
     loading.value = true
     error.value = null
 
     try {
+      let payload: PasswordChangeRequest = { ...data }
+
+      // Re-encrypt DEK with new password if available
+      if (import.meta.client) {
+        try {
+          const { getDekFromSession, generateSalt, deriveKek, encryptDek } = useDek()
+          const dek = await getDekFromSession()
+          if (dek) {
+            const newSalt = generateSalt()
+            const newKek = await deriveKek(data.new_password, newSalt)
+            const newEncryptedDek = await encryptDek(dek, newKek)
+            payload = { ...payload, encrypted_dek: newEncryptedDek, dek_salt: newSalt }
+          }
+        } catch {
+          // Non-fatal: proceed with password change without updating DEK
+        }
+      }
+
       await authFetch('/auth/change-password', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       })
     } catch (e: unknown) {
       const err = e as { data?: { detail?: string } }
@@ -317,6 +388,7 @@ export const useAuthStore = defineStore('auth', () => {
     error,
     requiresTwoFactor,
     pendingTwoFactorToken,
+    pendingPassword,
 
     // Getters (tokens are now computed from cookies)
     accessToken,
